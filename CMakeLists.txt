@@ -64,4 +64,4 @@ add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 #     inc                         - каталог, который должен входить в пути поиска include
 #       umba                      - каталог umba модуля SimpleFormatter
 #         simple_formatter.h      - include "umba/simple_formatter.h"
-arget_include_directories(${PROJECT_NAME} PUBLIC  ${MODULE_ROOT}/inc)
+target_include_directories(${PROJECT_NAME} PUBLIC  ${MODULE_ROOT}/inc)
