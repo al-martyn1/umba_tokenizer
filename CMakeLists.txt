@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(MODULE_NAME CXX)
+project(umba_tokenizer CXX)
 
 # Руководство по CMake для разработчиков C++ библиотек - https://habr.com/ru/articles/683204/
 # https://github.com/pananton/cpp-lib-template/blob/main/CMakeLists.txt
@@ -64,4 +64,4 @@ add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 #     inc                         - каталог, который должен входить в пути поиска include
 #       umba                      - каталог umba модуля SimpleFormatter
 #         simple_formatter.h      - include "umba/simple_formatter.h"
-# target_include_directories(${PROJECT_NAME} PUBLIC  ${MODULE_ROOT}/inc)
+arget_include_directories(${PROJECT_NAME} PUBLIC  ${MODULE_ROOT}/inc)
