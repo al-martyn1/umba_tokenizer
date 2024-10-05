@@ -35,11 +35,11 @@
 //
 #include "c_tokenizer_constants.h"
 //
-#include "iterator.h"
+#include "umba/iterator.h"
 //
-#include "text_iterator_traits.h"
+#include "umba/text_iterator_traits.h"
 //
-#include "escape_string.h"
+#include "umba/escape_string.h"
 
 //
 #include <map>
@@ -50,7 +50,7 @@
 #include <type_traits>
 
 //
-#include "assert.h"
+#include "umba/assert.h"
 
 //
 #include "tokenizer/defs.h"
