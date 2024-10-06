@@ -1,0 +1,4 @@
+http://www.compiler.su/
+http://compilerjobs.com/
+Компилятор за выходные: лексер и парсер - https://habr.com/ru/articles/787800/
+Writing a tokenizer - https://dev.to/ndesmic/writing-a-tokenizer-1j85
