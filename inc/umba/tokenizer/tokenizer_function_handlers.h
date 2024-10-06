@@ -35,7 +35,17 @@ class TokenizerFunctionHandlers : public TokenizerBaseImpl< TokenizerFunctionHan
 //------------------------------
 public: // depending types
 
-    using TBase = TokenizerBaseImpl< TokenizerFunctionHandlers
+    using TSelf = TokenizerFunctionHandlers< CharType
+                                           , UserDataType
+                                           , CharClassTableType
+                                           , TrieVectorType
+                                           , StringType
+                                           , MessagesStringType
+                                           , InputIteratorType
+                                           , InputIteratorTraits
+                                           >;
+
+    using TBase = TokenizerBaseImpl< TSelf
                                    , CharType
                                    , UserDataType
                                    , CharClassTableType
@@ -46,15 +56,6 @@ public: // depending types
                                    , InputIteratorTraits
                                    >;
 
-    using TSelf = TokenizerFunctionHandlers< CharType
-                                           , UserDataType
-                                           , CharClassTableType
-                                           , TrieVectorType
-                                           , StringType
-                                           , MessagesStringType
-                                           , InputIteratorType
-                                           , InputIteratorTraits
-                                           >;
 
     friend TBase;
 

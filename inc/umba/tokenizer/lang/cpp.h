@@ -14,17 +14,17 @@ namespace umba {
 namespace tokenizer {
 
 
-template< typename CharType            // Input chars type
-        , typename UserDataType        = void*
-        , typename CharClassTableType  = std::array<CharClass, 128>
-        , typename TrieVectorType      = std::vector<TrieNode>
-        , typename StringType          = std::basic_string<CharType>  // Тип строки, которая хранит входные символы
-        , typename MessagesStringType  = std::string  // Тип строки, которая используется для сообщений (в том числе и от внешних суб-парсеров)
+template< typename CharType                     //!< Input chars type
+        , typename UserDataType        = void*  //!< Пользовательские данные
+        , typename CharClassTableType  = std::array<umba::tokenizer::CharClass, 128> //!< Таблица классов символов
+        , typename TrieVectorType      = std::vector<umba::tokenizer::TrieNode>      //!< Тип Trie
+        , typename StringType          = std::basic_string<CharType>  //!< Тип строки, которая хранит входные символы
+        , typename MessagesStringType  = std::string  //!< Тип строки, которая используется для сообщений (в том числе и от внешних суб-парсеров)
         , typename InputIteratorType   = umba::iterator::TextPositionCountingIterator<CharType>
         , typename InputIteratorTraits = umba::iterator::TextIteratorTraits<InputIteratorType>
-        , typename TokenizerType       = Tokenizer< CharType, UserDataType, CharClassTableType, TrieVectorType, StringType, MessagesStringType, InputIteratorType >
+        , typename TokenizerType       = umba::tokenizer::Tokenizer< CharType, UserDataType, CharClassTableType, TrieVectorType, StringType, MessagesStringType, InputIteratorType >
         >
-TokenizerBuilder<CharType, UserDataType, CharClassTableType, TrieVectorType, StringType, MessagesStringType, InputIteratorType, InputIteratorTraits, TokenizerType>
+umba::tokenizer::TokenizerBuilder<CharType, UserDataType, CharClassTableType, TrieVectorType, StringType, MessagesStringType, InputIteratorType, InputIteratorTraits, TokenizerType>
 makeTokenizerBuilderCpp()
 {
     using CppStringLiteralParser     = CppEscapedSimpleQuotedStringLiteralParser<CharType, MessagesStringType, InputIteratorType, InputIteratorTraits>;
