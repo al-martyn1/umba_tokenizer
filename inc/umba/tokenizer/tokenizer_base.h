@@ -303,6 +303,8 @@ protected: // fields
 
     TokenizerOptions      options; // Не являются состоянием, обычно задаются в начале, и никогда не меняются
 
+    user_data_type        userData;
+
 
 //------------------------------
 protected: // fileds - состояние токенизатора
@@ -369,6 +371,18 @@ protected: // methods
 public: // methods
 
     //mutable std::size_t            rawModeCounter = 0;
+
+    user_data_type getUserData() const
+    {
+        return userData;
+    }
+
+    user_data_type setUserData(user_data_type data)
+    {
+        using namespace std;
+        swap(data, userData);
+        return data;
+    }
 
     bool isInRawMode() const
     {
