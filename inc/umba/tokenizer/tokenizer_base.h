@@ -372,6 +372,12 @@ public: // methods
 
     //mutable std::size_t            rawModeCounter = 0;
 
+    static
+    InputIteratorTraits getInputIteratorTraits()
+    {
+        return InputIteratorTraits();
+    }
+
     user_data_type getUserData() const
     {
         return userData;
