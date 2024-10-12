@@ -400,7 +400,7 @@ public: // methods
         if (bRawMode)
             ++rawModeCounter;
         else
-            ++rawModeCounter;
+            --rawModeCounter;
     }
 
     void addOwnershipForLiteralParsers(const std::vector<std::shared_ptr<ITokenizerLiteralParser> > &literalParsers)
