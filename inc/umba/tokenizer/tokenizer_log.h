@@ -303,13 +303,13 @@ struct TokenizerTokenErrorHandler : public TokenizerErrorHandlerBase
 
 
 //----------------------------------------------------------------------------
-#define PTGPAR_CONLOG_SRC_FILE   srcFile ? srcFile : __FILE__
-#define PTGPAR_CONLOG_SRC_LINE   srcFile ? srcLine : __LINE__
+#define UMBA_TOKENIZER_LOG_CONLOG_SRC_FILE   srcFile ? srcFile : __FILE__
+#define UMBA_TOKENIZER_LOG_CONLOG_SRC_LINE   srcFile ? srcLine : __LINE__
 
-#define PTGPAR_CONLOG_ERR_INPUT                 umba::log::startLogError( umbaLogStreamErr, umba::log::LogEntryType::err ,  /* gopts, */  std::string()/*"err"*/, curFile.c_str(), lineNo, PTGPAR_CONLOG_SRC_FILE, PTGPAR_CONLOG_SRC_LINE )
-#define PTGPAR_CONLOG_ERR_INPUT_EX(errType)     umba::log::startLogError( umbaLogStreamErr, umba::log::LogEntryType::err ,  /* gopts, */  std::string(errType)  , curFile.c_str(), lineNo, PTGPAR_CONLOG_SRC_FILE, PTGPAR_CONLOG_SRC_LINE )
-#define PTGPAR_CONLOG_WARN_INPUT(warnType)      umba::log::startLogError( umbaLogStreamErr, umba::log::LogEntryType::warn,  /* gopts, */  std::string(warnType) , curFile.c_str(), lineNo, PTGPAR_CONLOG_SRC_FILE, PTGPAR_CONLOG_SRC_LINE )
-#define PTGPAR_CONLOG_INFO_INPUT(infoType)      umba::log::startLogError( umbaLogStreamErr, umba::log::LogEntryType::msg ,  /* gopts, */  std::string(infoType) , curFile.c_str(), lineNo, PTGPAR_CONLOG_SRC_FILE, PTGPAR_CONLOG_SRC_LINE )
+#define UMBA_TOKENIZER_LOG_CONLOG_ERR_INPUT                 umba::log::startLogError( umbaLogStreamErr, umba::log::LogEntryType::err ,  /* gopts, */  std::string()/*"err"*/, curFile.c_str(), lineNo, UMBA_TOKENIZER_LOG_CONLOG_SRC_FILE, UMBA_TOKENIZER_LOG_CONLOG_SRC_LINE )
+#define UMBA_TOKENIZER_LOG_CONLOG_ERR_INPUT_EX(errType)     umba::log::startLogError( umbaLogStreamErr, umba::log::LogEntryType::err ,  /* gopts, */  std::string(errType)  , curFile.c_str(), lineNo, UMBA_TOKENIZER_LOG_CONLOG_SRC_FILE, UMBA_TOKENIZER_LOG_CONLOG_SRC_LINE )
+#define UMBA_TOKENIZER_LOG_CONLOG_WARN_INPUT(warnType)      umba::log::startLogError( umbaLogStreamErr, umba::log::LogEntryType::warn,  /* gopts, */  std::string(warnType) , curFile.c_str(), lineNo, UMBA_TOKENIZER_LOG_CONLOG_SRC_FILE, UMBA_TOKENIZER_LOG_CONLOG_SRC_LINE )
+#define UMBA_TOKENIZER_LOG_CONLOG_INFO_INPUT(infoType)      umba::log::startLogError( umbaLogStreamErr, umba::log::LogEntryType::msg ,  /* gopts, */  std::string(infoType) , curFile.c_str(), lineNo, UMBA_TOKENIZER_LOG_CONLOG_SRC_FILE, UMBA_TOKENIZER_LOG_CONLOG_SRC_LINE )
 
 //----------------------------------------------------------------------------
 
@@ -376,11 +376,11 @@ struct ParserConsoleErrorLog : public ParserErrorLog
             {
                 if (erroneousValue.empty())
                 {
-                    PTGPAR_CONLOG_ERR_INPUT_EX("unxp-symbol") << umba::FormatMessage("Unexpected symbol").toString() <<"\n";
+                    UMBA_TOKENIZER_LOG_CONLOG_ERR_INPUT_EX("unxp-symbol") << umba::FormatMessage("Unexpected symbol").toString() <<"\n";
                 }
                 else
                 {
-                    PTGPAR_CONLOG_ERR_INPUT_EX("unxp-symbol") << umba::FormatMessage("Unexpected symbol: \'$(Symbol)\'").arg("Symbol", erroneousValue).toString() <<"\n";
+                    UMBA_TOKENIZER_LOG_CONLOG_ERR_INPUT_EX("unxp-symbol") << umba::FormatMessage("Unexpected symbol: \'$(Symbol)\'").arg("Symbol", erroneousValue).toString() <<"\n";
                 }
 
 
@@ -389,6 +389,7 @@ struct ParserConsoleErrorLog : public ParserErrorLog
 
             case ParserErrorEventType::unknownOperator:
             {
+                //std::cout << "Possible unknown operator: '" << umba::iterator::makeString(b, e) << "'\n";
                 break;
             }
 
@@ -416,18 +417,9 @@ struct ParserConsoleErrorLog : public ParserErrorLog
 
         if (!erroneousLineText.empty() && !errMarkerStr.empty())
         {
-            PTGPAR_CONLOG_ERR_INPUT << "Line: " << erroneousLineText << "\n";
-            PTGPAR_CONLOG_ERR_INPUT << "     |" << errMarkerStr      << "|\n";
+            UMBA_TOKENIZER_LOG_CONLOG_ERR_INPUT << "Line: " << erroneousLineText << "\n";
+            UMBA_TOKENIZER_LOG_CONLOG_ERR_INPUT << "     |" << errMarkerStr      << "|\n";
         }
-
-
-         // ss << "Line: " << erroneousLineText << "\n";
-         // auto errMarkerStr = std::string(erroneousLineText.size(), ' ');
-         // if (errPos.symbolOffset>=errMarkerStr.size())
-         //     errMarkerStr.append(1,'^');
-         // else
-         //     errMarkerStr[errPos.symbolOffset] = '^';
-         // ss << "     |" << errMarkerStr << "|\n";
 
     }
 
