@@ -129,16 +129,21 @@ template<typename TokenizerBuilder, typename TokenHandler>
 //typename TokenizerBuilder::tokenizer_type makeTokenizerCpp(const TokenizerBuilder &builder, TokenHandler tokenHandler, bool suffixGluing=true, bool preprocessorFilter=true)
 typename TokenizerBuilder::tokenizer_type makeTokenizerCpp(TokenizerBuilder builder, TokenHandler tokenHandler, bool suffixGluing=true, bool preprocessorFilter=true)
 {
+    using TokenizerType = typename TokenizerBuilder::tokenizer_type;
     auto tokenizer = builder.makeTokenizer();
     tokenizer.tokenHandler = tokenHandler;
 
     // !!! Фильтры, установленные позже, отрабатывают раньше
 
     if (preprocessorFilter)
-        tokenizer.template installTokenFilter<umba::tokenizer::filters::CcPreprocessorFilter<typename TokenizerBuilder::tokenizer_type> >();
+        tokenizer.template installTokenFilter<umba::tokenizer::filters::CcPreprocessorFilter<TokenizerType> >();
 
     if (suffixGluing)
-        tokenizer.template installTokenFilter<umba::tokenizer::filters::SimpleSuffixGluingFilter<typename TokenizerBuilder::tokenizer_type> >();
+        tokenizer.template installTokenFilter<umba::tokenizer::filters::SimpleSuffixGluingFilter<TokenizerType> >();
+
+    tokenizer.template installTokenFilter<umba::tokenizer::filters::DblSquareBracketOpenComposingFilter <TokenizerType> >();
+    tokenizer.template installTokenFilter<umba::tokenizer::filters::DblSquareBracketCloseComposingFilter<TokenizerType> >();
+
 
     // Символ хэша приобретает значение операторного только внутри директивы define
     // По умолчанию он не операторный
