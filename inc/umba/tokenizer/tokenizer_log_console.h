@@ -131,7 +131,7 @@ struct ParserConsoleErrorLog : public ParserErrorLog
                 if (msgIdIt!=formatArgs.end())
                     msgId = msgIdIt->second;
                 UMBA_TOKENIZER_LOG_CONLOG_ERR_INPUT_EX(msgId)
-                    << FormatMessage(customMessage).values(formatArgs)
+                    << FormatMessage(customMessage).values(formatArgs).arg("Value", erroneousValue)
                        .toString() <<"\n";
                 break;
             }

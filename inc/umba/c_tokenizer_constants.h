@@ -141,7 +141,7 @@
 // #define UMBA_TOKENIZER_TOKEN_CTRL_PP_INCLUDE                                          (UMBA_TOKENIZER_TOKEN_CTRL_FLAG|0x0004u) /* empty token, that "include" PP directive detected. Non-paired token */
 
 
-
+// С какого хрена коменты я присунул в операторы?
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FIRST                       (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x010u)  /*  //    */
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_LAST                        (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x01Fu)  /*        */
 
