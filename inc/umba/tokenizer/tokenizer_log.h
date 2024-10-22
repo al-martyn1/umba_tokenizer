@@ -42,7 +42,8 @@ namespace log
 //----------------------------------------------------------------------------
 enum class ParserErrorEventType
 {
-    customEvent          ,
+    customError          ,
+    customWarning        ,
     unexpected           ,
     unknownOperator      , // warning/info report
     stringLiteralWarning , // warning/info report
@@ -294,15 +295,15 @@ struct TokenizerTokenErrorHandler : public TokenizerErrorHandlerBase
         std::string erroneousValue    = umba::iterator::makeString(b,e);
         std::string erroneousLineText = umba::iterator::makeString(b.getLineStartIterator(), b.getLineEndIterator());
 
-        errorLog->logErrorEvent( ParserErrorEventType::tokenError
-                               , b.getPosition(true) // с поиском конца строки
-                               , payload
-                               , erroneousValue
-                               , erroneousLineText
-                               , std::string() // customMsgId
-                               , msg  // customMessage
-                               , 0, 0 // srcFile, srcLine
-                               );
+	        errorLog->logErrorEvent( ParserErrorEventType::tokenError
+	                               , b.getPosition(true) // с поиском конца строки
+	                               , payload
+	                               , erroneousValue
+	                               , erroneousLineText
+	                               , std::string() // customMsgId
+	                               , msg  // customMessage
+	                               , 0, 0 // srcFile, srcLine
+	                               );
     }
 
 }; // struct TokenizerTokenErrorHandler

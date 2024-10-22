@@ -67,7 +67,7 @@ struct ParserConsoleErrorLog : public ParserErrorLog
     {
         erroneousValue = umba::escapeStringC(erroneousValue); // Тут не обязательно подсчитывать, сколько лишних символов добавилось
 
-        int lineNo = (int)textPos.lineNumber;
+        int lineNo = (int)textPos.lineNumber + 1;
 
         std::string curFile = "<->";
 
@@ -76,6 +76,8 @@ struct ParserConsoleErrorLog : public ParserErrorLog
         curFile = pFileInfo->orgFilename;
 
         using FormatMessage = umba::FormatMessage<std::string>;
+
+        bool bError = true;
 
 
         switch(eventType)
@@ -104,6 +106,7 @@ struct ParserConsoleErrorLog : public ParserErrorLog
 
             case ParserErrorEventType::stringLiteralWarning:
             {
+                bError = false;
                 UMBA_TOKENIZER_LOG_CONLOG_WARN_INPUT("string-literal") 
                     << FormatMessage("string literal, suspicious character value: '$(Value)': $(Message)")
                        .arg("Value", erroneousValue)
@@ -136,8 +139,28 @@ struct ParserConsoleErrorLog : public ParserErrorLog
                 break;
             }
 
-            case ParserErrorEventType::customEvent:
+            case ParserErrorEventType::customError:
             {
+                std::string msgId = customMsgId; //  = "error";
+                auto msgIdIt = formatArgs.find("msg-id");
+                if (msgIdIt!=formatArgs.end())
+                    msgId = msgIdIt->second;
+                UMBA_TOKENIZER_LOG_CONLOG_ERR_INPUT_EX(msgId)
+                    << FormatMessage(customMessage).values(formatArgs).arg("Value", erroneousValue)
+                       .toString() <<"\n";
+                break;
+            }
+
+            case ParserErrorEventType::customWarning:
+            {
+                bError = false;
+                std::string msgId = customMsgId; // = "error";
+                auto msgIdIt = formatArgs.find("msg-id");
+                if (msgIdIt!=formatArgs.end())
+                    msgId = msgIdIt->second;
+                UMBA_TOKENIZER_LOG_CONLOG_WARN_INPUT(msgId)
+                    << FormatMessage(customMessage).values(formatArgs).arg("Value", erroneousValue)
+                       .toString() <<"\n";
                 break;
             }
 
@@ -151,8 +174,16 @@ struct ParserConsoleErrorLog : public ParserErrorLog
             std::string escapedStr = umba::tokenizer::log::ParserErrorLog::escapeStringAndCorrectPos( erroneousLineText, errPos );
             std::string markerStr  = umba::tokenizer::log::ParserErrorLog::makeMarkerString(escapedStr, errPos );
 
-            UMBA_TOKENIZER_LOG_CONLOG_ERR_INPUT << "Line :" << escapedStr << "\n";
-            UMBA_TOKENIZER_LOG_CONLOG_ERR_INPUT << "     |" << markerStr  << "|\n";
+            if (bError)
+            {
+                UMBA_TOKENIZER_LOG_CONLOG_ERR_INPUT << "Line :" << escapedStr << "\n";
+                UMBA_TOKENIZER_LOG_CONLOG_ERR_INPUT << "     |" << markerStr  << "|\n";
+            }
+            else
+            {
+                UMBA_TOKENIZER_LOG_CONLOG_WARN_INPUT(std::string()) << "Line :" << escapedStr << "\n";
+                UMBA_TOKENIZER_LOG_CONLOG_WARN_INPUT(std::string()) << "     |" << markerStr  << "|\n";
+            }
         }
 
     }
