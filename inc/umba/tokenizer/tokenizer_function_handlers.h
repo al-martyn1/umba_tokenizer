@@ -92,7 +92,7 @@ public: // handler types
                                                                          , payload_type
                                                                          , InputIteratorType&
                                                                          , InputIteratorType&
-                                                                         , token_parsed_data_type // std::basic_string_view<value_type>
+                                                                         , token_parsed_data_type& // std::basic_string_view<value_type>
                                                                          , messages_string_type&
                                                                          )
                                                                     >;
