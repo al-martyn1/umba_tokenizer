@@ -93,6 +93,10 @@
 
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST                                           0x2000u
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_LAST                                            0x2FFFu
+                                                                                   // 0x0205u // Последний пока заданный в данном файле
+#define UMBA_TOKENIZER_TOKEN_OPERATOR_USER_FIRST                                      0x27FFu
+
+
 
 #define UMBA_TOKENIZER_TOKEN_USER_OPERATOR_FIRST                                      0x2800u
 #define UMBA_TOKENIZER_TOKEN_USER_OPERATOR_LAST                                       UMBA_TOKENIZER_TOKEN_OPERATOR_LAST
@@ -401,25 +405,6 @@
 
 
 
-#if 0
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_                                         (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x100)u   /*    */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_                                         (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x100)u   /*    */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_                                         (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x100)u   /*    */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_                                         (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x100)u   /*    */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_                                         (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x100)u   /*    */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_                                         (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x100)u   /*    */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_                                         (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x100)u   /*    */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_                                         (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x100)u   /*    */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_                                         (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x100)u   /*    */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_                                         (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x100)u   /*    */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_                                         (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x100)u   /*    */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_                                         (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x100)u   /*    */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_                                         (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x100)u   /*    */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_                                         (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x100)u   /*    */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_                                         (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x100)u   /*    */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_                                         (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x100)u   /*    */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_                                         (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x100)u   /*    */
-#endif
 
 
 

@@ -64,7 +64,8 @@ TokenFilter должен
 
 //----------------------------------------------------------------------------
 #define UMBA_TOKENIZER_TOKEN_FILTERS_DECLARE_USING_DEPENDENT_TYPES(className)                \
-            using tokeniser_type             = className                                 ;   \
+            /*using tokeniser_type             = className                             ;*/   \
+            using tokeniser_type             = TokenizerType                             ;   \
             using token_handler_type         = typename className ::token_handler_type   ;   \
                                                                                              \
             using char_type                  = typename className ::char_type            ;   \
@@ -1237,7 +1238,7 @@ struct TokenRangeConversionFilter : FilterBase<TokenizerType, VectorType>
                               , payload_type                                        targetToken_
                               , std::size_t                                         lenghtExtra_      = 0
                               )
-    : TBase(curTokenHandler)
+    : TBase(curTokenHandler_  )
     , rangeBegin (rangeBegin_ )
     , rangeSize  (rangeSize_  )
     , targetToken(targetToken_)
@@ -1276,7 +1277,7 @@ struct TokenRangeConversionFilter : FilterBase<TokenizerType, VectorType>
 
             payloadToken = targetToken;
 
-            tokenizer_type::IntegerNumericLiteralData lenghtData;
+            typename TokenizerType::IntegerNumericLiteralData lenghtData;
 
             lenghtData.data        = lenght;
             lenghtData.fOverflow   = false ;
