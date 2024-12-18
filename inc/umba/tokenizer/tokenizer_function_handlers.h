@@ -73,6 +73,14 @@ public: // depending types
 
     using token_parsed_data_type   = typename TBase::token_parsed_data_type;
 
+    using empty_data_type                    = typename TBase::empty_data_type                  ;
+    using comment_data_type                  = typename TBase::comment_data_type                ;
+    using identifier_data_type               = typename TBase::identifier_data_type             ;
+    using string_literal_data_type           = typename TBase::string_literal_data_type         ;
+    using integer_numeric_literal_data_type  = typename TBase::integer_numeric_literal_data_type;
+    using float_numeric_literal_data_type    = typename TBase::float_numeric_literal_data_type  ;
+
+
 
 //------------------------------
 public: // ctors and op=

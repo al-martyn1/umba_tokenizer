@@ -75,7 +75,13 @@ TokenFilter должен
             using string_type                = typename className ::string_type          ;   \
             using iterator_type              = typename className ::iterator_type        ;   \
             using messages_string_type       = typename className ::messages_string_type ;   \
-            using token_parsed_data_type     = typename className ::token_parsed_data_type
+            using token_parsed_data_type     = typename className ::token_parsed_data_type;  \
+            using empty_data_type            = typename className ::empty_data_type      ;   \
+            using comment_data_type          = typename className ::comment_data_type    ;   \
+            using identifier_data_type       = typename className ::identifier_data_type ;   \
+            using string_literal_data_type   = typename className ::string_literal_data_type                ; \
+            using integer_numeric_literal_data_type = typename className ::integer_numeric_literal_data_type; \
+            using float_numeric_literal_data_type   = typename className ::float_numeric_literal_data_type
 
 
 //----------------------------------------------------------------------------
@@ -208,7 +214,13 @@ protected:
         return isCollectingPayloadToken(sequenceStartInfo.payloadToken);
     }
 
-    bool callNextTokenHandler( TokenizerType &tokenizer, bool lineStartFlag, payload_type payloadToken, iterator_type &b, iterator_type &e, token_parsed_data_type &parsedData, messages_string_type &msg) const
+
+    // По ссылке мы передаём token_parsed_data_type только для того, чтобы не плодить копии
+    // По неконстантной ссылке - чтобы хэндлер могли поменять там значение и передать изменённое дальше
+    // Возврат значения по ссылке тут у нас не используется
+
+    // bool callNextTokenHandler( TokenizerType &tokenizer, bool lineStartFlag, payload_type payloadToken, iterator_type &b, iterator_type &e, token_parsed_data_type &parsedData, messages_string_type &msg) const
+    bool callNextTokenHandler( TokenizerType &tokenizer, bool lineStartFlag, payload_type payloadToken, iterator_type &b, iterator_type &e, token_parsed_data_type parsedData, messages_string_type &msg) const
     {
         if (!nextTokenHandler)
             return true;
@@ -359,7 +371,8 @@ protected:
         {
             auto tmpB = tki.b;
             auto tmpE = tki.e;
-            if (!nextTokenHandler(tokenizer, tki.lineStartFlag, tki.payloadToken, tmpB, tmpE, tki.parsedData /*strValue*/, msg))
+            auto parsedDataCopy = tki.parsedData;
+            if (!nextTokenHandler(tokenizer, tki.lineStartFlag, tki.payloadToken, tmpB, tmpE, parsedDataCopy /*strValue*/, msg))
             {
                 if (bClear)
                    clearTokenBuffer();
@@ -539,8 +552,9 @@ public:
         {
             payloadData.hasSuffix      = true;
             payloadData.suffixStartPos = suffixStartIter;
+            token_parsed_data_type payloadDataCopy = payloadData;
             return this->callNextTokenHandler( tokenizer, prevTokenInfo.lineStartFlag, prevTokenInfo.payloadToken
-                                         , literalStartIter, literalEndIter, payloadData, msg
+                                         , literalStartIter, literalEndIter, payloadDataCopy, msg
                                          );
         };
 
@@ -728,7 +742,7 @@ public:
                 {
                     reset(tokenizer);
 
-                    if (!nextTokenHandler(tokenizer, lineStartFlag, UMBA_TOKENIZER_TOKEN_CTRL_CC_PP_START, e, e, typename TokenizerType::EmptyData() /* strValue */ , msg))
+                    if (!nextTokenHandler(tokenizer, lineStartFlag, UMBA_TOKENIZER_TOKEN_CTRL_CC_PP_START, e, e, token_parsed_data_type(typename TokenizerType::EmptyData()) /* strValue */ , msg))
                         return false;
                     if (!nextTokenHandler(tokenizer, lineStartFlag, payloadToken, b, e, parsedData /* strValue */ , msg))
                         return false;
@@ -758,7 +772,8 @@ public:
                         if (ppKewordId&UMBA_TOKENIZER_TOKEN_CTRL_FLAG)
                         {
                             // Сигналим контрольным
-                            if (!nextTokenHandler(tokenizer, lineStartFlag, ppKewordId, e, e, typename TokenizerType::EmptyData(), msg))
+                            token_parsed_data_type emptyVal = empty_data_type();
+                            if (!nextTokenHandler(tokenizer, lineStartFlag, ppKewordId, e, e, emptyVal, msg))
                                 return false;
                         }
 
@@ -784,7 +799,8 @@ public:
                         }
 
                         // Пуляем найденным токеном
-                        if (!nextTokenHandler(tokenizer, lineStartFlag, ppKewordId, b, e, typename TokenizerType::EmptyData() /* strValue */ , msg)) // Сигналим про дефайн
+                        token_parsed_data_type emptyData = empty_data_type();
+                        if (!nextTokenHandler(tokenizer, lineStartFlag, ppKewordId, b, e, emptyData /* strValue */ , msg)) // Сигналим про дефайн
                             return false;
                     }
                     else
@@ -799,7 +815,8 @@ public:
                 {
                     reset(tokenizer);
 
-                    if (!nextTokenHandler(tokenizer, lineStartFlag, UMBA_TOKENIZER_TOKEN_CTRL_CC_PP_END, e, e, typename TokenizerType::EmptyData() /* strValue */ , msg))
+                    token_parsed_data_type emptyData = empty_data_type();
+                    if (!nextTokenHandler(tokenizer, lineStartFlag, UMBA_TOKENIZER_TOKEN_CTRL_CC_PP_END, e, e, emptyData /* strValue */ , msg))
                         return false;
 
                     if (!nextTokenHandler(tokenizer, lineStartFlag, payloadToken, b, e, parsedData /* strValue */ , msg)) // пробрасываем токен
@@ -817,7 +834,8 @@ public:
                 {
                     reset(tokenizer);
 
-                    if (!nextTokenHandler(tokenizer, lineStartFlag, UMBA_TOKENIZER_TOKEN_CTRL_CC_PP_END, e, e, typename TokenizerType::EmptyData() /* strValue */ , msg))
+                    token_parsed_data_type emptyData = empty_data_type();
+                    if (!nextTokenHandler(tokenizer, lineStartFlag, UMBA_TOKENIZER_TOKEN_CTRL_CC_PP_END, e, e, emptyData /* strValue */ , msg))
                         return false;
 
                     if (!nextTokenHandler(tokenizer, lineStartFlag, payloadToken, b, e, parsedData /* strValue */ , msg)) // пробрасываем токен

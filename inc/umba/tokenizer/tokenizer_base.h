@@ -267,7 +267,16 @@ public: // depending types
     // https://en.cppreference.com/w/cpp/utility/variant/visit
     using TokenParsedData = std::variant<EmptyData, CommentData, IdentifierData, StringLiteralData, IntegerNumericLiteralData, FloatNumericLiteralData>;
 
+    using TokenParsedDataType    = TokenParsedData;
     using token_parsed_data_type = TokenParsedData;
+
+    using empty_data_type                    = EmptyData                ;
+    using comment_data_type                  = CommentData              ;
+    using identifier_data_type               = IdentifierData           ;
+    using string_literal_data_type           = StringLiteralData        ;
+    using integer_numeric_literal_data_type  = IntegerNumericLiteralData;
+    using float_numeric_literal_data_type    = FloatNumericLiteralData  ;
+
 
 
 //------------------------------
