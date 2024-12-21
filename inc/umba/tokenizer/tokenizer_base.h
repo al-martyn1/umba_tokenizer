@@ -204,7 +204,7 @@ public: // depending types
         std::basic_string_view<value_type>  data;
 
         bool                 hasSuffix = false;
-        iterator_type        suffixStartPos;
+        iterator_type        suffixStartPos = {};
 
         StringType asString() const
         {
@@ -236,7 +236,7 @@ public: // depending types
         bool                 fOverflow; // число не влезло в используемый тип (std::uint64_t). Для marty::Decimal такой ситуации не происходит.
 
         bool                 hasSuffix = false;
-        iterator_type        suffixStartPos;
+        iterator_type        suffixStartPos = {};
 
     }; // struct NumericLiteralData
 
@@ -254,7 +254,7 @@ public: // depending types
         bool                 fFractionalOverflow; // при разборе дробная часть не влезла в std::uint64_t. Для marty::Decimal такой ситуации не происходит.
 
         bool                 hasSuffix = false;
-        iterator_type        suffixStartPos;
+        iterator_type        suffixStartPos = {};
 
     }; // struct NumericLiteralData
 
