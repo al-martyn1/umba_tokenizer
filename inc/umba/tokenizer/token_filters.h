@@ -473,13 +473,11 @@ protected:
         return payloadToken>=UMBA_TOKENIZER_TOKEN_STRING_LITERAL_FIRST && payloadToken<=UMBA_TOKENIZER_TOKEN_STRING_LITERAL_LAST;
     }
 
-    const
     bool glueNumbers() const
     {
         return gluingOption==GluingOption::glueAll || gluingOption==GluingOption::glueNumbers;
     }
 
-    const
     bool glueStrings() const
     {
         return gluingOption==GluingOption::glueAll || gluingOption==GluingOption::glueStrings;
