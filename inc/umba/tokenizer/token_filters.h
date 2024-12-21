@@ -742,7 +742,8 @@ public:
                 {
                     reset(tokenizer);
 
-                    if (!nextTokenHandler(tokenizer, lineStartFlag, UMBA_TOKENIZER_TOKEN_CTRL_CC_PP_START, e, e, token_parsed_data_type(typename TokenizerType::EmptyData()) /* strValue */ , msg))
+                    token_parsed_data_type token_parsed_data = typename TokenizerType::EmptyData();
+                    if (!nextTokenHandler(tokenizer, lineStartFlag, UMBA_TOKENIZER_TOKEN_CTRL_CC_PP_START, e, e, token_parsed_data /* strValue */ , msg))
                         return false;
                     if (!nextTokenHandler(tokenizer, lineStartFlag, payloadToken, b, e, parsedData /* strValue */ , msg))
                         return false;

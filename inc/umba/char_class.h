@@ -1,5 +1,14 @@
 #pragma once
 
+//
+#include "umba/debug_helpers.h"
+//
+#include "umba/assert.h"
+#include "umba/string_plus.h"
+//
+#include "c_char_class.h"
+//
+
 #include <cstdint>
 #include <climits>
 #include <type_traits>
@@ -10,11 +19,6 @@
 #include <stdexcept>
 #include <array>
 
-//
-#include "umba/assert.h"
-#include "umba/string_plus.h"
-//
-#include "c_char_class.h"
 
 
 
@@ -408,6 +412,7 @@ void setCharClassFlags( std::array<umba::tokenizer::CharClass, N> &charClasses, 
     }
 }
 
+#include "umba/warnings/push_disable_spectre_mitigation.h"
 template< std::size_t N, typename CharType >
 void setCharClassFlags( std::array<umba::tokenizer::CharClass, N> &charClasses, CharType ch1, CharType ch2, umba::tokenizer::CharClass setClasses)
 {
@@ -416,6 +421,7 @@ void setCharClassFlags( std::array<umba::tokenizer::CharClass, N> &charClasses, 
         setCharClassFlags(charClasses, ch, setClasses);
     }
 }
+#include "umba/warnings/pop.h"
 
 template< std::size_t N, typename CharType >
 void setCharClassFlagsForBracePair( std::array<umba::tokenizer::CharClass, N> &charClasses, const std::basic_string<CharType> &braceChars)

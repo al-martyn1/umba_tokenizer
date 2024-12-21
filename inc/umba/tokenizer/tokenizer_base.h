@@ -879,7 +879,7 @@ public: // methods - методы собственно разбора
                                                  prefixIsNumber = false;
                                              if (prefixIsNumber && idx!=idxEnd)
                                              {
-                                                 prefixDigits[idx] = ch;
+                                                 prefixDigits[idx] = (CharType)ch; // в token_type тут лежат CharType'ы
                                                  ++idx;
                                                  prefixDigits[idx] = 0;
                                              }
@@ -924,6 +924,13 @@ public: // methods - методы собственно разбора
                  if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, itEnd, itEnd))
                      return false;
 
+                 return true;
+
+            case TokenizerInternalState::stReadNumberMayBeFloat:
+
+                 // TODO: У нас был встречен символ разделяющий целую и дробную часть плавающего числа, но без целой части.
+                 // Пока просто съедаем его, но вообще этот символ может быть оператором, надо это обработать
+                 // Например, это может быть паскалевский `End.` (End с точкой)
                  return true;
 
             case TokenizerInternalState::stReadNumberFloat:
@@ -991,14 +998,15 @@ public: // methods - методы собственно разбора
 
             default: return false;
         }
-        return true;
 
+        //return true;
     }
 
 
     //----------------------------------------------------------------------------
     // Links
     // Is it possible to use goto with switch? - https://stackoverflow.com/questions/8202199/is-it-possible-to-use-goto-with-switch
+    #include "umba/warnings/push_disable_spectre_mitigation.h"
     bool tokenize(InputIteratorType it, InputIteratorType itEnd) const
     {
         if (isInRawMode())
@@ -1309,7 +1317,7 @@ public: // methods - методы собственно разбора
 
                                                 if (prefixIsNumber && (idx!=idxEnd))
                                                 {
-                                                    prefixDigits[idx] = ch;
+                                                    prefixDigits[idx] = (CharType)ch; // в token_type тут лежат CharType'ы
                                                     ++idx;
                                                     prefixDigits[idx] = 0;
                                                 }
@@ -1456,6 +1464,7 @@ public: // methods - методы собственно разбора
 
                 if (umba::TheFlags(charClass).oneOf(allowedDigitCharClass) && utils::isDigitAllowed(ch, numbersBase))
                 {
+                    st = TokenizerInternalState::stReadNumberFloat; //!!! Добавил
                     break; // Тут у нас годная цифра
                 }
 
@@ -1466,6 +1475,7 @@ public: // methods - методы собственно разбора
                 {
                     if (!performStartReadingOperatorLambda((std::decay_t<decltype(ch)>)'.', tokenStartIt))
                         return unexpectedHandlerLambda(tokenStartIt, itEnd, __FILE__, __LINE__); // но у нас нет операторов, начинающихся с точки
+                    st = TokenizerInternalState::stReadOperator; //!!! Добавил
                     goto explicit_readoperator; // Надо обработать текущий символ
                 }
                 else // точка - не операторный символ, и не начало дробной части плавающего числа (разделитель дробной части уже был)
@@ -1473,15 +1483,16 @@ public: // methods - методы собственно разбора
                     return unexpectedHandlerLambda(tokenStartIt, itEnd, __FILE__, __LINE__);
                 }
 
-                st = TokenizerInternalState::stReadNumberFloat;
+                // !!! unreachable code
+                //st = TokenizerInternalState::stReadNumberFloat;
 
-                goto explicit_readnumberfloat; // Текущий символ таки надо обработать
+                //goto explicit_readnumberfloat; // Текущий символ таки надо обработать
 
             } break;
 
 
             //------------------------------
-            explicit_readnumberfloat:
+            // explicit_readnumberfloat: // !!! После закоменчивания unreachable code выше эта метка стала uneferenced. Возможно, тут что-то не так
             case TokenizerInternalState::stReadNumberFloat:
             {
                 if (umba::TheFlags(charClass).oneOf(CharClass::escape))
@@ -1702,7 +1713,7 @@ public: // methods - методы собственно разбора
                             // Нашли
                             if (!parsingCommentHandlerLambda(commentTokenId, tokenStartIt, it+1, commentStartIt, commentEndStartIt)) // выплюнули текст коментария
                                 return false;
-
+                            
                             commentEndMatchIndex = 0;
                             st = TokenizerInternalState::stInitial;
                         }
@@ -1761,6 +1772,8 @@ public: // methods - методы собственно разбора
 
         return true;
     }
+    #include "umba/warnings/pop.h"
+
 
 protected:
 

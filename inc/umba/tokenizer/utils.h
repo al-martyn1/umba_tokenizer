@@ -282,6 +282,7 @@ bool isNumberHexDigitsAllowed(int base)
     return base > 10;
 }
 
+#include "umba/warnings/push_disable_spectre_mitigation.h"
 template<typename CharType>
 inline
 int charToDigit(CharType ch)
@@ -291,6 +292,7 @@ int charToDigit(CharType ch)
     if (ch>=(CharType)'a' && ch<=(CharType)'f') return (int)(ch-(CharType)'a'+10);
     return -1;
 }
+#include "umba/warnings/pop.h"
 
 template<typename CharType>
 inline

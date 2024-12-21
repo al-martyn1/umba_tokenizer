@@ -211,8 +211,18 @@ public:
         // UMBA_TOKENIZER_TOKEN_SQUARE_BRACKETS
         // или 0, для автоопределения, и сделать автоопределение
 
-        addTokenToKnownSet(pairBaseToken  , string_type(bracketsPair[0], pairBaseToken  ));
-        addTokenToKnownSet(pairBaseToken+1, string_type(bracketsPair[1], pairBaseToken+1));
+        // !!! Чот какая-то херня непонятная
+        // сама ф-я addTokenToKnownSet выглядит так:
+        // void addTokenToKnownSet(payload_type tk, const string_type &tkStr, bool allowExisting=false)
+        // А тут мы string_type как-то очень странно конструируем.
+        // Вроде бы нам надо просто сделать строку из одного символа
+        // А тут мы вроде бы делаем строки размером bracketsPair[0] и bracketsPair[1]
+        // из символов pairBaseToken и pairBaseToken+1
+        // Пока закоментим, и сделаем как надо
+        // addTokenToKnownSet(pairBaseToken  , string_type(bracketsPair[0], pairBaseToken  ));
+        // addTokenToKnownSet(pairBaseToken+1, string_type(bracketsPair[1], pairBaseToken+1));
+        addTokenToKnownSet(pairBaseToken  , string_type(1, bracketsPair[0]));
+        addTokenToKnownSet(pairBaseToken+1, string_type(1, bracketsPair[1]));
 
         generation::setCharClassFlagsForBracePair(charClassTable, bracketsPair);
         bracketsTrieBuilder.addTokenSequence(bracketsPair[0], pairBaseToken  );

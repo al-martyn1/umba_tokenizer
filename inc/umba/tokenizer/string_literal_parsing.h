@@ -241,6 +241,7 @@ public:
     virtual StringLiteralParsingResult parseChar(InputIteratorType it, InputIteratorType itEnd, ITokenizerLiteralCharInserter<CharType> *pInserter, MessageStringType *pMsg) override
     {
         UMBA_USED(itEnd);
+        UMBA_USED(pMsg);
         if (st==stInitial)
         {
             quotStart  = *it;
@@ -489,6 +490,7 @@ public:
     // \x hh     Символ ASCII в шестнадцатеричной нотации
     // \x hhhh     Символ юникода в шестнадцатеричном формате, если эта escape-последовательность используется в многобайтовой знаковой константе или строковом литерале юникода.
 
+    #include "umba/warnings/push_disable_spectre_mitigation.h"
     virtual StringLiteralParsingResult parseChar(InputIteratorType it, InputIteratorType itEnd, ITokenizerLiteralCharInserter<CharType> *pInserter, MessageStringType *pMsg) override
     {
         UMBA_USED(itEnd);
@@ -626,6 +628,8 @@ public:
 
         return StringLiteralParsingResult::okContinue;
     }
+    #include "umba/warnings/pop.h"
+
 
 }; // class CppEscapedSimpleQuotedStringLiteralParser
 #include "umba/warnings/pop.h"
