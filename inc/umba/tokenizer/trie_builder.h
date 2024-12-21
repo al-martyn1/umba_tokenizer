@@ -114,7 +114,7 @@ public:
         {
             umba::tokenizer::TrieBuilder::TrieNodesMap   *pMap;
             umba::tokenizer::trie_index_type             level;
-            umba::tokenizer::trie_index_type             parentNodeIndex;
+            umba::tokenizer::trie_index_type             parentNodeIndex = trie_index_invalid;
         };
 
         TrieNodesMap trieNodesMapCopy = m_trieNodesMap;
