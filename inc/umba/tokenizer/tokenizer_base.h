@@ -633,7 +633,7 @@ protected: // methods - helpers - из "грязного" проекта, где
             return false;
         st = TokenizerInternalState::stReadOperator;
         return true;
-    };
+    }
 
     bool performProcessBracketLambda(CharType ch, InputIteratorType it) const
     {
@@ -644,8 +644,9 @@ protected: // methods - helpers - из "грязного" проекта, где
             return false;
         st = TokenizerInternalState::stInitial;
         return true;
-    };
+    }
 
+    #include "umba/warnings/push_disable_spectre_mitigation.h"
     bool processCommentStartFromNonCommentedLambda(payload_type curPayload, InputIteratorType it) const
     {
         // tokenStartIt - указывает на начало оператора, в данном случае - оператора коментария
@@ -659,7 +660,7 @@ protected: // methods - helpers - из "грязного" проекта, где
             {
                 // Error? Or process as regular operator?
                 //UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FLAG_AS_REGULAR_OPERATOR
-                if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FLAG_AS_REGULAR_OPERATOR|commentTokenId, tokenStartIt, it)) // выплюнули как обычный оператор
+                if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FLAG_AS_REGULAR_OPERATOR | commentTokenId, tokenStartIt, it)) // выплюнули как обычный оператор
                     return false;
                 st = TokenizerInternalState::stInitial;
                 return true;
@@ -683,7 +684,8 @@ protected: // methods - helpers - из "грязного" проекта, где
         {
             return false;
         }
-    };
+    }
+    #include "umba/warnings/pop.h"
 
     [[nodiscard]] // Сменили void на bool, и теперь надо заставить везде проверять результат
     bool processEscapeSymbolLambda(InputIteratorType it) const
@@ -702,7 +704,7 @@ protected: // methods - helpers - из "грязного" проекта, где
         }
 
         return true;
-    };
+    }
 
     bool processUnclassifiedCharsRawLambda(InputIteratorType it, InputIteratorType itEnd) const
     {
@@ -718,7 +720,7 @@ protected: // methods - helpers - из "грязного" проекта, где
         {
             return unexpectedHandlerLambda(it, itEnd, __FILE__, __LINE__);
         }
-    };
+    }
 
                     // if (options.unclassifiedCharsRaw)
                     // {
@@ -764,7 +766,7 @@ protected: // methods - helpers - из "грязного" проекта, где
         }
 
         return 0;
-    };
+    }
 
 
 public: // methods - методы собственно разбора
