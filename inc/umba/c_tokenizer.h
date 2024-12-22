@@ -371,7 +371,7 @@ trie_index_type tokenTrieFindNext(const ContainerType &tokenTrie, trie_index_typ
         if (resIt==pE || resIt->token!=tk)
             return trie_index_invalid; // Не нашли, обломс
 
-        return resIt - &tokenTrie[0]; // &tokenTrie[lookupChunkStartIdx]; !!! Bug was here
+        return trie_index_type(resIt - &tokenTrie[0]); // &tokenTrie[lookupChunkStartIdx]; !!! Bug was here
     }
     #endif
 
