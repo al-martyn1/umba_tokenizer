@@ -40,6 +40,52 @@ namespace log
 
 
 //----------------------------------------------------------------------------
+/*! @enum umba::tokenizer::log::ParserErrorEventType
+
+    Типы ошибок, которые генерирует токенизер (лексический анализатор).
+    Пользовательские ошибки, возникающие при разборе потока токенов 
+    (при синтаксическом анализе), надо выводить с использованием
+    значения `customError`. При этом необходимые для форматирования величины
+    следует помещать в поле `formatArgs` объекта лога.
+
+    Тип выводимого сообщения и его идентификатор зависят от значений данного перечисления.
+    При выводе `customError` идентификатор сообщения должен быть помещён в поле `formatArgs`
+    объекта лога по ключу `msg-id`.
+
+    Значение по ключу `Value` используется для вывода "ошибочного" значения, его либо заполняет 
+    токенизатор, либо, для пользовательских сообщений, заполнаяет пользователь.
+
+    `msg-id` изначально указывается через параметр `customMsgId`, а поле `formatArgs` позволяет его переопрделить.
+
+
+    @var ParserErrorEventType::customError
+    Пользовательские сообщения об ошибках - FormatMessage(customMessage).values(formatArgs).arg("Value", erroneousValue)
+
+    @var ParserErrorEventType::customWarning
+    Пользовательские предупреждения - FormatMessage(customMessage).values(formatArgs).arg("Value", erroneousValue)
+
+    @var ParserErrorEventType::unexpected
+    Что-то неожиданное - FormatMessage("unexpected symbol: \'$(Value)\'").arg("Value", erroneousValue)
+
+    @var ParserErrorEventType::unknownOperator
+    Неизвестный оператор - FormatMessage("possible unknown operator: '$(Value)'").arg("Value", erroneousValue)
+
+    @var ParserErrorEventType::stringLiteralWarning
+    Предупреждение в строковом литерале - например, неизвестная escape-последовательность
+    FormatMessage("string literal, suspicious character value: '$(Value)': $(Message)").arg("Value", erroneousValue).arg("Message", customMessage)
+
+    @var ParserErrorEventType::stringLiteralError
+    Ошибка в строковом литерале
+    FormatMessage("string literal, invalid character value: '$(Value)': $(Message)")
+    .arg("Value", erroneousValue)
+    .arg("Message", customMessage) // customMsgId - for translation
+
+    @var ParserErrorEventType::tokenError
+    Сообщение, если обработчик токенов вернул false
+    Пользователь может тут задавать свою ошибку - FormatMessage(customMessage).values(formatArgs).arg("Value", erroneousValue)
+
+
+*/
 enum class ParserErrorEventType
 {
     customError          ,
@@ -56,6 +102,7 @@ enum class ParserErrorEventType
 
 
 //----------------------------------------------------------------------------
+//! Интерфейс логгера ошибок разбора. 
 struct ParserErrorLog
 {
 
@@ -72,8 +119,8 @@ struct ParserErrorLog
                       , umba::tokenizer::payload_type payload
                       , std::string                   erroneousValue     // Can be empty, can contain non-printable chars 
                       , std::string                   erroneousLineText  // Can be empty, can contain non-printable chars 
-                      , const std::string             &customMsgId       // Can be empty
-                      , const std::string             &customMessage     // Can be empty
+                      , const std::string             &customMsgId       // Can be empty, used only for customError and customWarning, can be overriden by 'msg-id' value
+                      , const std::string             &customMessage     // Can be empty, used only for tokenError, customError and customWarning
                       , const char* srcFile,          int srcLine
                       ) const
                       = 0;
@@ -112,6 +159,7 @@ struct ParserErrorLog
             return std::string(&buf[0]);
         };
 
+        // TODO: Тут надо бы сделать итерацию по символам текста, а не по char'ам
         for(auto ch: str)
         {
             switch(ch)

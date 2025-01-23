@@ -265,6 +265,8 @@ public: // depending types
     // https://en.cppreference.com/w/cpp/utility/variant/get
     // https://en.cppreference.com/w/cpp/utility/variant/holds_alternative
     // https://en.cppreference.com/w/cpp/utility/variant/visit
+
+    // EmptyData must be a first type in a variant (with zero index)
     using TokenParsedData = std::variant<EmptyData, CommentData, IdentifierData, StringLiteralData, IntegerNumericLiteralData, FloatNumericLiteralData>;
 
     using TokenParsedDataType    = TokenParsedData;
