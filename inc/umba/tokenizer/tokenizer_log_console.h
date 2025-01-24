@@ -65,6 +65,8 @@ struct ParserConsoleErrorLog : public ParserErrorLog
                       ) const
                       override
     {
+        UMBA_USED(payload);
+
         erroneousValue = umba::escapeStringC(erroneousValue); // Тут не обязательно подсчитывать, сколько лишних символов добавилось
 
         int lineNo = (int)textPos.lineNumber + 1;

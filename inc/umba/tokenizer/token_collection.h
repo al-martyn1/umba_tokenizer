@@ -137,7 +137,7 @@ template< typename PayloadType,
         >
 struct TokenCollectionTokenHandler
 {
-    explicit TokenCollectionTokenHandler(TokenCollectionTokenHandler &tcl, TokenParsedDataCollectionList &tpdcl) : tokenCollectionList(tcl), tokenParsedDataCollectionList(tpdcl) {}
+    explicit TokenCollectionTokenHandler(TokenCollectionList &tcl, TokenParsedDataCollectionList &tpdcl) : tokenCollectionList(tcl), tokenParsedDataCollectionList(tpdcl) {}
 
     // TODO: запретить все остальные конструкторы
     // TODO: запретить копирование
@@ -185,14 +185,15 @@ protected:
 
 
 //----------------------------------------------------------------------------
-template<typename TokenBuilder>
+//! Буферизирует токены. Производит отложенную токенизацию/токенизацию по запросу.
+template<typename TokenizerType>
 class TokenCollection
 {
 
 public:
 
     using token_pos_type         = std::size_t;
-    using tokenizer_type         = typename TokenBuilder::tokenizer_type;
+    using tokenizer_type         = TokenizerType; // typename TokenBuilder::tokenizer_type;
     using payload_type           = umba::tokenizer::payload_type;
     using iterator_type          = typename tokenizer_type::iterator_type;
     using token_parsed_data_type = typename tokenizer_type::token_parsed_data_type;
@@ -212,21 +213,47 @@ protected:
     iterator_type                    m_inputIt;
     iterator_type                    m_inputEndIt;
     token_pos_type                   m_tokenPos = token_pos_type(-1);
+    bool                             m_lastTokenizeResult = false;
 
 
 public:
 
     UMBA_RULE_OF_FIVE_COPY_MOVE_DELETE(TokenCollection);
 
-    explicit TokenCollection(const TokenBuilder &tb, shared_log_type log, const string_type &text)
+    explicit TokenCollection(const tokenizer_type &tkn, shared_log_type log, const string_type &text)
     : m_tokenCollectionList()
     , m_tokenParsedDataCollectionList()
-    , m_tokenizer(tb.makeTokenizer())
+    , m_tokenizer(tkn)
     , m_log(log)
     , m_text(text)
     , m_inputIt   (iterator_type(m_text.data(), m_text.size()))
     , m_inputEndIt(iterator_type()) // !!! Надо наверное что-то придумать с итератором конца. Или не надо?
     {}
+
+
+    /* Стратегия работы с индексом токена такая:
+
+       - getToken() - возвращает текущий элемент, и передвигает позицию на следующий элемент.
+         Также в выходном параметре getToken() возвращает текущий индекс в массиве токенов, 
+
+       - peekToken() - возвращает текущий элемент, позиция остаётся без изменений.
+
+       - нам нужно, чтобы peekToken() и getToken() возвращали одно и то же - значит, getToken()
+         должен менять позицию постинкрементом.
+
+       - getTokenPos() - должен возвращать позицию токена, которую вернул предыдущий getToken().
+         getToken() следует вызывать только после вызова getTokenPos(), и использовать только тогда,
+         когда индекс токена нужен редко. Если индекс токена нужен всегда, его следует получать
+         через возвращаемый параметр метода getToken().
+
+       - getNextTokenPos() - возвращает индекс следующего токена. Зачем бы это надо? Но пусть будет для ясности
+
+    */
+
+    bool getLastTokenizeResult() const
+    {
+        return m_lastTokenizeResult;
+    }
 
 
     const token_parsed_data_type* getTokenParsedData(const TokenCollectionItem *ptki) const
@@ -252,27 +279,10 @@ public:
     }
     #endif
 
-    /* Стратегия работы с индексом токена такая:
-
-       - getToken() - возвращает текущий элемент, и передвигает позицию на следующий элемент.
-         Также в выходном параметре getToken() возвращает текущий индекс в массиве токенов, 
-
-       - peekToken() - возвращает текущий элемент, позиция остаётся без изменений.
-
-       - нам нужно, чтобы peekToken() и getToken() возвращали одно и то же - значит, getToken()
-         должен менять позицию постинкрементом.
-
-       - getTokenPos() - должен возвращать позицию токена, которую вернул предыдущий getToken().
-         getToken() следует вызывать только после вызова getToken(), и использовать только тогда,
-         когда индекс токена нужен редко. Если индекс токена нужен всегда, его следует получать
-         через возвращаемый параметр метода getToken().
-
-
-
-    */
 
     // возвращает следующий токен, сдвигая указатель (или считывет следующий токен из источника, 
     // если указатель за пределами текущего буферизированного набора токенов)
+    // Взвращает 0, если следующего токена нет - достигнут конец последовательности, или произошла ошибка
     const TokenCollectionItem* getToken(token_pos_type *pTokenPos=0)
     {
         if (m_tokenPos<m_tokenCollectionList.size())
@@ -283,8 +293,55 @@ public:
         }
 
         // TODO: Вот тут надо вычитать следующий токен из входного текста
+        //  
+        // if (m_inputIt==m_inputEndIt) // Дальше двигать некуда
+        // {
+        //  
+        // }
 
+        auto prevTclSize = m_tokenCollectionList.size();
 
+        m_lastTokenizeResult = true;
+        for(; m_lastTokenizeResult
+           && prevTclSize==m_tokenCollectionList.size()
+           && m_inputIt!=m_inputEndIt
+            ; ++m_inputIt
+           )
+        {
+            // if (!tokenizer.tokenize(it, itEnd))
+            // {
+            //     m_lastTokenizeResult = false;
+            // }
+
+            m_lastTokenizeResult = tokenizer.tokenize(it, itEnd);
+        }
+
+        if (!m_lastTokenizeResult) // При ошибке возвращаем 0
+            return 0;
+
+        // Достигли конца. Не важно, изменилось ли у нас количество токенов в буфере, или нет -
+        // по достижении конца входного текста нам надо вызвать финализацию
+        if (m_inputIt==m_inputEndIt)
+        {
+            m_lastTokenizeResult = tokenizer.tokenizeFinalize(itEnd);
+        }
+
+        if (!m_lastTokenizeResult) // При финализации произошли ошибки
+            return 0;
+
+        // Пробуем взять токен из буфера
+        if (m_tokenPos<m_tokenCollectionList.size())
+        {
+            if (pTokenPos)
+               *pTokenPos = m_tokenPos;
+            return m_tokenCollectionList[m_tokenPos++];
+        }
+
+        // Таки не получилось, неизвестная ошибка - 
+        // TODO: надо как-то просигналить
+        m_lastTokenizeResult = false;
+
+        return 0;
     }
 
 
