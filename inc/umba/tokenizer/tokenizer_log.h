@@ -13,6 +13,7 @@
 #include "umba/text_position_info.h"
 #include "umba/format_message.h"
 #include "umba/escape_string.h"
+#include "umba/iterator.h"
 //
 #include "umba/log.h"
 //
@@ -106,7 +107,7 @@ enum class ParserErrorEventType
 struct ParserErrorLog
 {
 
-    ~ParserErrorLog() {}
+    virtual ~ParserErrorLog() {}
 
     using FormatArgsMapType = typename umba::FormatMessage<std::string>::macros_map_type;
 
@@ -227,7 +228,7 @@ struct TokenizerErrorHandlerBase
 struct TokenizerUnexpectedErrorHandler : public TokenizerErrorHandlerBase
 {
     UMBA_RULE_OF_FIVE(TokenizerUnexpectedErrorHandler, delete, default, default, default, default);
-    TokenizerUnexpectedErrorHandler(SharedParserErrorLog errLog) : TokenizerErrorHandlerBase(errLog) {}
+    explicit TokenizerUnexpectedErrorHandler(SharedParserErrorLog errLog) : TokenizerErrorHandlerBase(errLog) {}
 
     // Событие unexpected
     // it может быть равен end, поэтому тут дополнительно передаётся itEnd
@@ -237,11 +238,13 @@ struct TokenizerUnexpectedErrorHandler : public TokenizerErrorHandlerBase
     template<typename TokenizerType, typename IteratorType>
     bool operator()(TokenizerType &tokenizer, IteratorType it, IteratorType itEnd, const char* srcFile, int srcLine) const
     {
+        UMBA_USED(tokenizer);
+
         std::string erroneousValue;
         std::string erroneousLineText;
         if (it!=itEnd)
         {
-            erroneousValue    = umba::iterator::makeString(it);
+            erroneousValue    = umba::iterator::makeString(it,itEnd);
             erroneousLineText = umba::iterator::makeString(it.getLineStartIterator(), it.getLineEndIterator());
         }
 
@@ -275,6 +278,8 @@ struct TokenizerUnknownOperatorWarningHandler : public TokenizerErrorHandlerBase
     template<typename TokenizerType, typename IteratorType>
     void operator()(TokenizerType &tokenizer, IteratorType b, IteratorType e) const
     {
+        UMBA_USED(tokenizer);
+
         std::string erroneousValue    = umba::iterator::makeString(b,e);
         std::string erroneousLineText = umba::iterator::makeString(b.getLineStartIterator(), b.getLineEndIterator());
 
@@ -305,6 +310,8 @@ struct TokenizerStringLiteralMessageHandler : public TokenizerErrorHandlerBase
     template<typename TokenizerType, typename IteratorType>
     void operator()(TokenizerType &tokenizer, bool bErr, IteratorType it, const std::string &msg) const
     {
+        UMBA_USED(tokenizer);
+
         std::string erroneousValue    = umba::iterator::makeString(it);
         std::string erroneousLineText = umba::iterator::makeString(it.getLineStartIterator(), it.getLineEndIterator());
 

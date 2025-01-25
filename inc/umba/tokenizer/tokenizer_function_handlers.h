@@ -85,11 +85,15 @@ public: // depending types
 //------------------------------
 public: // ctors and op=
 
-    TokenizerFunctionHandlers() = default;
-    TokenizerFunctionHandlers(const TokenizerFunctionHandlers &) = delete;
-    TokenizerFunctionHandlers& operator=(const TokenizerFunctionHandlers &) = delete;
-    TokenizerFunctionHandlers(TokenizerFunctionHandlers &&) = default;
-    TokenizerFunctionHandlers& operator=(TokenizerFunctionHandlers &&) = default;
+    // А почему мы запрещаем копирование?
+    // TokenizerFunctionHandlers() = default;
+    // TokenizerFunctionHandlers(const TokenizerFunctionHandlers &) = delete;
+    // TokenizerFunctionHandlers& operator=(const TokenizerFunctionHandlers &) = delete;
+    // TokenizerFunctionHandlers(TokenizerFunctionHandlers &&) = default;
+    // TokenizerFunctionHandlers& operator=(TokenizerFunctionHandlers &&) = default;
+
+    // Для запрета вроде бы нет объективных причин
+    UMBA_RULE_OF_FIVE(TokenizerFunctionHandlers, default, default, default, default, default);
 
 
 //------------------------------

@@ -284,12 +284,12 @@ public: // depending types
 //------------------------------
 public: // ctors and op=
 
-    UMBA_RULE_OF_FIVE(TokenizerBaseImpl, default, delete, delete, default, default);
-    // TokenizerBaseImpl() = default;
-    // TokenizerBaseImpl(const TokenizerBaseImpl &) = delete;
-    // TokenizerBaseImpl& operator=(const TokenizerBaseImpl &) = delete;
-    // TokenizerBaseImpl(TokenizerBaseImpl &&) = default;
-    // TokenizerBaseImpl& operator=(TokenizerBaseImpl &&) = default;
+    // А почему мы запрещаем копирование?
+    // UMBA_RULE_OF_FIVE(TokenizerBaseImpl, default, delete, delete, default, default);
+
+    // Для запрета вроде бы нет объективных причин
+    UMBA_RULE_OF_FIVE(TokenizerBaseImpl, default, default, default, default, default);
+
 
 
 //------------------------------

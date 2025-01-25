@@ -24,10 +24,10 @@ namespace log
 #define UMBA_TOKENIZER_LOG_CONLOG_SRC_FILE   srcFile ? srcFile : __FILE__
 #define UMBA_TOKENIZER_LOG_CONLOG_SRC_LINE   srcFile ? srcLine : __LINE__
 
-#define UMBA_TOKENIZER_LOG_CONLOG_ERR_INPUT                 umba::log::startLogError( umbaLogStreamErr, umba::log::LogEntryType::err ,  /* gopts, */  std::string()/*"err"*/, curFile.c_str(), lineNo, UMBA_TOKENIZER_LOG_CONLOG_SRC_FILE, UMBA_TOKENIZER_LOG_CONLOG_SRC_LINE )
-#define UMBA_TOKENIZER_LOG_CONLOG_ERR_INPUT_EX(errType)     umba::log::startLogError( umbaLogStreamErr, umba::log::LogEntryType::err ,  /* gopts, */  std::string(errType)  , curFile.c_str(), lineNo, UMBA_TOKENIZER_LOG_CONLOG_SRC_FILE, UMBA_TOKENIZER_LOG_CONLOG_SRC_LINE )
-#define UMBA_TOKENIZER_LOG_CONLOG_WARN_INPUT(warnType)      umba::log::startLogError( umbaLogStreamErr, umba::log::LogEntryType::warn,  /* gopts, */  std::string(warnType) , curFile.c_str(), lineNo, UMBA_TOKENIZER_LOG_CONLOG_SRC_FILE, UMBA_TOKENIZER_LOG_CONLOG_SRC_LINE )
-#define UMBA_TOKENIZER_LOG_CONLOG_INFO_INPUT(infoType)      umba::log::startLogError( umbaLogStreamErr, umba::log::LogEntryType::msg ,  /* gopts, */  std::string(infoType) , curFile.c_str(), lineNo, UMBA_TOKENIZER_LOG_CONLOG_SRC_FILE, UMBA_TOKENIZER_LOG_CONLOG_SRC_LINE )
+#define UMBA_TOKENIZER_LOG_CONLOG_ERR_INPUT                 umba::log::startLogError( umbaLogStreamErr, umba::log::LogEntryType::err ,  /* gopts, */  std::string()/*"err"*/, curFile.c_str(), std::size_t(lineNo), UMBA_TOKENIZER_LOG_CONLOG_SRC_FILE, int(UMBA_TOKENIZER_LOG_CONLOG_SRC_LINE) )
+#define UMBA_TOKENIZER_LOG_CONLOG_ERR_INPUT_EX(errType)     umba::log::startLogError( umbaLogStreamErr, umba::log::LogEntryType::err ,  /* gopts, */  std::string(errType)  , curFile.c_str(), std::size_t(lineNo), UMBA_TOKENIZER_LOG_CONLOG_SRC_FILE, int(UMBA_TOKENIZER_LOG_CONLOG_SRC_LINE) )
+#define UMBA_TOKENIZER_LOG_CONLOG_WARN_INPUT(warnType)      umba::log::startLogError( umbaLogStreamErr, umba::log::LogEntryType::warn,  /* gopts, */  std::string(warnType) , curFile.c_str(), std::size_t(lineNo), UMBA_TOKENIZER_LOG_CONLOG_SRC_FILE, int(UMBA_TOKENIZER_LOG_CONLOG_SRC_LINE) )
+#define UMBA_TOKENIZER_LOG_CONLOG_INFO_INPUT(infoType)      umba::log::startLogError( umbaLogStreamErr, umba::log::LogEntryType::msg ,  /* gopts, */  std::string(infoType) , curFile.c_str(), std::size_t(lineNo), UMBA_TOKENIZER_LOG_CONLOG_SRC_FILE, int(UMBA_TOKENIZER_LOG_CONLOG_SRC_LINE) )
 
 //----------------------------------------------------------------------------
 
