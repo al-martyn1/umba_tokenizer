@@ -29,19 +29,20 @@ public: // types & ctors
 
 
     UMBA_RULE_OF_FIVE_COPY_DELETE(ParserBase);
+    UMBA_RULE_OF_FIVE_MOVE_DEFAULT(ParserBase);
 
     ParserBase() {}
 
-    ParserBase(ParserBase &&pb)
-    : m_tokens(std::exchange(pb.m_tokens, TokenCollectionType()))
-    {
-    }
-
-    ParserBase& operator=(ParserBase &&pb)
-    {
-        m_tokens = std::exchange(pb.m_tokens, TokenCollectionType());
-        return *this;
-    }
+    // ParserBase(ParserBase &&pb)
+    // : m_tokens(std::exchange(pb.m_tokens, TokenCollectionType()))
+    // {
+    // }
+    //  
+    // ParserBase& operator=(ParserBase &&pb)
+    // {
+    //     m_tokens = std::exchange(pb.m_tokens, TokenCollectionType());
+    //     return *this;
+    // }
 
     explicit
     ParserBase(TokenCollectionType tc)
