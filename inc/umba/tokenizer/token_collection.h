@@ -1,11 +1,10 @@
 #pragma once
 
-#include "umba/tokenizer.h"
-//
-#include "umba/text_position_info.h"
-
+#include "../tokenizer.h"
 //
 #include "tokenizer_log.h"
+//
+#include "umba/text_position_info.h"
 #include "umba/assert.h"
 
 //
@@ -368,6 +367,8 @@ public:
 
     UMBA_RULE_OF_FIVE_COPY_DELETE(TokenCollection);
 
+    TokenCollection() {}
+
     TokenCollection(TokenCollection &&tc)
     : m_tokenCollectionList(std::exchange(tc.m_tokenCollectionList, token_collection_list_type()))
     , m_tokenParsedDataCollectionList(std::exchange(tc.m_tokenParsedDataCollectionList, token_parsed_data_collection_list_type()))
@@ -415,16 +416,18 @@ public:
     , m_tokenParsedDataCollectionList()
     , m_log(log)
     , m_text(text)
-    , m_inputIt   (iterator_type(m_text.data(), m_text.size()))
+    , m_inputIt   (iterator_type(m_text.data(), m_text.size(), fileId))
     , m_inputEndIt(iterator_type()) // !!! Надо наверное что-то придумать с итератором конца. Или не надо?
     //, m_tokenizer(tknConfigurator(initTokenizerHandlers(std::move(tkn))))
-    , m_tokenizer(tknConfigurator(initTokenizerHandlers(tkn)))
+    , m_tokenizer(std::move(tknConfigurator(std::move(initTokenizerHandlers(std::move(tkn))))))
     , m_fileId(fileId)
-    {}
+    {
+    }
 
     void setFileId(file_id_type fileId)
     {
         m_fileId = fileId;
+        m_inputIt.setFileId(fileId);
     }
 
 
@@ -552,6 +555,35 @@ public:
             setTokenPos(tokenPos);
         return pToken;
     }
+
+
+    std::size_t getNumberOfTokensTotal() const
+    {
+        return m_tokenCollectionList.size();
+    }
+
+    std::size_t getNumberOfTokenDataTotal() const
+    {
+        return m_tokenParsedDataCollectionList.size();
+    }
+
+    std::size_t getBytesOfTokensTotal() const
+    {
+        return getNumberOfTokensTotal()*sizeof(typename token_collection_list_type::value_type);
+    }
+
+    std::size_t getBytesOfTokenDataTotal() const
+    {
+        return getNumberOfTokenDataTotal()*sizeof(typename token_parsed_data_collection_list_type::value_type);
+    }
+
+
+    // using token_collection_item_type              = TokenCollectionItemType;
+    // using token_handler_type                      = TokenCollectionTokenHandler<payload_type, iterator_type, token_parsed_data_type>;
+    // using token_collection_list_type              = TokenCollectionList<payload_type, char_type>;
+    // using token_parsed_data_collection_list_type  = TokenParsedDataCollectionList<token_parsed_data_type>;
+    // using file_id_type                            = umba::TextPositionInfo::file_id_type;
+
 
 
 protected:

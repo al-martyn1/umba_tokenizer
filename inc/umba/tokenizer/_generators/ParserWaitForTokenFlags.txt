@@ -1,5 +1,9 @@
-stopOnLinefeed = 1
-stopOnComment
-stopOnMultilineComment
+stopOnSingleLineComment   = 1    // Остановится на однострочном коменте
+stopOnMultiLineComment    = 2    // Остановится на многострочном коменте
+stopOnComment             = 3    // Остановится на любом коменте
 
+stopOnSpace               = 4    // Остановится на пробельном символе (space/tab)
+stopOnLinefeed            = 8    // Остановится на переводе строки (или FormFeed)
+stopOnAnySpace            = 0xC  // Остановится на любом пробельном символе (space|lf)
 
+stopOnAny                 = 0xF
