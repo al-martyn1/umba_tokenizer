@@ -1,0 +1,5 @@
+stopOnLinefeed = 1
+stopOnComment
+stopOnMultilineComment
+
+
