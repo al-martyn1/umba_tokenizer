@@ -336,7 +336,7 @@ public:
         if (tokenId==payload_invalid)
             tokenId = UMBA_TOKENIZER_TOKEN_STRING_LITERAL;
 
-        literalsTrieBuilder.addTokenSequence(seq, tokenId).payloadExtra = reinterpret_cast<payload_type>(pParser);
+        literalsTrieBuilder.addTokenSequence(seq, tokenId).payloadExtra = reinterpret_cast<UMBA_TOKENIZER_PAYLOAD_FLAGS_TYPE>(pParser);
 
         return *this;
     }

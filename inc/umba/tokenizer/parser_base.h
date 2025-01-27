@@ -70,32 +70,32 @@ public: // methods
         {
             const auto tokenType = umba::TheValue(pTokenInfo->tokenType);
 
-            if ( tokenType.oneOf< UMBA_TOKENIZER_TOKEN_SPACE, UMBA_TOKENIZER_TOKEN_TAB>()
-              && !theFlags.oneOf<ParserWaitForTokenFlags::stopOnSpace>()
+            if ( tokenType.template oneOf< UMBA_TOKENIZER_TOKEN_SPACE, UMBA_TOKENIZER_TOKEN_TAB>()
+              && !theFlags.template oneOf<ParserWaitForTokenFlags::stopOnSpace>()
                )
             {
                 pTokenInfo = m_tokens.getToken(pTokenPos); // продолжаем поиск значащего токена
                 continue;
             }
 
-            if ( tokenType.oneOf< UMBA_TOKENIZER_TOKEN_LINEFEED, UMBA_TOKENIZER_TOKEN_FORM_FEED>()
-              && !theFlags.oneOf<ParserWaitForTokenFlags::stopOnLinefeed>()
+            if ( tokenType.template oneOf< UMBA_TOKENIZER_TOKEN_LINEFEED, UMBA_TOKENIZER_TOKEN_FORM_FEED>()
+              && !theFlags.template oneOf<ParserWaitForTokenFlags::stopOnLinefeed>()
                )
             {
                 pTokenInfo = m_tokens.getToken(pTokenPos); // продолжаем поиск значащего токена
                 continue;
             }
 
-            if ( tokenType.inClosedRange< UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FIRST, UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_LAST >()
-              && !theFlags.oneOf<ParserWaitForTokenFlags::stopOnSingleLineComment>()
+            if ( tokenType.template inClosedRange< UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FIRST, UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_LAST >()
+              && !theFlags.template oneOf<ParserWaitForTokenFlags::stopOnSingleLineComment>()
                )
             {
                 pTokenInfo = m_tokens.getToken(pTokenPos); // продолжаем поиск значащего токена
                 continue;
             }
 
-            if ( tokenType.inOpenRange< UMBA_TOKENIZER_TOKEN_OPERATOR_MULTI_LINE_COMMENT_START, UMBA_TOKENIZER_TOKEN_OPERATOR_MULTI_LINE_COMMENT_END >()
-              && !theFlags.oneOf<ParserWaitForTokenFlags::stopOnMultiLineComment>()
+            if ( tokenType.template inOpenRange< UMBA_TOKENIZER_TOKEN_OPERATOR_MULTI_LINE_COMMENT_START, UMBA_TOKENIZER_TOKEN_OPERATOR_MULTI_LINE_COMMENT_END >()
+              && !theFlags.template oneOf<ParserWaitForTokenFlags::stopOnMultiLineComment>()
                )
             {
                 pTokenInfo = m_tokens.getToken(pTokenPos); // продолжаем поиск значащего токена

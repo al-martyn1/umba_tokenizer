@@ -103,7 +103,7 @@
         #elif defined(UMBA_TOKENIZER_TOKEN_TYPE_COMPACT)
             #define UMBA_TOKENIZER_TOKEN_TYPE  uint16_t
         #else
-            #define UMBA_TOKENIZER_TOKEN_TYPE  size_t
+            #define UMBA_TOKENIZER_TOKEN_TYPE  uint32_t
         #endif
 
     #else
@@ -113,7 +113,7 @@
         #elif defined(UMBA_TOKENIZER_TOKEN_TYPE_COMPACT)
             #define UMBA_TOKENIZER_TOKEN_TYPE  ::std::uint16_t
         #else
-            #define UMBA_TOKENIZER_TOKEN_TYPE  ::std::size_t
+            #define UMBA_TOKENIZER_TOKEN_TYPE  ::std::uint32_t
         #endif
 
     #endif
@@ -131,7 +131,7 @@
         #if defined(UMBA_TOKENIZER_PAYLOAD_TYPE_COMPACT)
             #define UMBA_TOKENIZER_PAYLOAD_TYPE  uint16_t
         #else
-            #define UMBA_TOKENIZER_PAYLOAD_TYPE  size_t
+            #define UMBA_TOKENIZER_PAYLOAD_TYPE  uint32_t
         #endif
 
     #else
@@ -139,7 +139,7 @@
         #if defined(UMBA_TOKENIZER_PAYLOAD_TYPE_COMPACT)
             #define UMBA_TOKENIZER_PAYLOAD_TYPE  ::std::uint16_t
         #else
-            #define UMBA_TOKENIZER_PAYLOAD_TYPE  ::std::size_t
+            #define UMBA_TOKENIZER_PAYLOAD_TYPE  ::std::uint32_t
         #endif
 
     #endif

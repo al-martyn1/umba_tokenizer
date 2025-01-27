@@ -25,10 +25,15 @@ namespace tokenizer {
 // template<typename TokenBuilder> class TokenCollection;
 
 //----------------------------------------------------------------------------
+// #if defined(UMBA_TARGET_BIT_SIZE) && UMBA_TARGET_BIT_SIZE>32
+using small_size_t = std::uint32_t;
+
+//----------------------------------------------------------------------------
 
 
 
 //----------------------------------------------------------------------------
+#include "umba/pushpack1.h"
 template< typename PayloadType
         , typename CharType
         //, typename InputIteratorType
@@ -41,47 +46,86 @@ public:
 
     using string_type = std::basic_string< CharType, std::char_traits<CharType>, std::allocator<CharType> >;
     using ConstCharTypePtr = const CharType*;
-    using TextPositionInfo = umba::TextPositionInfoNoFileId;
+    //using TextPositionInfo = umba::TextPositionInfoNoFileId;
+    using TextPositionInfo = umba::TextPositionInfo;
 
     template<typename TokenBuilder> friend class TokenCollection;
 
 
 protected:
 
-    std::size_t            parsedDataIndex = std::size_t(-1); // Нефик иметь к этому полю свободный доступ
+    small_size_t           parsedDataIndex = std::size_t(-1); // Нефик иметь к этому полю свободный доступ
 
 
 public:
 
-    TextPositionInfo       textPosition;
-    //umba::TextPositionInfoCompactDelta   textPositionDelta;
-    ConstCharTypePtr       pTextStart  ;
-    ConstCharTypePtr       pTextEnd    ;
+    //TextPositionInfo       textPosition;
+    small_size_t           tokenLineNumber;
+    std::size_t            tokenOffset ; // От начала файла
+    std::size_t            textStartOffset;
+    small_size_t           textLen;
     PayloadType            tokenType   ;
     bool                   bLineStart  ;
 
     UMBA_RULE_OF_FIVE_DEFAULT(TokenCollectionItem);
-    TokenCollectionItem( std::size_t pdi     , const TextPositionInfo &tpi
-                       , ConstCharTypePtr pts, ConstCharTypePtr pte
-                       , PayloadType tt      , bool bls
+    TokenCollectionItem( std::size_t   pdi
+                       , small_size_t  lineNo
+                       , std::size_t   offs
+                       , std::size_t   textStartOffset_
+                       , small_size_t  textLen_
+                       , PayloadType   tt
+                       , bool          bls
                        )
     : parsedDataIndex(pdi)
-    , textPosition(tpi)
-    , pTextStart  (pts)
-    , pTextEnd    (pte)
+    , tokenLineNumber(lineNo)
+    , tokenOffset (offs)
+    , textStartOffset(textStartOffset_)
+    , textLen     (textLen_)
     , tokenType   (tt)
     , bLineStart  (bls)
     {} 
 
-    string_type getText() const
+    string_type getText(const string_type &allText) const
     {
-       if (!pTextStart)
+       std::size_t textEndOffset = textStartOffset + std::size_t(textLen);
+       if (textStartOffset>=allText.size())
            return string_type();
 
-       return string_type(pTextStart, pTextEnd);
+       if (textEndOffset>allText.size())
+           textEndOffset = allText.size();
+       
+       return string_type(allText, textStartOffset, textEndOffset-textStartOffset);
     }
 
     PayloadType getTokenType() const { return tokenType; }
+
+    TextPositionInfo getPositionInfo(const std::string &text, std::size_t fileId) const
+    {
+        TextPositionInfo tpi;
+
+        std::size_t lineOffset = tokenOffset;
+
+        // Если мы находимся в конце строки, сдвигаемся с него в сторону начала текста
+        if (lineOffset!=0 && text[lineOffset]=='\r')
+            --lineOffset;
+        if (lineOffset!=0 && text[lineOffset]=='\n')
+            --lineOffset;
+
+        while(lineOffset!=0 && (text[lineOffset]!='\n' && text[lineOffset]!='\r'))
+            --lineOffset;
+
+        std::size_t nextLineOffset = lineOffset;
+        while(nextLineOffset<text.size() && (text[lineOffset]!='\n' && text[lineOffset]!='\r'))
+            ++nextLineOffset;
+
+        tpi.lineOffset   = lineOffset;
+        tpi.symbolOffset = tokenOffset - lineOffset;
+        tpi.lineLen      = nextLineOffset - lineOffset;
+        tpi.lineNumber   = tokenLineNumber;
+        tpi.fileId       = fileId;
+
+        return tpi;
+    }
     
 
     bool isTokenFin() const             { return tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN; }
@@ -193,10 +237,10 @@ public:
     // lineLen      - не может быть больше 64К
     // 
 
-
-
-
 }; // struct TokenCollectionItem
+
+#include "umba/packpop.h"
+
 
 template< typename PayloadType
         , typename CharType
@@ -261,11 +305,12 @@ struct TokenCollectionTokenHandler
 
         using ConstCharTypePtr = typename TokenCollectionItemType::ConstCharTypePtr;
 
+
         ConstCharTypePtr pb = b.getRawValueTypePointer();
-        ConstCharTypePtr pe = 0;
+        //ConstCharTypePtr pe = 0;
+        std::size_t distanceCharT = 0;
         if (pb)
         {
-            std::size_t distanceCharT = 0;
             if (b==e)
             {
                 distanceCharT = b.symbolLength();
@@ -278,25 +323,27 @@ struct TokenCollectionTokenHandler
                 }
             }
 
-            pe = pb + distanceCharT;
+            //pe = pb + distanceCharT;
         }
 
-        auto tpi = b.getPosition(true); // findLineLen
-        TextPositionInfoNoFileId tpiNfi;
-        tpiNfi.lineOffset   = tpi.lineOffset  ;
-        tpiNfi.symbolOffset = tpi.symbolOffset;
-        tpiNfi.lineNumber   = tpi.lineNumber  ;
-        tpiNfi.lineLen      = tpi.lineLen     ;
+        auto tpi = b.getPosition(false); // do not findLineLen
 
-
-    // TokenCollectionItem( std::size_t pdi     , const TextPositionInfo &tpi
-    //                    , ConstCharTypePtr pts, ConstCharTypePtr pte
-    //                    , PayloadType tt      , bool bls
+    // TokenCollectionItem( std::size_t   pdi
+    //                    , std::size_t   offs
+    //                    , small_size_t  lineNo
+    //                    , std::size_t   textStartOffset_
+    //                    , small_size_t  textLen_
+    //                    , PayloadType   tt
+    //                    , bool          bls
     //                    )
 
+        
         tokenCollectionList.emplace_back( TokenCollectionItemType
-                                          ( parsedDataIndex, tpiNfi
-                                          , pb, pe
+                                          ( parsedDataIndex
+                                          , small_size_t(tpi.lineNumber) // tokenLineNumber
+                                          , tpi.lineOffset + tpi.symbolOffset // tokenOffset
+                                          , b.getOffsetFromStart()
+                                          , small_size_t(distanceCharT)
                                           , tokenType, bLineStart
                                           ) 
                                         );
@@ -488,9 +535,8 @@ public:
     #endif
 
 
-    TextPositionInfo getTextPositionInfo(const TokenCollectionItemType *ptki) const
+    TextPositionInfo getTokenPositionInfo(const TokenCollectionItemType *ptki) const
     {
-        UMBA_ASSERT(ptki);
         UMBA_ASSERT(ptki);
 
         UMBA_ASSERT(m_fileId!=file_id_type(-1));
@@ -503,6 +549,12 @@ public:
         tpi.fileId       = m_fileId;
 
         return tpi;
+    }
+
+    string_type getTokenText(const TokenCollectionItemType *ptki) const
+    {
+        UMBA_ASSERT(ptki);
+        return ptki->getText(m_text);
     }
 
 
