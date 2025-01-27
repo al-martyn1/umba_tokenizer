@@ -204,7 +204,8 @@ public: // depending types
         std::basic_string_view<value_type>  data;
 
         bool                 hasSuffix = false;
-        iterator_type        suffixStartPos = {};
+        // iterator_type        suffixStartPos = {};
+        std::size_t          suffixStartPos = std::size_t(-1);
 
         StringType asString() const
         {
@@ -236,7 +237,8 @@ public: // depending types
         bool                 fOverflow; // число не влезло в используемый тип (std::uint64_t). Для marty::Decimal такой ситуации не происходит.
 
         bool                 hasSuffix = false;
-        iterator_type        suffixStartPos = {};
+        // iterator_type        suffixStartPos = {};
+        std::size_t          suffixStartPos = std::size_t(-1);
 
     }; // struct NumericLiteralData
 
@@ -254,7 +256,8 @@ public: // depending types
         bool                 fFractionalOverflow; // при разборе дробная часть не влезла в std::uint64_t. Для marty::Decimal такой ситуации не происходит.
 
         bool                 hasSuffix = false;
-        iterator_type        suffixStartPos = {};
+        //iterator_type        suffixStartPos = {};
+        std::size_t          suffixStartPos = std::size_t(-1);
 
     }; // struct NumericLiteralData
 
@@ -560,9 +563,10 @@ protected: // methods - helpers - из "грязного" проекта, где
 
     IntegerNumericLiteralData makeIntegerLiteralData(iterator_type itEnd) const
     {
+        UMBA_USED(itEnd);
         IntegerNumericLiteralData res;
         res.hasSuffix      = false;
-        res.suffixStartPos = itEnd;
+        res.suffixStartPos = std::size_t(-1);
 
         res.data      = numberCurrentIntValue;
         res.fOverflow = numberIntegerOverflow;
@@ -572,9 +576,10 @@ protected: // methods - helpers - из "грязного" проекта, где
 
     FloatNumericLiteralData makeFloatLiteralData(iterator_type itEnd) const
     {
+        UMBA_USED(itEnd);
         FloatNumericLiteralData res;
         res.hasSuffix      = false;
-        res.suffixStartPos = itEnd;
+        res.suffixStartPos = std::size_t(-1);
 
         // auto powerDivider = (typename FloatNumericLiteralData::DataValueType)utils::makePowerOf((typename FloatNumericLiteralData::DataValueType)numbersBase, numberCurrentFractionalPower, numberFractionalOverflow);
         //

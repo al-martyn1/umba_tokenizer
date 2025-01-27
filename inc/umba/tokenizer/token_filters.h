@@ -549,7 +549,7 @@ public:
         auto updatePayloadDataAndCallNextHandler = [&](auto payloadData) -> bool
         {
             payloadData.hasSuffix      = true;
-            payloadData.suffixStartPos = suffixStartIter;
+            payloadData.suffixStartPos = suffixStartIter.getOffsetFromStart();
             token_parsed_data_type payloadDataCopy = payloadData;
             return this->callNextTokenHandler( tokenizer, prevTokenInfo.lineStartFlag, prevTokenInfo.payloadToken
                                          , literalStartIter, literalEndIter, payloadDataCopy, msg
