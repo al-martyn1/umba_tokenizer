@@ -3,6 +3,7 @@
 #include "../tokenizer.h"
 //
 #include "tokenizer_log.h"
+#include "types.h"
 //
 #include "umba/text_position_info.h"
 #include "umba/assert.h"
@@ -10,6 +11,10 @@
 //
 #include <vector>
 #include <utility>
+//#-sort
+#include <exception>
+#include <stdexcept>
+//#+sort
 
 
 //----------------------------------------------------------------------------
@@ -23,10 +28,6 @@ namespace tokenizer {
 
 //----------------------------------------------------------------------------
 // template<typename TokenBuilder> class TokenCollection;
-
-//----------------------------------------------------------------------------
-// #if defined(UMBA_TARGET_BIT_SIZE) && UMBA_TARGET_BIT_SIZE>32
-using small_size_t = std::uint32_t;
 
 //----------------------------------------------------------------------------
 
@@ -44,7 +45,7 @@ struct TokenCollectionItem
 
 public:
 
-    using string_type = std::basic_string< CharType, std::char_traits<CharType>, std::allocator<CharType> >;
+    using string_type      = std::basic_string< CharType, std::char_traits<CharType>, std::allocator<CharType> >;
     using ConstCharTypePtr = const CharType*;
     //using TextPositionInfo = umba::TextPositionInfoNoFileId;
     using TextPositionInfo = umba::TextPositionInfo;
@@ -54,7 +55,9 @@ public:
 
 protected:
 
-    small_size_t           parsedDataIndex = std::size_t(-1); // Нефик иметь к этому полю свободный доступ
+    // Нефик иметь к этому полю свободный доступ
+    // Также, токенов не может быть больше четырех гиглв
+    small_size_t           parsedDataIndex = small_size_t(-1); 
 
 
 public:
@@ -62,16 +65,15 @@ public:
     //TextPositionInfo       textPosition;
     small_size_t           tokenLineNumber;
     std::size_t            tokenOffset ; // От начала файла
-    std::size_t            textStartOffset;
-    small_size_t           textLen;
+    super_small_size_t     textLen     ; // Токены не могут быть длиной больше 64К char'ов - это и так овердофига
     PayloadType            tokenType   ;
     bool                   bLineStart  ;
 
     UMBA_RULE_OF_FIVE_DEFAULT(TokenCollectionItem);
-    TokenCollectionItem( std::size_t   pdi
+
+    TokenCollectionItem( small_size_t  pdi
                        , small_size_t  lineNo
                        , std::size_t   offs
-                       , std::size_t   textStartOffset_
                        , small_size_t  textLen_
                        , PayloadType   tt
                        , bool          bls
@@ -79,22 +81,24 @@ public:
     : parsedDataIndex(pdi)
     , tokenLineNumber(lineNo)
     , tokenOffset (offs)
-    , textStartOffset(textStartOffset_)
-    , textLen     (textLen_)
+    , textLen     (super_small_size_t(textLen_))
     , tokenType   (tt)
     , bLineStart  (bls)
-    {} 
+    {
+        if (textLen_>=65535u)
+            textLen = 65535u;
+    } 
 
     string_type getText(const string_type &allText) const
     {
-       std::size_t textEndOffset = textStartOffset + std::size_t(textLen);
-       if (textStartOffset>=allText.size())
+       std::size_t textEndOffset = tokenOffset + std::size_t(textLen);
+       if (tokenOffset>=allText.size())
            return string_type();
 
        if (textEndOffset>allText.size())
            textEndOffset = allText.size();
        
-       return string_type(allText, textStartOffset, textEndOffset-textStartOffset);
+       return string_type(allText, tokenOffset, textEndOffset-tokenOffset);
     }
 
     PayloadType getTokenType() const { return tokenType; }
@@ -295,12 +299,14 @@ struct TokenCollectionTokenHandler
         if (tokenType==UMBA_TOKENIZER_TOKEN_CTRL_RST)
             return true;
 
-        std::size_t parsedDataIndex = std::size_t(-1);
+        small_size_t parsedDataIndex = small_size_t(-1);
         if (parsedData.index()!=0)
         {
-            auto idx = tokenParsedDataCollectionList.size();
+            auto idx = tokenParsedDataCollectionList.size(); 
+            if (idx==std::size_t(small_size_t(-1)))
+                throw std::runtime_error("TokenCollection: tokenParsedDataCollectionList too large"); // 4 гига токенов с данными - это перебор
             tokenParsedDataCollectionList.emplace_back(parsedData);
-            parsedDataIndex = idx;
+            parsedDataIndex = (small_size_t)idx;
         }
 
         using ConstCharTypePtr = typename TokenCollectionItemType::ConstCharTypePtr;
@@ -328,20 +334,20 @@ struct TokenCollectionTokenHandler
 
         auto tpi = b.getPosition(false); // do not findLineLen
 
-    // TokenCollectionItem( std::size_t   pdi
-    //                    , std::size_t   offs
-    //                    , small_size_t  lineNo
-    //                    , std::size_t   textStartOffset_
-    //                    , small_size_t  textLen_
-    //                    , PayloadType   tt
-    //                    , bool          bls
-    //                    )
 
+        // TokenCollectionItem( std::size_t   pdi
+        //                    , small_size_t  lineNo
+        //                    , std::size_t   offs
+        //                    , std::size_t   textStartOffset_
+        //                    , small_size_t  textLen_
+        //                    , PayloadType   tt
+        //                    , bool          bls
+        //                    )
         
         tokenCollectionList.emplace_back( TokenCollectionItemType
                                           ( parsedDataIndex
                                           , small_size_t(tpi.lineNumber) // tokenLineNumber
-                                          , tpi.lineOffset + tpi.symbolOffset // tokenOffset
+                                          // , tpi.lineOffset + tpi.symbolOffset // tokenOffset
                                           , b.getOffsetFromStart()
                                           , small_size_t(distanceCharT)
                                           , tokenType, bLineStart
