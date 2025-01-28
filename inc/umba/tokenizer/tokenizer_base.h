@@ -187,6 +187,9 @@ public: // depending types
     {};
 
     //------------------------------
+
+    #include "umba/pushpack1.h"
+
     struct CommentData // Текст комента без обрамляющих символов
     {
         std::basic_string_view<value_type>  data;
@@ -203,9 +206,9 @@ public: // depending types
     {
         std::basic_string_view<value_type>  data;
 
-        bool                 hasSuffix = false;
-        // iterator_type        suffixStartPos = {};
-        std::size_t          suffixStartPos = std::size_t(-1);
+        iterator_type        suffixStartPos = {};
+        bool                 hasSuffix      = false;
+        //std::size_t          suffixStartPos = std::size_t(-1);
 
         StringType asString() const
         {
@@ -234,11 +237,11 @@ public: // depending types
 #else
         std::uint64_t        data;
 #endif
-        bool                 fOverflow; // число не влезло в используемый тип (std::uint64_t). Для marty::Decimal такой ситуации не происходит.
+        iterator_type        suffixStartPos = {};
+        //std::size_t          suffixStartPos = std::size_t(-1);
 
         bool                 hasSuffix = false;
-        // iterator_type        suffixStartPos = {};
-        std::size_t          suffixStartPos = std::size_t(-1);
+        bool                 fOverflow = false; // число не влезло в используемый тип (std::uint64_t). Для marty::Decimal такой ситуации не происходит.
 
     }; // struct NumericLiteralData
 
@@ -251,15 +254,18 @@ public: // depending types
         using DataValueType  = double;
 #endif
 
+        iterator_type        suffixStartPos = {};
+        //std::size_t          suffixStartPos = std::size_t(-1);
+        bool                 hasSuffix = false;
+
         DataValueType        data;
         bool                 fIntegerOverflow   ; // при разборе целая часть не влезла в std::uint64_t. Для marty::Decimal такой ситуации не происходит.
         bool                 fFractionalOverflow; // при разборе дробная часть не влезла в std::uint64_t. Для marty::Decimal такой ситуации не происходит.
 
-        bool                 hasSuffix = false;
-        //iterator_type        suffixStartPos = {};
-        std::size_t          suffixStartPos = std::size_t(-1);
 
     }; // struct NumericLiteralData
+
+    #include "umba/packpop.h"
 
     //------------------------------
 
@@ -566,7 +572,8 @@ protected: // methods - helpers - из "грязного" проекта, где
         UMBA_USED(itEnd);
         IntegerNumericLiteralData res;
         res.hasSuffix      = false;
-        res.suffixStartPos = std::size_t(-1);
+        // res.suffixStartPos = std::size_t(-1);
+        res.suffixStartPos = itEnd;
 
         res.data      = numberCurrentIntValue;
         res.fOverflow = numberIntegerOverflow;
@@ -579,7 +586,8 @@ protected: // methods - helpers - из "грязного" проекта, где
         UMBA_USED(itEnd);
         FloatNumericLiteralData res;
         res.hasSuffix      = false;
-        res.suffixStartPos = std::size_t(-1);
+        // res.suffixStartPos = std::size_t(-1);
+        res.suffixStartPos = itEnd;
 
         // auto powerDivider = (typename FloatNumericLiteralData::DataValueType)utils::makePowerOf((typename FloatNumericLiteralData::DataValueType)numbersBase, numberCurrentFractionalPower, numberFractionalOverflow);
         //
