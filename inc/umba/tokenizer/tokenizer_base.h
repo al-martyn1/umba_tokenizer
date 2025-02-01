@@ -188,8 +188,7 @@ public: // depending types
 
     //------------------------------
 
-    #include "umba/pushpack1.h"
-
+    // #include "umba/pushpack1.h"
     struct CommentData // Текст комента без обрамляющих символов
     {
         std::basic_string_view<value_type>  data;
@@ -265,7 +264,7 @@ public: // depending types
 
     }; // struct NumericLiteralData
 
-    #include "umba/packpop.h"
+    //#include "umba/packpop.h"
 
     //------------------------------
 
