@@ -191,7 +191,7 @@ public: // depending types
     // #include "umba/pushpack1.h"
     struct CommentData // Текст комента без обрамляющих символов
     {
-        std::basic_string_view<value_type>  data;
+        std::basic_string_view<value_type>  value;
 
         StringType asString() const
         {
@@ -203,7 +203,7 @@ public: // depending types
     //------------------------------
     struct StringLiteralData
     {
-        std::basic_string_view<value_type>  data;
+        std::basic_string_view<value_type>  value;
 
         iterator_type        suffixStartPos = {};
         bool                 hasSuffix      = false;
@@ -219,7 +219,7 @@ public: // depending types
     //------------------------------
     struct IdentifierData
     {
-        std::basic_string_view<value_type>  data;
+        std::basic_string_view<value_type>  value;
 
         StringType asString() const
         {
@@ -232,9 +232,9 @@ public: // depending types
     struct IntegerNumericLiteralData
     {
 #if defined(UMBA_TOKENOZER_MARTY_DECIMAL_USED)
-        marty::Decimal       data;
+        marty::Decimal       value;
 #else
-        std::uint64_t        data;
+        std::uint64_t        value;
 #endif
         iterator_type        suffixStartPos = {};
         //std::size_t          suffixStartPos = std::size_t(-1);
@@ -257,7 +257,7 @@ public: // depending types
         //std::size_t          suffixStartPos = std::size_t(-1);
         bool                 hasSuffix = false;
 
-        DataValueType        data;
+        DataValueType        value;
         bool                 fIntegerOverflow   ; // при разборе целая часть не влезла в std::uint64_t. Для marty::Decimal такой ситуации не происходит.
         bool                 fFractionalOverflow; // при разборе дробная часть не влезла в std::uint64_t. Для marty::Decimal такой ситуации не происходит.
 
@@ -265,6 +265,23 @@ public: // depending types
     }; // struct NumericLiteralData
 
     //#include "umba/packpop.h"
+
+    //------------------------------
+    #define UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(DataType)      \
+                struct DataType##Holder                            \
+                {                                                  \
+                    std::shared_ptr<DataType>   pData;             \
+                                                                   \
+                    UMBA_RULE_OF_FIVE_DEFAULT(DataType##Holder);   \
+                    /* explicit */ DataType##Holder(DataType &&d)  \
+                    : pData(std::make_shared<DataType>(d)) {}      \
+                }
+
+    UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(CommentData              );
+    UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(IdentifierData           );
+    UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(StringLiteralData        );
+    UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(IntegerNumericLiteralData);
+    UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(FloatNumericLiteralData  );
 
     //------------------------------
 
@@ -275,17 +292,24 @@ public: // depending types
     // https://en.cppreference.com/w/cpp/utility/variant/visit
 
     // EmptyData must be a first type in a variant (with zero index)
-    using TokenParsedData = std::variant<EmptyData, CommentData, IdentifierData, StringLiteralData, IntegerNumericLiteralData, FloatNumericLiteralData>;
+    using TokenParsedData = std::variant<EmptyData, CommentDataHolder, IdentifierDataHolder, StringLiteralDataHolder, IntegerNumericLiteralDataHolder, FloatNumericLiteralDataHolder>;
 
-    using TokenParsedDataType    = TokenParsedData;
-    using token_parsed_data_type = TokenParsedData;
+    using TokenParsedDataType                       = TokenParsedData                ;
+    using token_parsed_data_type                    = TokenParsedData                ;
 
-    using empty_data_type                    = EmptyData                ;
-    using comment_data_type                  = CommentData              ;
-    using identifier_data_type               = IdentifierData           ;
-    using string_literal_data_type           = StringLiteralData        ;
-    using integer_numeric_literal_data_type  = IntegerNumericLiteralData;
-    using float_numeric_literal_data_type    = FloatNumericLiteralData  ;
+    using empty_data_type                           = EmptyData                      ;
+    
+    using comment_data_type                         = CommentData                    ;
+    using identifier_data_type                      = IdentifierData                 ;
+    using string_literal_data_type                  = StringLiteralData              ;
+    using integer_numeric_literal_data_type         = IntegerNumericLiteralData      ;
+    using float_numeric_literal_data_type           = FloatNumericLiteralData        ;
+
+    using comment_data_holder_type                  = CommentDataHolder              ;
+    using identifier_data_holder_type               = IdentifierDataHolder           ;
+    using string_literal_data_holder_type           = StringLiteralDataHolder        ;
+    using integer_numeric_literal_data_holder_type  = IntegerNumericLiteralDataHolder;
+    using float_numeric_literal_data_holder_type    = FloatNumericLiteralDataHolder  ;
 
 
 
@@ -574,7 +598,7 @@ protected: // methods - helpers - из "грязного" проекта, где
         // res.suffixStartPos = std::size_t(-1);
         res.suffixStartPos = itEnd;
 
-        res.data      = numberCurrentIntValue;
+        res.value     = numberCurrentIntValue;
         res.fOverflow = numberIntegerOverflow;
 
         return res;
@@ -596,8 +620,8 @@ protected: // methods - helpers - из "грязного" проекта, где
             fractionalPart = (typename FloatNumericLiteralData::DataValueType)numberCurrentFractionalValue / (typename FloatNumericLiteralData::DataValueType)numberCurrentFractionalPower;
         }
 
-        res.data = (typename FloatNumericLiteralData::DataValueType)numberCurrentIntValue;
-        res.data += fractionalPart;
+        res.value = (typename FloatNumericLiteralData::DataValueType)numberCurrentIntValue;
+        res.value += fractionalPart;
 
         res.fIntegerOverflow    = numberIntegerOverflow;
         res.fFractionalOverflow = numberFractionalOverflow;
@@ -1879,7 +1903,7 @@ protected: // methods - хандлеры из "грязного" проекта,
             return true;
         MessagesStringType msg;
         bool bRes = static_cast<const TBase*>(this)->hadleToken( curPosAtLineBeginning, tokenType, inputDataBegin, inputDataEnd
-                                                               , makeIntegerLiteralData(itEnd)
+                                                               , IntegerNumericLiteralDataHolder(makeIntegerLiteralData(itEnd))
                                                                , msg
                                                                );
         checkLineStart(tokenType);
@@ -1899,7 +1923,7 @@ protected: // methods - хандлеры из "грязного" проекта,
             return true;
         MessagesStringType msg;
         bool bRes = static_cast<const TBase*>(this)->hadleToken( curPosAtLineBeginning, tokenType, inputDataBegin, inputDataEnd
-                                                               , makeFloatLiteralData(itEnd)
+                                                               , FloatNumericLiteralDataHolder(makeFloatLiteralData(itEnd))
                                                                , msg
                                                                );
         checkLineStart(tokenType);
@@ -1921,7 +1945,7 @@ protected: // methods - хандлеры из "грязного" проекта,
             return true;
         MessagesStringType msg;
         bool bRes = static_cast<const TBase*>(this)->hadleToken( curPosAtLineBeginning, tokenType, inputDataBegin, inputDataEnd
-                                                               , CommentData{makeStringView(parsedDataBegin, parsedDataEnd)}
+                                                               , CommentDataHolder(CommentData{makeStringView(parsedDataBegin, parsedDataEnd)})
                                                                , msg
                                                                );
         checkLineStart(tokenType);
@@ -1944,7 +1968,7 @@ protected: // methods - хандлеры из "грязного" проекта,
         MessagesStringType msg;
         bool bRes = static_cast<const TBase*>(this)->hadleToken(curPosAtLineBeginning, tokenType
                                                                , inputDataBegin, inputDataEnd
-                                                               , StringLiteralData{parsedData}
+                                                               , StringLiteralDataHolder(StringLiteralData{parsedData})
                                                                , msg
                                                                );
         // TokenParsedData StringLiteralData
@@ -1967,7 +1991,7 @@ protected: // methods - хандлеры из "грязного" проекта,
         MessagesStringType msg;
         bool bRes = static_cast<const TBase*>(this)->hadleToken(curPosAtLineBeginning, UMBA_TOKENIZER_TOKEN_IDENTIFIER
                                                                , inputDataBegin, inputDataEnd
-                                                               , IdentifierData{makeStringView(inputDataBegin, inputDataEnd)}
+                                                               , IdentifierDataHolder(IdentifierData{makeStringView(inputDataBegin, inputDataEnd)})
                                                                , msg
                                                                );
         // TokenParsedData StringLiteralData

@@ -59,19 +59,19 @@ public: // depending types
 
     friend TBase;
 
-    using user_data_type           = typename TBase::user_data_type       ;
-    using char_type                = typename TBase::char_type            ;
-    using value_type               = typename TBase::value_type           ;
-    using char_class_table_type    = typename TBase::char_class_table_type;
-    using trie_vector_type         = typename TBase::trie_vector_type     ;
-    using string_type              = typename TBase::string_type          ;
-    using iterator_type            = typename TBase::iterator_type        ;
-    using iterator_traits_type     = typename TBase::iterator_traits_type ;
-    using messages_string_type     = typename TBase::messages_string_type ;
+    using user_data_type                     = typename TBase::user_data_type       ;
+    using char_type                          = typename TBase::char_type            ;
+    using value_type                         = typename TBase::value_type           ;
+    using char_class_table_type              = typename TBase::char_class_table_type;
+    using trie_vector_type                   = typename TBase::trie_vector_type     ;
+    using string_type                        = typename TBase::string_type          ;
+    using iterator_type                      = typename TBase::iterator_type        ;
+    using iterator_traits_type               = typename TBase::iterator_traits_type ;
+    using messages_string_type               = typename TBase::messages_string_type ;
 
-    using ITokenizerLiteralParser  = typename TBase::ITokenizerLiteralParser;
+    using ITokenizerLiteralParser            = typename TBase::ITokenizerLiteralParser;
 
-    using token_parsed_data_type   = typename TBase::token_parsed_data_type;
+    using token_parsed_data_type             = typename TBase::token_parsed_data_type;
 
     using empty_data_type                    = typename TBase::empty_data_type                  ;
     using comment_data_type                  = typename TBase::comment_data_type                ;

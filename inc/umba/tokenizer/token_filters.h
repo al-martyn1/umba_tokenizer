@@ -238,13 +238,13 @@ public:
 
     UMBA_RULE_OF_FIVE(TokenCollectingFilter, default, default, default, default, default);
 
-    bool operator()( TokenizerType           &tokenizer
-                   , bool                    lineStartFlag
-                   , payload_type            payloadToken
-                   , iterator_type           &b
-                   , iterator_type           &e
-                   , token_parsed_data_type  &parsedData // std::variant<...>
-                   , messages_string_type    &msg
+    bool operator()( TokenizerType            &tokenizer
+                   , bool                     lineStartFlag
+                   , payload_type             payloadToken
+                   , iterator_type            &b
+                   , iterator_type            &e
+                   , token_parsed_data_type   &parsedData // std::variant<...>
+                   , messages_string_type     &msg
                    )
     {
         if (payloadToken==UMBA_TOKENIZER_TOKEN_CTRL_RST)
@@ -548,11 +548,14 @@ public:
 
         auto updatePayloadDataAndCallNextHandler = [&](auto payloadData) -> bool
         {
-            payloadData.hasSuffix      = true;
-            payloadData.suffixStartPos = suffixStartIter; // .getOffsetFromStart();
-            token_parsed_data_type payloadDataCopy = payloadData;
+            payloadData.pData->hasSuffix      = true;
+            payloadData.pData->suffixStartPos = suffixStartIter; // .getOffsetFromStart();
+            // !!! Зачем я тут копию делаю?
+            // token_parsed_data_type payloadDataCopy = payloadData;
             return this->callNextTokenHandler( tokenizer, prevTokenInfo.lineStartFlag, prevTokenInfo.payloadToken
-                                         , literalStartIter, literalEndIter, payloadDataCopy, msg
+                                         , literalStartIter, literalEndIter
+                                         , payloadData // Copy
+                                         , msg
                                          );
         };
 
@@ -563,16 +566,16 @@ public:
         {
             if (prevTokenInfo.payloadToken&UMBA_TOKENIZER_TOKEN_FLOAT_FLAG)
             {
-                res = updatePayloadDataAndCallNextHandler(std::get<typename TokenizerType::FloatNumericLiteralData>(prevTokenInfo.parsedData));
+                res = updatePayloadDataAndCallNextHandler(std::get<typename TokenizerType::FloatNumericLiteralDataHolder>(prevTokenInfo.parsedData));
             }
             else
             {
-                res = updatePayloadDataAndCallNextHandler(std::get<typename TokenizerType::IntegerNumericLiteralData>(prevTokenInfo.parsedData));
+                res = updatePayloadDataAndCallNextHandler(std::get<typename TokenizerType::IntegerNumericLiteralDataHolder>(prevTokenInfo.parsedData));
             }
         }
         else if (isStringLiteral(prevTokenInfo.payloadToken))
         {
-            res = updatePayloadDataAndCallNextHandler(std::get<typename TokenizerType::StringLiteralData>(prevTokenInfo.parsedData));
+            res = updatePayloadDataAndCallNextHandler(std::get<typename TokenizerType::StringLiteralDataHolder>(prevTokenInfo.parsedData));
         }
         else
         {
@@ -1195,8 +1198,8 @@ struct IdentifierToKeywordConversionFilter : FilterBase<TokenizerType, VectorTyp
             return this->callNextTokenHandler(tokenizer, lineStartFlag, payloadToken, b, e, parsedData, msg);
         }
 
-        auto identifierData = std::get<typename TokenizerType::IdentifierData>(parsedData);
-        string_type identifierStr = string_type(identifierData.data);
+        auto identifierData = std::get<typename TokenizerType::IdentifierDataHolder>(parsedData);
+        string_type identifierStr = string_type(identifierData.pData->value);
         //string_type identifier = umba::string_plus::make_string<string_type>(umba::iterator::makeString(tringLiteralData.suffixStartPos, itEnd));
 
         if (!caseSensitive)

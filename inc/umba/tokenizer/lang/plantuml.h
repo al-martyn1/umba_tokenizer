@@ -269,8 +269,8 @@ typename TokenizerBuilder::tokenizer_type makeTokenizerPlantUml(TokenizerBuilder
                                                                               {
                                                                                   if (idx!=1)
                                                                                       return true;
-                                                                                  auto identifierData = std::get<typename tokenizer_type::IdentifierData>(parsedData);
-                                                                                  string_type identifierStr = typename tokenizer_type::string_type(identifierData.data);
+                                                                                  auto identifierData = std::get<typename tokenizer_type::IdentifierDataHolder>(parsedData);
+                                                                                  string_type identifierStr = typename tokenizer_type::string_type(identifierData.pData->value);
                                                                                   if (umba::string_plus::make_string<std::string>(identifierStr)=="H")
                                                                                       return true;
                                                                                   return false;
@@ -294,8 +294,8 @@ typename TokenizerBuilder::tokenizer_type makeTokenizerPlantUml(TokenizerBuilder
                                                                               {
                                                                                   if (idx!=1)
                                                                                       return true;
-                                                                                  auto identifierData = std::get<typename tokenizer_type::IdentifierData>(parsedData);
-                                                                                  string_type identifierStr = typename tokenizer_type::string_type(identifierData.data);
+                                                                                  auto identifierData = std::get<typename tokenizer_type::IdentifierDataHolder>(parsedData);
+                                                                                  string_type identifierStr = typename tokenizer_type::string_type(identifierData.pData->value);
                                                                                   if (umba::string_plus::make_string<std::string>(identifierStr)=="H")
                                                                                       return true;
                                                                                   return false;
