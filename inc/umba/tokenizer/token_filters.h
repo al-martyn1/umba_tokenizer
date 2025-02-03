@@ -551,10 +551,10 @@ public:
             payloadData.pData->hasSuffix      = true;
             payloadData.pData->suffixStartPos = suffixStartIter; // .getOffsetFromStart();
             // !!! Зачем я тут копию делаю?
-            // token_parsed_data_type payloadDataCopy = payloadData;
+            token_parsed_data_type payloadDataCopy = payloadData;
             return this->callNextTokenHandler( tokenizer, prevTokenInfo.lineStartFlag, prevTokenInfo.payloadToken
                                          , literalStartIter, literalEndIter
-                                         , payloadData // Copy
+                                         , payloadDataCopy
                                          , msg
                                          );
         };
@@ -566,16 +566,19 @@ public:
         {
             if (prevTokenInfo.payloadToken&UMBA_TOKENIZER_TOKEN_FLOAT_FLAG)
             {
-                res = updatePayloadDataAndCallNextHandler(std::get<typename TokenizerType::FloatNumericLiteralDataHolder>(prevTokenInfo.parsedData));
+                auto tmp = std::get<typename TokenizerType::FloatNumericLiteralDataHolder>(prevTokenInfo.parsedData);
+                res = updatePayloadDataAndCallNextHandler(tmp);
             }
             else
             {
-                res = updatePayloadDataAndCallNextHandler(std::get<typename TokenizerType::IntegerNumericLiteralDataHolder>(prevTokenInfo.parsedData));
+                auto tmp = std::get<typename TokenizerType::IntegerNumericLiteralDataHolder>(prevTokenInfo.parsedData);
+                res = updatePayloadDataAndCallNextHandler(tmp);
             }
         }
         else if (isStringLiteral(prevTokenInfo.payloadToken))
         {
-            res = updatePayloadDataAndCallNextHandler(std::get<typename TokenizerType::StringLiteralDataHolder>(prevTokenInfo.parsedData));
+            auto tmp = std::get<typename TokenizerType::StringLiteralDataHolder>(prevTokenInfo.parsedData);
+            res = updatePayloadDataAndCallNextHandler(tmp);
         }
         else
         {

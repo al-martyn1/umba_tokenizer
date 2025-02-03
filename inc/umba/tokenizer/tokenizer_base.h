@@ -195,7 +195,7 @@ public: // depending types
 
         StringType asString() const
         {
-            return StringType(data);
+            return StringType(value);
         }
 
     }; // struct CommentData
@@ -211,7 +211,7 @@ public: // depending types
 
         StringType asString() const
         {
-            return StringType(data);
+            return StringType(value);
         }
 
     }; // struct StringLiteralData
@@ -223,7 +223,7 @@ public: // depending types
 
         StringType asString() const
         {
-            return StringType(data);
+            return StringType(value);
         }
 
     }; // struct IdentifierData
@@ -267,14 +267,16 @@ public: // depending types
     //#include "umba/packpop.h"
 
     //------------------------------
-    #define UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(DataType)      \
-                struct DataType##Holder                            \
-                {                                                  \
-                    std::shared_ptr<DataType>   pData;             \
-                                                                   \
-                    UMBA_RULE_OF_FIVE_DEFAULT(DataType##Holder);   \
-                    /* explicit */ DataType##Holder(DataType &&d)  \
-                    : pData(std::make_shared<DataType>(d)) {}      \
+    #define UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(DataType)           \
+                struct DataType##Holder                                 \
+                {                                                       \
+                    std::shared_ptr<DataType>   pData;                  \
+                                                                        \
+                    UMBA_RULE_OF_FIVE_DEFAULT(DataType##Holder);        \
+                    /* explicit */ DataType##Holder(DataType &&d)       \
+                    : pData(std::make_shared<DataType>(d)) {}           \
+                    /* explicit */ DataType##Holder(const DataType &d)  \
+                    : pData(std::make_shared<DataType>(d)) {}           \
                 }
 
     UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(CommentData              );
