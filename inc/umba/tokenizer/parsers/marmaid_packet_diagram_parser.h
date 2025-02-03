@@ -215,11 +215,24 @@ public:
         return false;
     }
 
+    bool expectedReachedMsg(umba::tokenizer::payload_type tkExpected1, umba::tokenizer::payload_type tkExpected2, umba::tokenizer::payload_type tkReached, const std::string &msg) const
+    {
+        LOG_ERR << msg << ". Expected " << getTokenIdStr(tkExpected1) << " or " << getTokenIdStr(tkExpected2) << ", but got " << getTokenIdStr(tkReached) << "\n";
+        return false;
+    }
+
     bool checkExactTokenType(umba::tokenizer::payload_type tkExpected, umba::tokenizer::payload_type tkReached, const std::string &msg) const
     {
         if (tkExpected==tkReached)
             return true;
         return expectedReachedMsg(tkExpected, tkReached, msg);
+    }
+
+    bool checkExactTokenType(umba::tokenizer::payload_type tkExpected1, umba::tokenizer::payload_type tkExpected2, umba::tokenizer::payload_type tkReached, const std::string &msg) const
+    {
+        if (tkExpected1==tkReached || tkExpected2==tkReached)
+            return true;
+        return expectedReachedMsg(tkExpected1, tkExpected2, tkReached, msg);
     }
 
 
@@ -233,6 +246,9 @@ public:
             const TokenInfoType *pTokenInfo = BaseClass::waitForSignificantToken(&tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
             if (!checkNotNul(pTokenInfo))
                 return false;
+
+            if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_LINEFEED)
+                continue;
 
             if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
                 return true; // normal stop
@@ -266,7 +282,8 @@ public:
                         return expectedReachedMsg(UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, pTokenInfo->tokenType, "invalid range");
 
                     pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
-                    auto numericLiteralData = std::get<typename tokenizer_type::IntegerNumericLiteralDataHolder>(*pParsedData);
+                    // auto 
+                    numericLiteralData = std::get<typename tokenizer_type::IntegerNumericLiteralDataHolder>(*pParsedData);
                     if (numericLiteralData.pData->fOverflow)
                     {
                         LOG_ERR << "integer oveflow\n";
@@ -352,7 +369,7 @@ public:
             if (!checkNotNul(pTokenInfo))
                 return false;
 
-            if (!checkExactTokenType(UMBA_TOKENIZER_TOKEN_LINEFEED, pTokenInfo->tokenType, "invalid record definition"))
+            if (!checkExactTokenType(UMBA_TOKENIZER_TOKEN_LINEFEED, UMBA_TOKENIZER_TOKEN_CTRL_FIN, pTokenInfo->tokenType, "invalid record definition"))
                 return false;
 
             diagramData.emplace_back(item);

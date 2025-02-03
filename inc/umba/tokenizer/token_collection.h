@@ -470,7 +470,8 @@ public:
     , m_tokenParsedDataCollectionList()
     , m_log(log)
     , m_text(text)
-    , m_inputIt   (iterator_type(m_text.data(), m_text.size()/*, fileId*/))
+    //, m_inputIt   (iterator_type(m_text.data(), m_text.size()/*, std::size_t(fileId)*/))
+    , m_inputIt(m_text.data(), m_text.size(), std::size_t(fileId))
     , m_inputEndIt(iterator_type()) // !!! Надо наверное что-то придумать с итератором конца. Или не надо?
     //, m_tokenizer(tknConfigurator(initTokenizerHandlers(std::move(tkn))))
     , m_tokenizer(std::move(tknConfigurator(std::move(initTokenizerHandlers(std::move(tkn))))))
