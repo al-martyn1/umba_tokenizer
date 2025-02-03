@@ -464,6 +464,7 @@ public:
                             , shared_log_type log
                             , const string_type &text
                             , file_id_type fileId=file_id_type(-1)
+                            , std::size_t lineNumber = 0
                             )
     : m_tokenCollectionList()
     , m_tokenParsedDataCollectionList()
@@ -475,12 +476,23 @@ public:
     , m_tokenizer(std::move(tknConfigurator(std::move(initTokenizerHandlers(std::move(tkn))))))
     , m_fileId(fileId)
     {
+        m_inputIt.setLineNumber(lineNumber);
+    }
+
+    void setLineNumber(lineNumber)
+    {
+        m_inputIt.setLineNumber(lineNumber);
     }
 
     void setFileId(file_id_type fileId)
     {
         m_fileId = fileId;
         m_inputIt.setFileId(fileId);
+    }
+
+    file_id_type getFileId() const
+    {
+        return m_fileId;
     }
 
 
@@ -547,12 +559,20 @@ public:
 
         UMBA_ASSERT(m_fileId!=file_id_type(-1));
 
-        TextPositionInfo tpi;
-        tpi.lineOffset   = ptki->textPosition.lineOffset  ;
-        tpi.symbolOffset = ptki->textPosition.symbolOffset;
-        tpi.lineNumber   = ptki->textPosition.lineNumber  ;
-        tpi.lineLen      = ptki->textPosition.lineLen     ;
-        tpi.fileId       = m_fileId;
+        TextPositionInfo tpi = ptki->getPositionInfo();
+        tpi.fileId = m_fileId;
+
+        // tpi.lineOffset   = ptki->textPosition.lineOffset  ;
+        // tpi.symbolOffset = ptki->textPosition.symbolOffset;
+        // tpi.lineNumber   = ptki->textPosition.lineNumber  ;
+        // tpi.lineLen      = ptki->textPosition.lineLen     ;
+        // tpi.fileId       = m_fileId;
+
+    // small_size_t           tokenLineNumber;
+    // std::size_t            tokenOffset ; // От начала файла
+    // super_small_size_t     textLen     ; // Токены не могут быть длиной больше 64К char'ов - это и так овердофига
+    // PayloadType            tokenType   ;
+    // bool                   bLineStart  ;
 
         return tpi;
     }

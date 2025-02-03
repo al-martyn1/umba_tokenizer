@@ -5,6 +5,8 @@
 //
 #include "umba/the.h"
 
+//
+#include <memory>
 
 //----------------------------------------------------------------------------
 // umba::tokenizer::
@@ -22,10 +24,12 @@ class ParserBase
 
 public: // types & ctors
 
+    using tokenizer_type           = TokenizerType;
     using TokenCollectionType      = TokenCollection<TokenizerType>;
     using TokenCollectionItemType  = typename TokenCollectionType::TokenCollectionItemType;
     using TokenInfoType            = TokenCollectionItemType;
     using TokenPosType             = typename TokenCollectionType::token_pos_type;
+    using token_parsed_data_type   = typename tokenizer_type::token_parsed_data_type;
 
 
     UMBA_RULE_OF_FIVE_COPY_DELETE(ParserBase);
@@ -45,24 +49,40 @@ public: // types & ctors
     // }
 
     explicit
-    ParserBase(TokenCollectionType tc)
-    : m_tokens(std::move(tc))
+    ParserBase(std::shared_ptr<TokenCollectionType> tc)
+    : m_pTokens(tc)
     {
     }
 
-    std::size_t getNumFetchedTokens() const       { return m_tokens.getNumFetchedTokens(); }
-    std::size_t getNumberOfTokensTotal() const    { return m_tokens.getNumberOfTokensTotal(); }
-    std::size_t getNumberOfTokenDataTotal() const { return m_tokens.getNumberOfTokenDataTotal(); } 
-    std::size_t getBytesOfTokensTotal() const     { return m_tokens.getBytesOfTokensTotal(); } 
-    std::size_t getBytesOfTokenDataTotal() const  { return m_tokens.getBytesOfTokenDataTotal(); } 
+    std::size_t getNumFetchedTokens() const       { return m_pTokens->getNumFetchedTokens(); }
+    std::size_t getNumberOfTokensTotal() const    { return m_pTokens->getNumberOfTokensTotal(); }
+    std::size_t getNumberOfTokenDataTotal() const { return m_pTokens->getNumberOfTokenDataTotal(); } 
+    std::size_t getBytesOfTokensTotal() const     { return m_pTokens->getBytesOfTokensTotal(); } 
+    std::size_t getBytesOfTokenDataTotal() const  { return m_pTokens->getBytesOfTokenDataTotal(); } 
 
 
 public: // methods
 //protected: // methods
 
+    file_id_type getFileId() const
+    {
+        return m_pTokens->getFileId();
+    }
+
+    const token_parsed_data_type* getTokenParsedData(const TokenCollectionItemType *ptki) const
+    {
+        return m_pTokens->getTokenParsedData(ptki);
+    }
+
+    TextPositionInfo getTokenPositionInfo(const TokenCollectionItemType *ptki) const
+    {
+        return m_pTokens->getTokenPositionInfo(ptki);
+    }
+
+
     const TokenInfoType* waitForSignificantToken(TokenPosType *pTokenPos=0, ParserWaitForTokenFlags waitFlags=ParserWaitForTokenFlags::stopOnAny)
     {
-        const TokenInfoType* pTokenInfo = m_tokens.getToken(pTokenPos);
+        const TokenInfoType* pTokenInfo = m_pTokens->getToken(pTokenPos);
 
         const auto theFlags = TheFlags(waitFlags);
 
@@ -74,7 +94,7 @@ public: // methods
               && !theFlags.template oneOf<ParserWaitForTokenFlags::stopOnSpace>()
                )
             {
-                pTokenInfo = m_tokens.getToken(pTokenPos); // продолжаем поиск значащего токена
+                pTokenInfo = m_pTokens->getToken(pTokenPos); // продолжаем поиск значащего токена
                 continue;
             }
 
@@ -82,7 +102,7 @@ public: // methods
               && !theFlags.template oneOf<ParserWaitForTokenFlags::stopOnLinefeed>()
                )
             {
-                pTokenInfo = m_tokens.getToken(pTokenPos); // продолжаем поиск значащего токена
+                pTokenInfo = m_pTokens->getToken(pTokenPos); // продолжаем поиск значащего токена
                 continue;
             }
 
@@ -90,7 +110,7 @@ public: // methods
               && !theFlags.template oneOf<ParserWaitForTokenFlags::stopOnSingleLineComment>()
                )
             {
-                pTokenInfo = m_tokens.getToken(pTokenPos); // продолжаем поиск значащего токена
+                pTokenInfo = m_pTokens->getToken(pTokenPos); // продолжаем поиск значащего токена
                 continue;
             }
 
@@ -98,7 +118,7 @@ public: // methods
               && !theFlags.template oneOf<ParserWaitForTokenFlags::stopOnMultiLineComment>()
                )
             {
-                pTokenInfo = m_tokens.getToken(pTokenPos); // продолжаем поиск значащего токена
+                pTokenInfo = m_pTokens->getToken(pTokenPos); // продолжаем поиск значащего токена
                 continue;
             }
 
@@ -116,7 +136,7 @@ public: // methods
 
 protected: // fields
 
-    TokenCollectionType   m_tokens;
+    std::shared_ptr<TokenCollectionType>  m_pTokens;
 
 
 }; // class ParserBase
