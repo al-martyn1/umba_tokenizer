@@ -479,7 +479,7 @@ public:
         m_inputIt.setLineNumber(lineNumber);
     }
 
-    void setLineNumber(lineNumber)
+    void setLineNumber(std::size_t lineNumber)
     {
         m_inputIt.setLineNumber(lineNumber);
     }

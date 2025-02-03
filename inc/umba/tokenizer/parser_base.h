@@ -30,6 +30,7 @@ public: // types & ctors
     using TokenInfoType            = TokenCollectionItemType;
     using TokenPosType             = typename TokenCollectionType::token_pos_type;
     using token_parsed_data_type   = typename tokenizer_type::token_parsed_data_type;
+    using file_id_type             = umba::TextPositionInfo::file_id_type;
 
 
     UMBA_RULE_OF_FIVE_COPY_DELETE(ParserBase);

@@ -238,7 +238,7 @@ public:
                 return true; // normal stop
 
             MarmaidPacketDiagramItemType item;
-            item->pTokenInfo = pTokenInfo;
+            item.pTokenInfo = pTokenInfo;
 
             if (isAnyNumber(pTokenInfo->tokenType))
             {
