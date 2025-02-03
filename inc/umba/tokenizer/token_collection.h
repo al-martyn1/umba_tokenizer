@@ -254,7 +254,7 @@ template< typename PayloadType
 using TokenCollectionList = std::vector< TokenCollectionItem<PayloadType, CharType /* , TokenParsedDataType, InputIteratorType */ > >;
 
 template< typename TokenParsedDataType >
-using TokenParsedDataCollectionList = std::vector<TokenParsedDataType>;
+using TokenParsedDataCollectionList = std::vector<TokenParsedDataType>; // TODO: !!! Надо переделать на unordered_map, чтобы можно было удалять элементы
 
 
 
@@ -630,9 +630,23 @@ public:
         return getNumberOfTokensTotal()*sizeof(typename token_collection_list_type::value_type);
     }
 
+    // selfSize()
     std::size_t getBytesOfTokenDataTotal() const
     {
-        return getNumberOfTokenDataTotal()*sizeof(typename token_parsed_data_collection_list_type::value_type);
+        std::size_t totalSize = 0;
+        for(auto &&v: m_tokenParsedDataCollectionList)
+        {
+            // See Перегрузка лямбды - https://en.cppreference.com/w/cpp/utility/variant/visit
+            std::visit( [&](const auto &v)
+                        {
+                            totalSize += v.selfSize();
+                        }
+                        , v
+                      );
+        }
+
+        return totalSize;
+        //return getNumberOfTokenDataTotal()*sizeof(typename token_parsed_data_collection_list_type::value_type);
     }
 
 

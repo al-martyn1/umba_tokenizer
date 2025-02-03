@@ -184,7 +184,9 @@ public: // depending types
     // FloatNumericLiteralData
     //------------------------------
     struct EmptyData
-    {};
+    {
+        std::size_t selfSize() const { return sizeof(*this); }
+    };
 
     //------------------------------
 
@@ -277,6 +279,8 @@ public: // depending types
                     : pData(std::make_shared<DataType>(d)) {}           \
                     /* explicit */ DataType##Holder(const DataType &d)  \
                     : pData(std::make_shared<DataType>(d)) {}           \
+                                                                        \
+                    std::size_t selfSize() const { return sizeof(*this) + sizeof(DataType); } \
                 }
 
     UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(CommentData              );
