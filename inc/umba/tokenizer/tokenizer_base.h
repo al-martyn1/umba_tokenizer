@@ -517,6 +517,25 @@ public: // methods
         return cls;
     }
 
+    iterator_type findSameCharsIter(iterator_type b, iterator_type e) const
+    {
+        if (b==e)
+            return b;
+
+        auto ch  = *b;
+        auto cls = getCharClass(ch);
+        for(++b; b!=e; ++b)
+        {
+            ch  = *b;
+            auto cls2 = getCharClass(ch);
+            if (cls!=cls2)
+                break;
+        }
+
+        return b;
+    }
+    //umba::tokenizer::CharClass getCharClass(CharType ch) const
+
     // Конец многострочного коментария ищется тупо как текст, поэтому он не входит в operatorsTrie (в отличие от начала)
     void setMultiLineCommentEndString(const StringType s) { multiLineCommentEndStr = s; }
 
@@ -2014,7 +2033,11 @@ protected: // methods - хандлеры из "грязного" проекта,
 
     bool unexpectedHandlerLambda(InputIteratorType it, InputIteratorType itEnd, const char* srcFile, int srcLine) const
     {
-        return static_cast<const TBase*>(this)->hadleUnexpected(it, itEnd, srcFile, srcLine);
+        //return static_cast<const TBase*>(this)->hadleUnexpected(it, findSameCharsIter(it, itEnd), srcFile, srcLine);
+        auto it2 = it;
+        if (it2!=itEnd)
+            ++it2;
+        return static_cast<const TBase*>(this)->hadleUnexpected(it, it2, srcFile, srcLine);
     }
 
     // Дополнительное сообщение о неизвестном операторе, перед вызовом unexpectedHandlerLambda - типа чуть чуть улучшили диагностику
