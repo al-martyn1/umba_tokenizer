@@ -13,9 +13,10 @@
 //
 #include <unordered_map>
 
-// umba::tokenizer::
+// umba::tokenizer::marmaid::
 namespace umba {
 namespace tokenizer {
+namespace marmaid {
 
 
 template< typename CharType                     //!< Input chars type
@@ -29,7 +30,7 @@ template< typename CharType                     //!< Input chars type
         , typename TokenizerType       = umba::tokenizer::Tokenizer< CharType, UserDataType, CharClassTableType, TrieVectorType, StringType, MessagesStringType, InputIteratorType >
         >
 umba::tokenizer::TokenizerBuilder<CharType, UserDataType, CharClassTableType, TrieVectorType, StringType, MessagesStringType, InputIteratorType, InputIteratorTraits, TokenizerType>
-makeTokenizerBuilderMarmaidPacketDiagram()
+makeTokenizerBuilderPacketDiagram()
 {
     using CppStringLiteralParser     = CppEscapedSimpleQuotedStringLiteralParser<CharType, MessagesStringType, InputIteratorType, InputIteratorTraits>;
     using AngleBracketsLiteralParser = SimpleQuotedStringLiteralParser<CharType, MessagesStringType, InputIteratorType, InputIteratorTraits>;
@@ -76,7 +77,7 @@ makeTokenizerBuilderMarmaidPacketDiagram()
 }
 
 
-struct MarmaidPacketDiagramTokenizerConfigurator
+struct PacketDiagramTokenizerConfigurator
 {
     template<typename TokenizerType>
     TokenizerType operator()(TokenizerType tokenizer)
@@ -105,7 +106,10 @@ struct MarmaidPacketDiagramTokenizerConfigurator
                                                                                     , {"uint16"          , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT16  }
                                                                                     , {"uint32"          , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT32  }
                                                                                     , {"uint64"          , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64  }
-    
+
+                                                                                    , {"packet-beta"     , MARMAID_TOKEN_DIRECTIVE_PACKET_BETA       }
+                                                                                    , {"title"           , MARMAID_TOKEN_DIRECTIVE_TITLE             }
+
                                                                                     //, {""          ,        }
                                                                                     }
                                                                                   );
@@ -118,16 +122,16 @@ struct MarmaidPacketDiagramTokenizerConfigurator
 
 template<typename TokenizerBuilder, typename TokenHandler>
 //typename TokenizerBuilder::tokenizer_type makeTokenizerCpp(const TokenizerBuilder &builder, TokenHandler tokenHandler, bool suffixGluing=true, bool preprocessorFilter=true)
-typename TokenizerBuilder::tokenizer_type makeTokenizerMarmaidPacketDiagram(TokenizerBuilder builder, TokenHandler tokenHandler, bool suffixGluing=true, bool preprocessorFilter=true)
+typename TokenizerBuilder::tokenizer_type makeTokenizerPacketDiagram(TokenizerBuilder builder, TokenHandler tokenHandler, bool suffixGluing=true, bool preprocessorFilter=true)
 {
     using TokenizerType = typename TokenizerBuilder::tokenizer_type;
     auto tokenizer = builder.makeTokenizer();
     tokenizer.tokenHandler = tokenHandler;
 
-    return MarmaidPacketDiagramTokenizerConfigurator()(tokenizer);
+    return PacketDiagramTokenizerConfigurator()(tokenizer);
 }
 
-
+} // namespace marmaid
 } // namespace tokenizer
 } // namespace umba
 

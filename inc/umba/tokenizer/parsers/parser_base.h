@@ -1,7 +1,9 @@
 #pragma once
 
-#include "token_collection.h"
-#include "enums.h"
+#include "umba/warnings/push_disable_rel_inc_contains_dbldot.h"
+#include "../token_collection.h"
+#include "../enums.h"
+#include "umba/warnings/pop.h"
 //
 #include "umba/the.h"
 #include "umba/format_message.h"
@@ -82,6 +84,22 @@ public: // methods
         return m_pTokens->getTokenPositionInfo(ptki);
     }
 
+    void logSimpleMessage(const TokenCollectionItemType *pTokenInfo, const std::string &msgId, const std::string &msg) const
+    {
+        TextPositionInfo textPosInfo = getTokenPositionInfo(pTokenInfo);
+        std::string erroneousLineText = m_pTokens->getTokenTextLine(textPosInfo);
+
+        m_pTokens->getLog()->logErrorEvent( umba::tokenizer::log::ParserErrorEventType::customError
+                                          , textPosInfo
+                                          , pTokenInfo->tokenType
+                                          , std::string() // unexpectedTokenValue  // erroneousValue
+                                          , erroneousLineText // std::string() // erroneousLineText - пока не ищем
+                                          , msgId, msg
+                                          , 0, 0
+                                          );
+    }
+
+
     template<typename KindStringGetter>
     void logUnexpected( const TokenCollectionItemType *pTokenInfo
                       , umba::tokenizer::payload_type payloadExpected
@@ -91,6 +109,7 @@ public: // methods
     {
         logUnexpected(pTokenInfo, {payloadExpected}, prefixMsg, kindStringGetter);
     }
+
 
     template<typename KindStringGetter>
     void logUnexpected( const TokenCollectionItemType *pTokenInfo
@@ -115,17 +134,17 @@ public: // methods
 
             if (expectedFormatStr.empty())
             {
-                expectedFormatStr = "$(" + curName + ")";
+                expectedFormatStr = "'$(" + curName + ")'";
             }
             else
             {
                 if (plIdx!=payloadExpectedList.size())
                 {
-                    expectedFormatStr += ", $(" + curName + ")";
+                    expectedFormatStr += ", '$(" + curName + ")'";
                 }
                 else
                 {
-                    expectedFormatStr += " or $(" + curName + ")";
+                    expectedFormatStr += " or '$(" + curName + ")'";
                 }
             }
 
@@ -136,13 +155,17 @@ public: // methods
 
 
         std::string msg = prefixMsg.empty()
-                        ? "expected " + expectedFormatStr + ", but got $(UnexpectedTokenKind)" 
-                        : prefixMsg + ". Expected " + expectedFormatStr + ", but got $(UnexpectedTokenKind)"
+                        ? "expected " + expectedFormatStr + ", but got '$(UnexpectedTokenKind)'" 
+                        : prefixMsg + ". Expected " + expectedFormatStr + ", 'but got $(UnexpectedTokenKind)'"
                         ;
 
         std::string unexpectedTokenValue;
 
-        if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_IDENTIFIER)
+        // Ключевые слова получаются из идентификаторов, просто обретают новый ID
+        // Полезная нагрузка у них остаётся того же типа
+        if ( pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_IDENTIFIER
+          || (pTokenInfo->tokenType>=UMBA_TOKENIZER_TOKEN_KEYWORD_SET1_FIRST && pTokenInfo->tokenType<=UMBA_TOKENIZER_TOKEN_KEYWORD_SET8_LAST)
+           )
         {
             const token_parsed_data_type* pParsedData = getTokenParsedData(pTokenInfo);
             auto identifierData = std::get<typename tokenizer_type::IdentifierDataHolder>(*pParsedData);
@@ -154,25 +177,21 @@ public: // methods
             msg += " ('$(Value)')";
         }
 
-        msg += ".";
+        // msg += "";
 
         TextPositionInfo textPosInfo = getTokenPositionInfo(pTokenInfo);
-
-        const auto &text = m_pTokens->getText();
-
-        auto posIt = umba::iterator::TextPositionCountingIterator<char>(text.data(), text.size(), textPosInfo.fileId, textPosInfo.lineOffset+textPosInfo.symbolOffset);
-        std::string erroneousLineText = umba::iterator::makeString(posIt.getLineStartIterator(), posIt.getLineEndIterator());
+        std::string erroneousLineText = m_pTokens->getTokenTextLine(textPosInfo);
 
         m_pTokens->getLog()->formatArgs = formatMessage.values();
 
         m_pTokens->getLog()->logErrorEvent( umba::tokenizer::log::ParserErrorEventType::customError
-                                        , textPosInfo
-                                        , pTokenInfo->tokenType
-                                        , unexpectedTokenValue  // erroneousValue
-                                        , erroneousLineText // std::string() // erroneousLineText - пока не ищем
-                                        , msgId, msg
-                                        , 0, 0
-                                        );
+                                          , textPosInfo
+                                          , pTokenInfo->tokenType
+                                          , unexpectedTokenValue  // erroneousValue
+                                          , erroneousLineText // std::string() // erroneousLineText - пока не ищем
+                                          , msgId, msg
+                                          , 0, 0
+                                          );
 
         // if (it!=itEnd)
         // {

@@ -25,7 +25,7 @@ struct KebabCaseComposingFilter : FilterBase<TokenizerType, VectorType>
     using token_buffer_vector_type  = typename TBase::token_buffer_vector_type;
     // using string_type               = typename TokenizerType::string_type;
 
-    string_type stringLiteralValueCollector;
+    string_type identifierValueCollector;
 
     // First argument is index in sequence
     UMBA_RULE_OF_FIVE(KebabCaseComposingFilter, default, default, default, default, default);
@@ -62,15 +62,15 @@ public:
         //TokenInfo<KebabCaseComposingFilter> minusTokenInfo;
         typename TBase::token_buffer_vector_type::value_type minusTokenInfo;
         bool lastMinus = false;
-        if (this->tokenBuffer.back().payloadToken==UMBA_TOKENIZER_TOKEN_IDENTIFIER)
+        if (this->tokenBuffer.back().payloadToken==UMBA_TOKENIZER_TOKEN_OPERATOR_SUBTRACTION)
         {
-            lastMinus = false;
+            lastMinus = true;
             minusTokenInfo = this->tokenBuffer.back();
             this->tokenBuffer.pop_back();
         }
 
 
-        stringLiteralValueCollector.clear();
+        identifierValueCollector.clear();
 
         //typename TokenizerType::StringLiteralData collectedStringLiteralData;
         typename token_buffer_vector_type::const_iterator it = this->tokenBuffer.begin();
@@ -80,15 +80,15 @@ public:
             if (it->payloadToken==UMBA_TOKENIZER_TOKEN_IDENTIFIER)
             {
                 auto stringLiteralData = std::get<typename TokenizerType::IdentifierDataHolder>(it->parsedData);
-                stringLiteralValueCollector.append(stringLiteralData.pData->asString());
+                identifierValueCollector.append(stringLiteralData.pData->asString());
             }
             else
             {
-                stringLiteralValueCollector.append(1,'-');
+                identifierValueCollector.append(1,'-');
             }
         }
 
-    //makeStringView(stringLiteralValueCollector.str())
+    //makeStringView(identifierValueCollector.str())
 
 
         //auto 
@@ -98,7 +98,7 @@ public:
         bool lineStartFlag = this->tokenBuffer.front().lineStartFlag;
         this->clearTokenBuffer();
         typename TokenizerType::StringLiteralData collectedStringLiteralData;
-        this->tokenBufferPushBack(lineStartFlag, UMBA_TOKENIZER_TOKEN_IDENTIFIER, b, e, typename TokenizerType::StringLiteralDataHolder(typename TokenizerType::StringLiteralData{stringLiteralValueCollector}));
+        this->tokenBufferPushBack(lineStartFlag, UMBA_TOKENIZER_TOKEN_IDENTIFIER, b, e, typename TokenizerType::IdentifierDataHolder(typename TokenizerType::IdentifierData{identifierValueCollector}));
 
         if (!this->flushTokenBuffer(tokenizer, msg, b, e)) // сбрасываем буферизированное (с очисткой буфера)
             return false;

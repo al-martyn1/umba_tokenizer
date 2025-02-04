@@ -527,7 +527,23 @@ public:
 
     const char_type* getTextPointer(const TokenCollectionItemType *ptki) const
     {
+        UMBA_ASSERT(ptki);
         return m_text.data()+ptki->tokenOffset;
+    }
+
+    std::string getTokenTextLine(const TokenCollectionItemType *ptki) const
+    {
+        UMBA_ASSERT(ptki);
+
+        // Самому лень считать, а в итераторе уже сделан поиск начала строки
+        auto posIt = umba::iterator::TextPositionCountingIterator<char>(m_text.data(), m_text.size(), m_fileId, ptki->tokenOffset);
+        return umba::iterator::makeString(posIt.getLineStartIterator(), posIt.getLineEndIterator());
+    }
+
+    std::string getTokenTextLine(const TextPositionInfo &textPosInfo) const
+    {
+        auto posIt = umba::iterator::TextPositionCountingIterator<char>(m_text.data(), m_text.size(), textPosInfo.fileId, textPosInfo.lineOffset+textPosInfo.symbolOffset);
+        return umba::iterator::makeString(posIt.getLineStartIterator(), posIt.getLineEndIterator());
     }
 
     bool getLastTokenizeResult() const
@@ -542,9 +558,6 @@ public:
 
     const token_parsed_data_type* getTokenParsedData(const TokenCollectionItemType *ptki) const
     {
-        // if (!ptki)
-        //      return 0; // или assert?
-
         UMBA_ASSERT(ptki);
 
         std::size_t parsedDataIndex = ptki->parsedDataIndex;
@@ -554,18 +567,6 @@ public:
         return &m_tokenParsedDataCollectionList[parsedDataIndex];
     }
 
-    #if 0
-    const token_parsed_data_type* getTokenParsedData() const
-    {
-        if (m_nextTokenPos>=m_tokenCollectionList.size())
-            return 0; // к невалидному индексу данные не возвращаем - сначала надо получить токен инфу - вычитать по необходимости входной поток
-                      // TODO: !!! может тут ассерт кинуть?
-
-        return getTokenParsedData(&m_tokenCollectionList[m_nextTokenPos]);
-    }
-    #endif
-
-
     TextPositionInfo getTokenPositionInfo(const TokenCollectionItemType *ptki) const
     {
         UMBA_ASSERT(ptki);
@@ -573,19 +574,6 @@ public:
         UMBA_ASSERT(m_fileId!=file_id_type(-1));
 
         TextPositionInfo tpi = ptki->getPositionInfo(m_text, m_fileId);
-        // tpi.fileId = m_fileId;
-
-        // tpi.lineOffset   = ptki->textPosition.lineOffset  ;
-        // tpi.symbolOffset = ptki->textPosition.symbolOffset;
-        // tpi.lineNumber   = ptki->textPosition.lineNumber  ;
-        // tpi.lineLen      = ptki->textPosition.lineLen     ;
-        // tpi.fileId       = m_fileId;
-
-    // small_size_t           tokenLineNumber;
-    // std::size_t            tokenOffset ; // От начала файла
-    // super_small_size_t     textLen     ; // Токены не могут быть длиной больше 64К char'ов - это и так овердофига
-    // PayloadType            tokenType   ;
-    // bool                   bLineStart  ;
 
         return tpi;
     }
