@@ -59,7 +59,8 @@ public:
         UMBA_ASSERT(!this->tokenBuffer.empty()); // точно ли ы буфере что-то есть?
         UMBA_ASSERT(this->tokenBuffer.front().payloadToken==UMBA_TOKENIZER_TOKEN_IDENTIFIER); // Начало kebab идентификатора должны быть идентификаторами
 
-        TokenInfo minusTokenInfo;
+        //TokenInfo<KebabCaseComposingFilter> minusTokenInfo;
+        typename TBase::token_buffer_vector_type::value_type minusTokenInfo;
         bool lastMinus = false;
         if (this->tokenBuffer.back().payloadToken==UMBA_TOKENIZER_TOKEN_IDENTIFIER)
         {

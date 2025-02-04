@@ -525,6 +525,11 @@ public:
     string_type& getText() { return m_text; }
     const string_type& getText() const { return m_text; }
 
+    const char_type* getTextPointer(const TokenCollectionItemType *ptki) const
+    {
+        return m_text.data()+ptki->tokenOffset;
+    }
+
     bool getLastTokenizeResult() const
     {
         return m_lastTokenizeResult;

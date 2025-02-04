@@ -18,6 +18,7 @@
 
 //
 #include <stdexcept>
+#include <initializer_list>
 
 
 // umba::tokenizer::
@@ -128,15 +129,16 @@ public:
     {
         switch(tk)
         {
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR  : return "char"  ;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8  : return "int8"  ;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT16 : return "int16" ;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT32 : return "int32" ;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT64 : return "int64" ;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8 : return "uint8" ;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT16: return "uint16";
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT32: return "uint32";
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64: return "uint64";
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR  : return "type"; // return "char"  ; 
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8  : return "type"; // return "int8"  ; 
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT16 : return "type"; // return "int16" ; 
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT32 : return "type"; // return "int32" ; 
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT64 : return "type"; // return "int64" ; 
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8 : return "type"; // return "uint8" ; 
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT16: return "type"; // return "uint16"; 
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT32: return "type"; // return "uint32"; 
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64: return "type"; // return "uint64"; 
+
             case UMBA_TOKENIZER_TOKEN_IDENTIFIER         : return "identifier";
             case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_BIN: return "number";
             //case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_BIN: return "number";
@@ -211,33 +213,21 @@ public:
 
 
 
-    bool expectedReachedMsg(const TokenInfoType *pTokenInfo, umba::tokenizer::payload_type tkExpected, umba::tokenizer::payload_type tkReached, const std::string &msg=std::string()) const
+    bool expectedReachedMsg(const TokenInfoType *pTokenInfo, std::initializer_list<umba::tokenizer::payload_type> payloadExpectedList, const std::string &msg=std::string()) const
     {
-        UMBA_USED(tkReached);
-        BaseClass::logUnexpected( pTokenInfo, tkExpected, msg, [&](umba::tokenizer::payload_type tk) { return getTokenIdStr(tk); } );
+        BaseClass::logUnexpected( pTokenInfo, payloadExpectedList, msg, [&](umba::tokenizer::payload_type tk) { return getTokenIdStr(tk); } );
         // LOG_ERR << msg << ". Expected " << getTokenIdStr(tkExpected) << ", but got " << getTokenIdStr(tkReached) << "\n";
         return false;
     }
 
-    bool expectedReachedMsg(const TokenInfoType *pTokenInfo, umba::tokenizer::payload_type tkExpected1, umba::tokenizer::payload_type tkExpected2, umba::tokenizer::payload_type tkReached, const std::string &msg=std::string()) const
+    bool checkExactTokenType(const TokenInfoType *pTokenInfo, std::initializer_list<umba::tokenizer::payload_type> payloadExpectedList, const std::string &msg=std::string()) const
     {
-        UMBA_USED(pTokenInfo);
-        LOG_ERR << msg << ". Expected " << getTokenIdStr(tkExpected1) << " or " << getTokenIdStr(tkExpected2) << ", but got " << getTokenIdStr(tkReached) << "\n";
-        return false;
-    }
-
-    bool checkExactTokenType(const TokenInfoType *pTokenInfo, umba::tokenizer::payload_type tkExpected, umba::tokenizer::payload_type tkReached, const std::string &msg=std::string()) const
-    {
-        if (tkExpected==tkReached)
-            return true;
-        return expectedReachedMsg(pTokenInfo, tkExpected, tkReached, msg);
-    }
-
-    bool checkExactTokenType(const TokenInfoType *pTokenInfo, umba::tokenizer::payload_type tkExpected1, umba::tokenizer::payload_type tkExpected2, umba::tokenizer::payload_type tkReached, const std::string &msg=std::string()) const
-    {
-        if (tkExpected1==tkReached || tkExpected2==tkReached)
-            return true;
-        return expectedReachedMsg(pTokenInfo, tkExpected1, tkExpected2, tkReached, msg);
+        for(auto e : payloadExpectedList)
+        {
+            if (e==pTokenInfo->tokenType) // tkReached
+                return true;
+        }
+        return expectedReachedMsg(pTokenInfo, payloadExpectedList, msg);
     }
 
 
@@ -284,7 +274,7 @@ public:
                     if (!checkNotNul(pTokenInfo))
                         return false;
                     if (!isAnyNumber(pTokenInfo->tokenType))
-                        return expectedReachedMsg(pTokenInfo, UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, pTokenInfo->tokenType, "invalid range");
+                        return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, "invalid range");
 
                     pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
                     // auto 
@@ -299,7 +289,6 @@ public:
                     item.end       = std::uint64_t(numericLiteralData.pData->value);
 
                     pTokenInfo = BaseClass::waitForSignificantToken(&tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-                    
                 }
             }
 
@@ -317,7 +306,7 @@ public:
                     if (!checkNotNul(pTokenInfo))
                         return false;
                     if (!isAnyNumber(pTokenInfo->tokenType))
-                        return expectedReachedMsg(pTokenInfo, UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, pTokenInfo->tokenType, "invalid array size");
+                        return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, "invalid array size");
 
                     const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
                     auto numericLiteralData = std::get<typename tokenizer_type::IntegerNumericLiteralDataHolder>(*pParsedData);
@@ -334,7 +323,7 @@ public:
                         return false;
 
                     if (pTokenInfo->tokenType!=UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE)
-                        return expectedReachedMsg(pTokenInfo, UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE, pTokenInfo->tokenType, "invalid array size");
+                        return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE}, "invalid array size");
                 
                     pTokenInfo = BaseClass::waitForSignificantToken(&tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
 
@@ -348,12 +337,12 @@ public:
 
             else if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
             {
-                return true;
+                return false; // true;
             }
 
             else
             {
-                return expectedReachedMsg(pTokenInfo, UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, pTokenInfo->tokenType /* , std::string() */ );
+                return expectedReachedMsg(pTokenInfo, {MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR, UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC} /* , std::string() */ );
                 // LOG_ERR << "unexpected " << getTokenIdStr(pTokenInfo->tokenType) << "\n";
                 //return false;
             }
@@ -362,14 +351,14 @@ public:
             if (!checkNotNul(pTokenInfo))
                 return false;
 
-            if (!checkExactTokenType(pTokenInfo, UMBA_TOKENIZER_TOKEN_OPERATOR_TERNARY_ALTERNATIVE, pTokenInfo->tokenType, "invalid record definition"))
+            if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_OPERATOR_TERNARY_ALTERNATIVE}, "invalid record definition"))
                 return false;
 
             pTokenInfo = BaseClass::waitForSignificantToken(&tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
             if (!checkNotNul(pTokenInfo))
                 return false;
 
-            if (!checkExactTokenType(pTokenInfo, UMBA_TOKENIZER_TOKEN_STRING_LITERAL, pTokenInfo->tokenType, "invalid record definition"))
+            if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL}, "invalid record definition"))
                 return false;
 
             const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
@@ -380,7 +369,7 @@ public:
             if (!checkNotNul(pTokenInfo))
                 return false;
 
-            if (!checkExactTokenType(pTokenInfo, UMBA_TOKENIZER_TOKEN_LINEFEED, UMBA_TOKENIZER_TOKEN_CTRL_FIN, pTokenInfo->tokenType, "invalid record definition"))
+            if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_LINEFEED, UMBA_TOKENIZER_TOKEN_CTRL_FIN}, "invalid record definition"))
                 return false;
 
             diagramData.emplace_back(item);

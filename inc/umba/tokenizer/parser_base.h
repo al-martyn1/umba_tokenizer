@@ -8,6 +8,7 @@
 
 //
 #include <memory>
+#include <initializer_list>
 
 //----------------------------------------------------------------------------
 // umba::tokenizer::
@@ -81,7 +82,6 @@ public: // methods
         return m_pTokens->getTokenPositionInfo(ptki);
     }
 
-
     template<typename KindStringGetter>
     void logUnexpected( const TokenCollectionItemType *pTokenInfo
                       , umba::tokenizer::payload_type payloadExpected
@@ -89,13 +89,55 @@ public: // methods
                       , KindStringGetter kindStringGetter
                       ) const
     {
-        std::string expectedTokenKind   = kindStringGetter(payloadExpected);
+        logUnexpected(pTokenInfo, {payloadExpected}, prefixMsg, kindStringGetter);
+    }
+
+    template<typename KindStringGetter>
+    void logUnexpected( const TokenCollectionItemType *pTokenInfo
+                      , std::initializer_list<umba::tokenizer::payload_type> payloadExpectedList
+                      , const std::string &prefixMsg
+                      , KindStringGetter kindStringGetter
+                      ) const
+    {
+        //std::string expectedTokenKind   = kindStringGetter(payloadExpected);
         std::string unexpectedTokenKind = kindStringGetter(pTokenInfo->tokenType);
         std::string msgId = "unexpected-" + unexpectedTokenKind;
 
+        auto formatMessage = FormatMessage<std::string>();
+        formatMessage.arg("UnexpectedTokenKind", unexpectedTokenKind);
+
+        std::string expectedFormatStr;
+        std::size_t plIdx = 1;
+        for(auto e : payloadExpectedList)
+        {
+            std::string curName = "ExpectedTokenKind" + std::to_string(plIdx);
+            std::string curKind = kindStringGetter(e);
+
+            if (expectedFormatStr.empty())
+            {
+                expectedFormatStr = "$(" + curName + ")";
+            }
+            else
+            {
+                if (plIdx!=payloadExpectedList.size())
+                {
+                    expectedFormatStr += ", $(" + curName + ")";
+                }
+                else
+                {
+                    expectedFormatStr += " or $(" + curName + ")";
+                }
+            }
+
+            formatMessage.arg(curName, curKind);
+
+            ++plIdx;
+        }
+
+
         std::string msg = prefixMsg.empty()
-                        ? "expected $(ExpectedTokenKind), but got $(UnexpectedTokenKind)" 
-                        : prefixMsg + ". Expected $(ExpectedTokenKind), but got $(UnexpectedTokenKind)"
+                        ? "expected " + expectedFormatStr + ", but got $(UnexpectedTokenKind)" 
+                        : prefixMsg + ". Expected " + expectedFormatStr + ", but got $(UnexpectedTokenKind)"
                         ;
 
         std::string unexpectedTokenValue;
@@ -121,21 +163,7 @@ public: // methods
         auto posIt = umba::iterator::TextPositionCountingIterator<char>(text.data(), text.size(), textPosInfo.fileId, textPosInfo.lineOffset+textPosInfo.symbolOffset);
         std::string erroneousLineText = umba::iterator::makeString(posIt.getLineStartIterator(), posIt.getLineEndIterator());
 
-    // explicit TextPositionCountingIterator( const CharType* pData
-    //                                      , std::size_t dataSize
-    //                                      , std::size_t a_fileId=std::size_t(-1)
-    //                                      , std::size_t pos = 0
-    //                                      )
-
-    // umba_text_position_info_line_offset_type    lineOffset  ; //!< From data origin to line start
-    // umba_text_position_info_symbol_offset_type  symbolOffset; //!< From line start
-
-
-
-        m_pTokens->getLog()->formatArgs = FormatMessage<std::string>()
-                                        . arg("ExpectedTokenKind"  , expectedTokenKind)
-                                        . arg("UnexpectedTokenKind", unexpectedTokenKind)
-                                        . values();
+        m_pTokens->getLog()->formatArgs = formatMessage.values();
 
         m_pTokens->getLog()->logErrorEvent( umba::tokenizer::log::ParserErrorEventType::customError
                                         , textPosInfo
