@@ -193,11 +193,11 @@ public: // depending types
     // #include "umba/pushpack1.h"
     struct CommentData // Текст комента без обрамляющих символов
     {
-        std::basic_string_view<value_type>  value;
+        string_type  value;
 
         StringType asString() const
         {
-            return StringType(value);
+            return value;
         }
 
     }; // struct CommentData
@@ -205,7 +205,7 @@ public: // depending types
     //------------------------------
     struct StringLiteralData
     {
-        std::basic_string_view<value_type>  value;
+        string_type          value;
 
         iterator_type        suffixStartPos = {};
         bool                 hasSuffix      = false;
@@ -213,7 +213,7 @@ public: // depending types
 
         StringType asString() const
         {
-            return StringType(value);
+            return value;
         }
 
     }; // struct StringLiteralData
@@ -221,11 +221,11 @@ public: // depending types
     //------------------------------
     struct IdentifierData
     {
-        std::basic_string_view<value_type>  value;
+        string_type value;
 
         StringType asString() const
         {
-            return StringType(value);
+            return value;
         }
 
     }; // struct IdentifierData
@@ -1701,7 +1701,7 @@ public: // methods - методы собственно разбора
 
                 if (res==StringLiteralParsingResult::okStop || res==StringLiteralParsingResult::warnStop)
                 {
-                    if (!parsingStringLiteralHandlerLambda(literalTokenId, tokenStartIt, it+1, makeStringView(stringLiteralValueCollector.str()))) // выплюнули текущий литерал
+                    if (!parsingStringLiteralHandlerLambda(literalTokenId, tokenStartIt, it+1, stringLiteralValueCollector.str())) // выплюнули текущий литерал
                         return false;
                     st = TokenizerInternalState::stInitial;
                 }
@@ -1855,22 +1855,22 @@ protected:
 public:
 
     static
-    std::basic_string_view<value_type> makeStringView( const umba::iterator::TextPositionCountingIterator<CharType> b, const umba::iterator::TextPositionCountingIterator<CharType> &e)
+    string_type makeString( const umba::iterator::TextPositionCountingIterator<CharType> b, const umba::iterator::TextPositionCountingIterator<CharType> &e)
     {
-        return umba::iterator::makeStringView(b,e);
+        return umba::iterator::makeString(b,e);
     }
 
     template<typename GenericIteratorType>
     static
-    std::basic_string_view<value_type> makeStringView(GenericIteratorType b, GenericIteratorType e)
+    string_type makeString(GenericIteratorType b, GenericIteratorType e)
     {
-        return std::basic_string_view<value_type>(&*b, distance( b, e ));
+        return string_type(&*b, distance( b, e ));
     }
 
     static
-    std::basic_string_view<typename StringType::value_type> makeStringView(const StringType &str)
+    StringType makeString(const StringType &str)
     {
-        return std::basic_string_view<value_type>(&str[0], str.size());
+        return str;
     }
 
 
@@ -1970,7 +1970,7 @@ protected: // methods - хандлеры из "грязного" проекта,
             return true;
         MessagesStringType msg;
         bool bRes = static_cast<const TBase*>(this)->hadleToken( curPosAtLineBeginning, tokenType, inputDataBegin, inputDataEnd
-                                                               , CommentDataHolder(CommentData{makeStringView(parsedDataBegin, parsedDataEnd)})
+                                                               , CommentDataHolder(CommentData{makeString(parsedDataBegin, parsedDataEnd)})
                                                                , msg
                                                                );
         checkLineStart(tokenType);
@@ -1985,7 +1985,7 @@ protected: // methods - хандлеры из "грязного" проекта,
 
     [[nodiscard]] // Сменили void на bool, и теперь надо заставить везде проверять результат
     bool parsingStringLiteralHandlerLambda( payload_type tokenType, InputIteratorType inputDataBegin, InputIteratorType inputDataEnd
-                             , std::basic_string_view<value_type> parsedData
+                             , const string_type &parsedData
                              ) const
     {
         if (tokenType!=UMBA_TOKENIZER_TOKEN_CTRL_FIN && inputDataBegin==inputDataEnd)
@@ -2016,7 +2016,7 @@ protected: // methods - хандлеры из "грязного" проекта,
         MessagesStringType msg;
         bool bRes = static_cast<const TBase*>(this)->hadleToken(curPosAtLineBeginning, UMBA_TOKENIZER_TOKEN_IDENTIFIER
                                                                , inputDataBegin, inputDataEnd
-                                                               , IdentifierDataHolder(IdentifierData{makeStringView(inputDataBegin, inputDataEnd)})
+                                                               , IdentifierDataHolder(IdentifierData{makeString(inputDataBegin, inputDataEnd)})
                                                                , msg
                                                                );
         // TokenParsedData StringLiteralData

@@ -147,15 +147,15 @@ public:
             //case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_HEX: return "number";
             case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_OCT|UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_FLAG_MISS_DIGIT: return "number";
             case UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FIRST: return "comment";
-            case UMBA_TOKENIZER_TOKEN_OPERATOR_SUBTRACTION: return "range operator";
-            case UMBA_TOKENIZER_TOKEN_OPERATOR_TERNARY_ALTERNATIVE: return "text delimiter";
+            case UMBA_TOKENIZER_TOKEN_OPERATOR_SUBTRACTION: return "range-operator";
+            case UMBA_TOKENIZER_TOKEN_OPERATOR_TERNARY_ALTERNATIVE: return "text-delimiter";
             case UMBA_TOKENIZER_TOKEN_STRING_LITERAL     : return "string";
-            case UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_OPEN : return "array size start bracket";
-            case UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE: return "array size end bracket";
+            case UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_OPEN : return "array-size-start-bracket";
+            case UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE: return "array-size-end-bracket";
             case UMBA_TOKENIZER_TOKEN_LINEFEED : return "linefeed";
             case UMBA_TOKENIZER_TOKEN_SPACE    : return "space";
             case UMBA_TOKENIZER_TOKEN_TAB      : return "tab";
-            case UMBA_TOKENIZER_TOKEN_FORM_FEED: return "form feed";
+            case UMBA_TOKENIZER_TOKEN_FORM_FEED: return "form-feed";
             
             case UMBA_TOKENIZER_TOKEN_CTRL_FIN: return "EOF";
             // case : return "";
@@ -177,7 +177,9 @@ public:
             //                   )
             // return false;
 
-            throw std::runtime_error("Something goes wrong");
+            //throw std::runtime_error("Something goes wrong in parser");
+            // Не надо ничего кидать, просто молча выходим
+            return false;
         }
 
         return true;
@@ -209,30 +211,33 @@ public:
 
 
 
-    bool expectedReachedMsg(umba::tokenizer::payload_type tkExpected, umba::tokenizer::payload_type tkReached, const std::string &msg) const
+    bool expectedReachedMsg(const TokenInfoType *pTokenInfo, umba::tokenizer::payload_type tkExpected, umba::tokenizer::payload_type tkReached, const std::string &msg=std::string()) const
     {
-        LOG_ERR << msg << ". Expected " << getTokenIdStr(tkExpected) << ", but got " << getTokenIdStr(tkReached) << "\n";
+        UMBA_USED(tkReached);
+        BaseClass::logUnexpected( pTokenInfo, tkExpected, msg, [&](umba::tokenizer::payload_type tk) { return getTokenIdStr(tk); } );
+        // LOG_ERR << msg << ". Expected " << getTokenIdStr(tkExpected) << ", but got " << getTokenIdStr(tkReached) << "\n";
         return false;
     }
 
-    bool expectedReachedMsg(umba::tokenizer::payload_type tkExpected1, umba::tokenizer::payload_type tkExpected2, umba::tokenizer::payload_type tkReached, const std::string &msg) const
+    bool expectedReachedMsg(const TokenInfoType *pTokenInfo, umba::tokenizer::payload_type tkExpected1, umba::tokenizer::payload_type tkExpected2, umba::tokenizer::payload_type tkReached, const std::string &msg=std::string()) const
     {
+        UMBA_USED(pTokenInfo);
         LOG_ERR << msg << ". Expected " << getTokenIdStr(tkExpected1) << " or " << getTokenIdStr(tkExpected2) << ", but got " << getTokenIdStr(tkReached) << "\n";
         return false;
     }
 
-    bool checkExactTokenType(umba::tokenizer::payload_type tkExpected, umba::tokenizer::payload_type tkReached, const std::string &msg) const
+    bool checkExactTokenType(const TokenInfoType *pTokenInfo, umba::tokenizer::payload_type tkExpected, umba::tokenizer::payload_type tkReached, const std::string &msg=std::string()) const
     {
         if (tkExpected==tkReached)
             return true;
-        return expectedReachedMsg(tkExpected, tkReached, msg);
+        return expectedReachedMsg(pTokenInfo, tkExpected, tkReached, msg);
     }
 
-    bool checkExactTokenType(umba::tokenizer::payload_type tkExpected1, umba::tokenizer::payload_type tkExpected2, umba::tokenizer::payload_type tkReached, const std::string &msg) const
+    bool checkExactTokenType(const TokenInfoType *pTokenInfo, umba::tokenizer::payload_type tkExpected1, umba::tokenizer::payload_type tkExpected2, umba::tokenizer::payload_type tkReached, const std::string &msg=std::string()) const
     {
         if (tkExpected1==tkReached || tkExpected2==tkReached)
             return true;
-        return expectedReachedMsg(tkExpected1, tkExpected2, tkReached, msg);
+        return expectedReachedMsg(pTokenInfo, tkExpected1, tkExpected2, tkReached, msg);
     }
 
 
@@ -247,7 +252,7 @@ public:
             if (!checkNotNul(pTokenInfo))
                 return false;
 
-            if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_LINEFEED)
+            if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_LINEFEED)
                 continue;
 
             if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
@@ -279,7 +284,7 @@ public:
                     if (!checkNotNul(pTokenInfo))
                         return false;
                     if (!isAnyNumber(pTokenInfo->tokenType))
-                        return expectedReachedMsg(UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, pTokenInfo->tokenType, "invalid range");
+                        return expectedReachedMsg(pTokenInfo, UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, pTokenInfo->tokenType, "invalid range");
 
                     pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
                     // auto 
@@ -312,7 +317,7 @@ public:
                     if (!checkNotNul(pTokenInfo))
                         return false;
                     if (!isAnyNumber(pTokenInfo->tokenType))
-                        return expectedReachedMsg(UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, pTokenInfo->tokenType, "invalid array size");
+                        return expectedReachedMsg(pTokenInfo, UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, pTokenInfo->tokenType, "invalid array size");
 
                     const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
                     auto numericLiteralData = std::get<typename tokenizer_type::IntegerNumericLiteralDataHolder>(*pParsedData);
@@ -329,7 +334,7 @@ public:
                         return false;
 
                     if (pTokenInfo->tokenType!=UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE)
-                        return expectedReachedMsg(UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE, pTokenInfo->tokenType, "invalid array size");
+                        return expectedReachedMsg(pTokenInfo, UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE, pTokenInfo->tokenType, "invalid array size");
                 
                     pTokenInfo = BaseClass::waitForSignificantToken(&tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
 
@@ -341,24 +346,30 @@ public:
                 continue;
             }
 
+            else if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
+            {
+                return true;
+            }
+
             else
             {
-                LOG_ERR << "unexpected " << getTokenIdStr(pTokenInfo->tokenType) << "\n";
-                return false;
+                return expectedReachedMsg(pTokenInfo, UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, pTokenInfo->tokenType /* , std::string() */ );
+                // LOG_ERR << "unexpected " << getTokenIdStr(pTokenInfo->tokenType) << "\n";
+                //return false;
             }
 
             // Тут у нас в pTokenInfo должен быть следующий токен
             if (!checkNotNul(pTokenInfo))
                 return false;
 
-            if (!checkExactTokenType(UMBA_TOKENIZER_TOKEN_OPERATOR_TERNARY_ALTERNATIVE, pTokenInfo->tokenType, "invalid record definition"))
+            if (!checkExactTokenType(pTokenInfo, UMBA_TOKENIZER_TOKEN_OPERATOR_TERNARY_ALTERNATIVE, pTokenInfo->tokenType, "invalid record definition"))
                 return false;
 
             pTokenInfo = BaseClass::waitForSignificantToken(&tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
             if (!checkNotNul(pTokenInfo))
                 return false;
 
-            if (!checkExactTokenType(UMBA_TOKENIZER_TOKEN_STRING_LITERAL, pTokenInfo->tokenType, "invalid record definition"))
+            if (!checkExactTokenType(pTokenInfo, UMBA_TOKENIZER_TOKEN_STRING_LITERAL, pTokenInfo->tokenType, "invalid record definition"))
                 return false;
 
             const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
@@ -369,7 +380,7 @@ public:
             if (!checkNotNul(pTokenInfo))
                 return false;
 
-            if (!checkExactTokenType(UMBA_TOKENIZER_TOKEN_LINEFEED, UMBA_TOKENIZER_TOKEN_CTRL_FIN, pTokenInfo->tokenType, "invalid record definition"))
+            if (!checkExactTokenType(pTokenInfo, UMBA_TOKENIZER_TOKEN_LINEFEED, UMBA_TOKENIZER_TOKEN_CTRL_FIN, pTokenInfo->tokenType, "invalid record definition"))
                 return false;
 
             diagramData.emplace_back(item);

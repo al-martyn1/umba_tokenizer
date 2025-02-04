@@ -83,6 +83,8 @@ struct MarmaidPacketDiagramTokenizerConfigurator
     {
         //using tokenizer_type = typename TokenizerBuilder::tokenizer_type;
         using IdentifierToKeywordConversionFilter = umba::tokenizer::filters::IdentifierToKeywordConversionFilter<TokenizerType>;
+        using KebabCaseComposingFilter = umba::tokenizer::filters::KebabCaseComposingFilter<TokenizerType>;
+        
         using string_type    = typename TokenizerType::string_type;
 
         auto options = tokenizer.getOptions();
@@ -108,6 +110,7 @@ struct MarmaidPacketDiagramTokenizerConfigurator
                                                                                     }
                                                                                   );
 
+        tokenizer.template installTokenFilter<KebabCaseComposingFilter>();
         return tokenizer;
     }
 };

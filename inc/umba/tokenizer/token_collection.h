@@ -494,8 +494,12 @@ public:
     file_id_type getFileId() const
     {
         return m_fileId;
-    }
+    }      
 
+    shared_log_type getLog() const
+    {
+        return m_log;
+    }
 
     /* Стратегия работы с индексом токена такая:
 
@@ -517,6 +521,9 @@ public:
        - getNextTokenPos() - возвращает индекс следующего токена. Зачем бы это надо? Но пусть будет для ясности
 
     */
+
+    string_type& getText() { return m_text; }
+    const string_type& getText() const { return m_text; }
 
     bool getLastTokenizeResult() const
     {
@@ -560,8 +567,8 @@ public:
 
         UMBA_ASSERT(m_fileId!=file_id_type(-1));
 
-        TextPositionInfo tpi = ptki->getPositionInfo();
-        tpi.fileId = m_fileId;
+        TextPositionInfo tpi = ptki->getPositionInfo(m_text, m_fileId);
+        // tpi.fileId = m_fileId;
 
         // tpi.lineOffset   = ptki->textPosition.lineOffset  ;
         // tpi.symbolOffset = ptki->textPosition.symbolOffset;
