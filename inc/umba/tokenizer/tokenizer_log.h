@@ -69,7 +69,7 @@ namespace log
     Что-то неожиданное - FormatMessage("unexpected symbol: \'$(Value)\'").arg("Value", erroneousValue)
 
     @var ParserErrorEventType::unknownOperator
-    Неизвестный оператор - FormatMessage("possible unknown operator: '$(Value)'").arg("Value", erroneousValue)
+    Неизвестный оператор - FormatMessage("unknown operator: '$(Value)'").arg("Value", erroneousValue)
 
     @var ParserErrorEventType::stringLiteralWarning
     Предупреждение в строковом литерале - например, неизвестная escape-последовательность

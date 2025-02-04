@@ -101,7 +101,7 @@ struct ParserConsoleErrorLog : public ParserErrorLog
 
             case ParserErrorEventType::unknownOperator:
             {
-                UMBA_TOKENIZER_LOG_CONLOG_ERR_INPUT_EX("unknown-operator") << FormatMessage("possible unknown operator: '$(Value)'").arg("Value", erroneousValue).toString() <<"\n";
+                UMBA_TOKENIZER_LOG_CONLOG_ERR_INPUT_EX("unknown-operator") << FormatMessage("unknown operator: '$(Value)'").arg("Value", erroneousValue).toString() <<"\n";
                 //std::cout << "Possible unknown operator: '" << umba::iterator::makeString(b, e) << "'\n";
                 break;
             }
