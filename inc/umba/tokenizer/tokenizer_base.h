@@ -397,7 +397,7 @@ protected: // fileds - состояние токенизатора
     //StringType                     rawDataBuffer;
     iterator_type                  rawStartIt;
     iterator_type                  rawEndIt  ;
-    bool                           rawStartValid = false;
+    mutable bool                   rawStartValid = false;
     TokenizerRawAutoStopMode       tokenizerRawAutoStopMode = TokenizerRawAutoStopMode::noAutoStop;
     StringType                     tokenizerRawStopChars; // or sequence
 
@@ -453,7 +453,7 @@ protected: // fileds - состояние токенизатора
 protected: // methods
 
 
-    void updateStoredRawIterators(iterator_type curIt, iterator_type curEnd)
+    void updateStoredRawIterators(iterator_type curIt, iterator_type itEnd)
     {
         if (!rawStartValid)
         {
@@ -461,7 +461,7 @@ protected: // methods
             rawStartIt    = curIt;
         }
 
-        if (tokenizerRawAutoStopMode==TokenizerRawAutoStopMode::stopOnCharIncluding)
+        if (tokenizerRawAutoStopMode==TokenizerRawAutoStopMode::stopOnCharIncluding && curIt!=itEnd)
         {
             // у нас режим, когда символ, на котором стопимся, входит в число сырых,
             // поэтому надо передвинуть итератор конца на один символ дальше
@@ -470,6 +470,44 @@ protected: // methods
         
         rawEndIt = curIt;
     }
+
+    // Возвращает результат флуша, по умолчанию - true, если флуш не понадобился
+    bool checkRawForAutoStop(iterator_type curIt, iterator_type itEnd) const
+    {
+        bool res = true;
+
+        if (tokenizerRawAutoStopMode==TokenizerRawAutoStopMode::noAutoStop)
+            return res;
+
+        // TODO: !!! Надо определится, что делать в tokenize в raw режиме. См там коментарии
+        /*
+        if (tokenizerRawAutoStopMode==TokenizerRawAutoStopMode::)
+
+        if (tokenizerRawAutoStopMode==TokenizerRawAutoStopMode::)
+    
+        if (tokenizerRawAutoStopMode==TokenizerRawAutoStopMode::)
+    
+        if (tokenizerRawAutoStopMode==TokenizerRawAutoStopMode::)
+        */
+
+        return res;
+    }
+
+
+//     void updateStoredRawIterators(iterator_type curIt, iterator_type curEnd)
+//     bool flushRawData(iterator_type startIt, iterator_type endIt) const
+// enum class TokenizerRawAutoStopMode
+// {
+//     noAutoStop         ,  // Остановка происходит только по команде
+//     stopOnCharIncluding,  // Останавливаемся на символе, символ также входит в последовательность сырых символов
+//     stopOnCharExcluding,  // Останавливаемся на символе, но символ не входит в последовательность сырых символов и будет обработан далее
+//     stopOnCharSequence ,  // Останавливаемся, когда в строке сырых символов встречается заданная последовательность. Она входит в последовательность сырых символов
+//     stopOnHandler         // Останавливаемся, когда отдельный хэндлер разрешит. Пока не делаем
+// };
+    // TokenizerRawAutoStopMode       tokenizerRawAutoStopMode = TokenizerRawAutoStopMode::noAutoStop;
+    // StringType                     tokenizerRawStopChars; // or sequence
+
+
 
 
 //------------------------------
@@ -506,8 +544,11 @@ public: // methods
         return rawMode;
     }
 
-    void setRawMode(bool bRawMode)
+    // Возвращает не предыдущий режим, а результат флуша, если был
+    bool setRawMode(bool bRawMode)
     {
+        bool res = true;
+
         if (rawMode!=bRawMode)
         {
             // Значение меняется
@@ -518,11 +559,14 @@ public: // methods
             }
             else
             {
-                // TODO: !!! зафлушить тут (rawStartIt, rawEndIt)
+                // Новый режим обычный, токенный
+                res = flushRawData();
             }
         }
 
         rawMode = bRawMode;
+
+        return res;
     }
 
     void setRawModeAutoStop(TokenizerRawAutoStopMode newMode, const string_type &stopChars=string_type())
@@ -859,7 +903,7 @@ protected: // methods - helpers - из "грязного" проекта, где
         return true;
     }
 
-    bool processUnclassifiedCharsRawLambda(InputIteratorType it, InputIteratorType itEnd) const
+    bool processUnclassifiedCharsLambda(InputIteratorType it, InputIteratorType itEnd) const
     {
         if (options.allowUnclassifiedChars)
         {
@@ -874,6 +918,50 @@ protected: // methods - helpers - из "грязного" проекта, где
             return unexpectedHandlerLambda(it, itEnd, __FILE__, __LINE__);
         }
     }
+
+    bool flushRawData(iterator_type startIt, iterator_type endIt) const
+    {
+        if (!rawStartValid)
+            return true; // Ничего не надо флушиь
+
+        MessagesStringType msg;
+        bool bRes = static_cast<const TBase*>(this)->hadleToken( curPosAtLineBeginning, UMBA_TOKENIZER_TOKEN_RAW_DATA, startIt, endIt
+                                                               , RawDataHolder(RawData{makeString(startIt, endIt)})
+                                                               , msg
+                                                               );
+        if (!bRes)
+        {
+            reportHandleTokenErrorLambda(UMBA_TOKENIZER_TOKEN_RAW_DATA, startIt, endIt, msg);
+        }
+
+        rawStartValid = false;
+        return bRes;
+    }
+
+    bool flushRawData() const
+    {
+        if (!rawStartValid)
+            return true; // Ничего не надо флушить
+
+        return flushRawData(rawStartIt, rawEndIt);
+    }
+
+    
+
+    // iterator_type                  rawStartIt;
+    // iterator_type                  rawEndIt  ;
+
+
+    // mutable bool                   rawMode = false;
+    // //StringType                     rawDataBuffer;
+    // iterator_type                  rawStartIt;
+    // iterator_type                  rawEndIt  ;
+    // bool                           rawStartValid = false;
+    // TokenizerRawAutoStopMode       tokenizerRawAutoStopMode = TokenizerRawAutoStopMode::noAutoStop;
+    // StringType                     tokenizerRawStopChars; // or sequence
+    // rawStartValid
+
+
 
                     // if (options.unclassifiedCharsRaw)
                     // {
@@ -947,7 +1035,8 @@ public: // methods - методы собственно разбора
         st            = TokenizerInternalState::stInitial;
         stEscapeSaved = TokenizerInternalState::stInitial;
 
-        rawModeCounter = 0;
+        rawMode = false;
+        rawStartValid = false;
 
         curPosAtLineBeginning = true;
 
@@ -989,8 +1078,12 @@ public: // methods - методы собственно разбора
     {
         if (isInRawMode())
         {
+             if (!flushRawData()) // пытаемся флушить сохраненные raw данные, если они есть
+                 return false;
+
              if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, it, itEnd))
                  return false;
+
              return true;
         }
 
@@ -1166,12 +1259,37 @@ public: // methods - методы собственно разбора
     #include "umba/warnings/push_disable_spectre_mitigation.h"
     bool tokenize(InputIteratorType it, InputIteratorType itEnd) const
     {
+//     void updateStoredRawIterators(iterator_type curIt, iterator_type curEnd)
+//     bool flushRawData(iterator_type startIt, iterator_type endIt) const
+// enum class TokenizerRawAutoStopMode
+// {
+//     noAutoStop         ,  // Остановка происходит только по команде
+//     stopOnCharIncluding,  // Останавливаемся на символе, символ также входит в последовательность сырых символов
+//     stopOnCharExcluding,  // Останавливаемся на символе, но символ не входит в последовательность сырых символов и будет обработан далее
+//     stopOnCharSequence ,  // Останавливаемся, когда в строке сырых символов встречается заданная последовательность. Она входит в последовательность сырых символов
+//     stopOnHandler         // Останавливаемся, когда отдельный хэндлер разрешит. Пока не делаем
+// };
+    // TokenizerRawAutoStopMode       tokenizerRawAutoStopMode = TokenizerRawAutoStopMode::noAutoStop;
+    // StringType                     tokenizerRawStopChars; // or sequence
+
+
         if (isInRawMode())
         {
-            if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_RAW_DATA, it, it+1)) // Сырые символы мы всегда отдельно выплёвываем
-                return false;
-             return true;
+            if (tokenizerRawAutoStopMode==TokenizerRawAutoStopMode::noAutoStop)
+            {
+                // if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_RAW_DATA, it, it+1)) // Без автостопа сырые символы мы всегда отдельно выплёвываем
+                return flushRawData(it, it+1); // Без автостопа сырые символы мы всегда отдельно выплёвываем
+            }
+
+            UMBA_ASSERT( tokenizerRawAutoStopMode==TokenizerRawAutoStopMode::stopOnCharIncluding
+                      || tokenizerRawAutoStopMode==TokenizerRawAutoStopMode::stopOnCharExcluding
+                      || tokenizerRawAutoStopMode==TokenizerRawAutoStopMode::stopOnCharSequence
+                       );
+
+            // TODO: тут надо накалякать, что делать в разных raw режимах
         }
+
+
 
         const auto ch = *it;
         UMBA_ASSERT(charClassTable.size()>charToCharClassTableIndex(ch));
@@ -1250,7 +1368,7 @@ public: // methods - методы собственно разбора
                 }
                 else
                 {
-                    return processUnclassifiedCharsRawLambda(it, itEnd);
+                    return processUnclassifiedCharsLambda(it, itEnd);
                 }
 
                 //if ((charClass::linefeed))
@@ -1364,7 +1482,7 @@ public: // methods - методы собственно разбора
                 else
                 {
                     //return unexpectedHandlerLambda(it, itEnd, __FILE__, __LINE__);
-                    return processUnclassifiedCharsRawLambda(it, itEnd);
+                    return processUnclassifiedCharsLambda(it, itEnd);
                 }
             } break;
 
@@ -1430,7 +1548,7 @@ public: // methods - методы собственно разбора
                 else
                 {
                     //return unexpectedHandlerLambda(it, itEnd, __FILE__, __LINE__);
-                    return processUnclassifiedCharsRawLambda(it, itEnd);
+                    return processUnclassifiedCharsLambda(it, itEnd);
                 }
             } break;
 
@@ -1921,7 +2039,7 @@ public: // methods - методы собственно разбора
             {
                 // У нас тут необработанное состояние, вообще-то мы сюда не должны попадать
                 return unexpectedHandlerLambda(it, itEnd, __FILE__, __LINE__);
-                //return processUnclassifiedCharsRawLambda(it, itEnd);
+                //return processUnclassifiedCharsLambda(it, itEnd);
                 
             }
 

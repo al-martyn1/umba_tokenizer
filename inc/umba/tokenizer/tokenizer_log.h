@@ -247,6 +247,14 @@ struct TokenizerUnexpectedErrorHandler : public TokenizerErrorHandlerBase
             erroneousValue    = umba::iterator::makeString(it,itEnd);
             erroneousLineText = umba::iterator::makeString(it.getLineStartIterator(), it.getLineEndIterator());
         }
+        else
+        {
+            if (!it.isEndReached() && !it.isEndIterator())
+            {
+                erroneousValue = umba::iterator::makeString(it);
+                erroneousLineText = umba::iterator::makeString(it.getLineStartIterator(), it.getLineEndIterator());
+            }
+        }
 
         errorLog->logErrorEvent( ParserErrorEventType::unexpected
                                , it.getPosition(true) // с поиском конца строки

@@ -319,7 +319,8 @@ struct TokenCollectionTokenHandler
         {
             if (b==e)
             {
-                distanceCharT = b.symbolLength();
+                if (!b.isEndIterator() && !b.isEndReached())
+                    distanceCharT = b.symbolLength();
             }
             else
             {
