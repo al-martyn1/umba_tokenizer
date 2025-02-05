@@ -45,7 +45,7 @@ protected:
     static
     bool isCollectingPayloadToken(payload_type payloadToken)
     {
-        return payloadToken==UMBA_TOKENIZER_TOKEN_RAW_CHAR;
+        return payloadToken==CollectingPayloadValue; // UMBA_TOKENIZER_TOKEN_RAW_CHAR;
     }
 
     bool isCollectingMode() const

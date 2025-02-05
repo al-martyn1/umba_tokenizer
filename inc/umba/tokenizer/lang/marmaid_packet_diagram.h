@@ -89,7 +89,7 @@ struct PacketDiagramTokenizerConfigurator
         using string_type    = typename TokenizerType::string_type;
 
         auto options = tokenizer.getOptions();
-        options.unclassifiedCharsRaw = false;
+        options.allowUnclassifiedChars = false;
         tokenizer.setOptions(options);
 
         // !!! Фильтры, установленные позже, отрабатывают раньше
@@ -112,6 +112,7 @@ struct PacketDiagramTokenizerConfigurator
 
                                                                                     //, {""          ,        }
                                                                                     }
+                                                                                  , false // not case sensitive
                                                                                   );
 
         tokenizer.template installTokenFilter<KebabCaseComposingFilter>();

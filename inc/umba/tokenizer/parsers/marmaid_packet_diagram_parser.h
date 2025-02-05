@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include "umba/string_plus.h"
+//
 
 #include "umba/tokenizer.h"
 //
@@ -26,14 +28,14 @@ namespace tokenizer {
 namespace marmaid {
 
 
-enum class PacketDiagramRangeType
+enum class EPacketDiagramRangeType
 {
     singleValue,
     range      ,
     explicitType
 };
 
-enum class PacketDiagramType
+enum class EPacketDiagramType
 {
     unknown,
     bitDiagram,
@@ -44,7 +46,7 @@ enum class PacketDiagramType
 template<typename TokenCollectionItemType>
 struct PacketDiagramItem
 {
-    PacketDiagramRangeType          rangeType;
+    EPacketDiagramRangeType         rangeType;
     umba::tokenizer::payload_type   explicitTypeTokenId;
     std::string                     text;
 
@@ -61,12 +63,13 @@ struct PacketDiagram
 {
     using PacketDiagramItemType = PacketDiagramItem<TokenCollectionItemType>;
 
-    PacketDiagramType                      diagramType = PacketDiagramType::unknown;
+    EPacketDiagramType                     diagramType = EPacketDiagramType::unknown;
     std::string                            title;
     std::vector<PacketDiagramItemType>     data ;
+    bool                                   allowOverrideTitle = true;
+
 
 };
-
 
 
 
@@ -227,8 +230,8 @@ public:
         return expectedReachedMsg(pTokenInfo, payloadExpectedList, msg);
     }
 
-    //! Разбираем токен числового литерала. Возвращается следующий токен
-    const TokenInfoType *pTokenInfo parseNumber(const TokenInfoType *pTokenInfo, std::uint64_t &val, const std::string &msg=std::string())
+    //! Разбираем токен числового литерала. Возвращается следующий токен для анализа и продолжения разбора строки или ноль при ошибке
+    const TokenInfoType* parseNumber(const TokenInfoType *pTokenInfo, std::uint64_t &val, const std::string &msg=std::string())
     {
         // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
 
@@ -238,20 +241,20 @@ public:
         using umba::tokenizer::ParserWaitForTokenFlags;
 
         if (!isAnyNumber(pTokenInfo->tokenType))
-            return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, msg), 0;
+            return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, msg), (const TokenInfoType*)0;
 
         const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
         auto numericLiteralData = std::get<typename tokenizer_type::IntegerNumericLiteralDataHolder>(*pParsedData);
         if (numericLiteralData.pData->fOverflow)
-            return BaseClass::logSimpleMessage(pTokenInfo, "integer-overflow", msg.empty() ? "integer overflow" : msg + ": integer overflow"), 0;
+            return BaseClass::logSimpleMessage(pTokenInfo, "integer-overflow", msg.empty() ? "integer overflow" : msg + ": integer overflow"), (const TokenInfoType*)0;
 
         val = std::uint64_t(numericLiteralData.pData->value);
 
         return BaseClass::waitForSignificantToken( 0 /* &tokenPos */ , ParserWaitForTokenFlags::stopOnLinefeed);
     }
 
-    //! Разбираем диапазон. Возвращается следующий токен
-    const TokenInfoType *pTokenInfo parseRange(const TokenInfoType *pTokenInfo, PacketDiagramItemType &item)
+    //! Разбираем диапазон. Возвращается следующий токен для анализа и продолжения разбора строки или ноль при ошибке
+    const TokenInfoType* parseRange(const TokenInfoType *pTokenInfo, PacketDiagramItemType &item)
     {
         // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
 
@@ -264,12 +267,12 @@ public:
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
-        if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_OPERATOR_SUBTRACTION, UMBA_TOKENIZER_TOKEN_OPERATOR_TERNARY_ALTERNATIVE}, "reading offset/range"))
+        if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_OPERATOR_SUBTRACTION, UMBA_TOKENIZER_TOKEN_OPERATOR_TERNARY_ALTERNATIVE}, "failed reading offset/range"))
             return 0;
 
         if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_OPERATOR_TERNARY_ALTERNATIVE)
         {
-            item.rangeType = PacketDiagramRangeType::singleValue;
+            item.rangeType = EPacketDiagramRangeType::singleValue;
             return pTokenInfo;
         }
 
@@ -280,22 +283,22 @@ public:
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
         if (!isAnyNumber(pTokenInfo->tokenType))
-            return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, "reading range end"), 0;
+            return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, "failed reading range end"), (const TokenInfoType*)0;
 
         pTokenInfo = parseNumber(pTokenInfo, item.end, "range end value");
-        item.rangeType = PacketDiagramRangeType::range;
+        item.rangeType = EPacketDiagramRangeType::range;
 
         return pTokenInfo;
     }
 
-    //! Разбираем тип. Возвращается следующий токен
-    const TokenInfoType *pTokenInfo parseType(const TokenInfoType *pTokenInfo, PacketDiagramItemType &item)
+    //! Разбираем тип. Возвращается следующий токен для анализа и продолжения разбора строки или ноль при ошибке
+    const TokenInfoType* parseType(const TokenInfoType *pTokenInfo, PacketDiagramItemType &item)
     {
         // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
 
         using umba::tokenizer::ParserWaitForTokenFlags;
 
-        item.rangeType           = PacketDiagramRangeType::explicitType;
+        item.rangeType           = EPacketDiagramRangeType::explicitType;
         item.explicitTypeTokenId = pTokenInfo->tokenType;
 
         pTokenInfo = BaseClass::waitForSignificantToken( 0 /* &tokenPos */ , ParserWaitForTokenFlags::stopOnLinefeed);
@@ -322,14 +325,95 @@ public:
         return BaseClass::waitForSignificantToken( 0 /* &tokenPos */ , ParserWaitForTokenFlags::stopOnLinefeed);
     }
 
-    const TokenInfoType *pTokenInfo parsePacketBetaDirective(const TokenInfoType *pTokenInfo, PacketDiagramItemType &item)
+    //! Разбор директивы packet-beta. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
+    const TokenInfoType* parsePacketBetaDirective(const TokenInfoType *pTokenInfo)
+    {
+        // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
 
+        // считываем коммент, если есть
+        pTokenInfo = BaseClass::waitForSignificantToken( 0 /* &tokenPos */ , ParserWaitForTokenFlags::stopOnLinefeed | ParserWaitForTokenFlags::stopOnComment);
+        if (!pTokenInfo)
+            return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
+        if (pTokenInfo->tokenType<UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FIRST || pTokenInfo->tokenType>UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_LAST)
+            return pTokenInfo;
 
+        const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
+        auto commentData = std::get<typename tokenizer_type::CommentDataHolder>(*pParsedData);
+        auto commentDataLower = umba::string::tolower_copy(commentData.pData->asString());
 
+        // Заранее читаем следующий токен
+        pTokenInfo = BaseClass::waitForSignificantToken( 0 /* &tokenPos */ , ParserWaitForTokenFlags::stopOnLinefeed);
 
+        if (commentDataLower.empty() || commentDataLower[0]!='!')
+            return pTokenInfo;
 
+        commentDataLower.erase(0, 1);
+        commentDataLower = umba::string::trim_copy(commentDataLower);
 
+        if (commentDataLower.empty())
+            return pTokenInfo;
+
+        if (commentDataLower=="bit" || commentDataLower=="bit-diagram")
+            diagram.diagramType = EPacketDiagramType::bitDiagram;
+        else if (commentDataLower=="byte" || commentDataLower=="byte-diagram")
+            diagram.diagramType = EPacketDiagramType::byteDiagram;
+
+        return pTokenInfo;
+    }
+
+    //! Разбор директивы title. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
+    const TokenInfoType* parseTitleDirective(const TokenInfoType *pTokenInfo)
+    {
+        // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
+
+        auto pTextStart = BaseClass::getTextPointer(pTokenInfo);
+        pTokenInfo = BaseClass::waitForSignificantToken( 0 /* &tokenPos */ , ParserWaitForTokenFlags::stopOnLinefeed);
+        if (!pTokenInfo)
+            return 0; // Сообщение уже выведено, просто возвращаем ошибку
+        auto pTextEnd   = BaseClass::getTextPointer(pTokenInfo);
+
+        if (diagram.allowOverrideTitle)
+        {
+            pTextStart += 5; // скипнуои сам токен title
+            if (pTextStart<=pTextEnd)
+            diagram.title = umba::string::trim_copy(std::string(pTextStart, pTextEnd));
+        }
+        return pTokenInfo;
+    }
+
+    //! Разбор обычной строки. Может возвращать ноль при ошибке, или токен LF/FIN
+    const TokenInfoType* parseRegularLine(const TokenInfoType *pTokenInfo, PacketDiagramItemType &item)
+    {
+        if (!pTokenInfo)
+            return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+        if (isAnyNumber(pTokenInfo->tokenType))
+            pTokenInfo = parseRange(pTokenInfo, item);
+        else if (isAnyType(pTokenInfo->tokenType))
+            pTokenInfo = parseType(pTokenInfo, item);
+        else
+            return 0;
+
+        if (!pTokenInfo)
+            return 0; // Сообщение уже выведено, просто возвращаем ошибку
+        if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_OPERATOR_TERNARY_ALTERNATIVE}, "invalid record definition"))
+            return 0;
+
+        // Читаем следующий токен
+        pTokenInfo = BaseClass::waitForSignificantToken( 0 /* &tokenPos */ , ParserWaitForTokenFlags::stopOnLinefeed);
+        if (!checkNotNul(pTokenInfo))
+            return 0;
+
+        if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL}, "invalid record definition"))
+            return 0;
+
+        const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
+        auto stringLiteralData = std::get<typename tokenizer_type::StringLiteralDataHolder>(*pParsedData);
+        item.text = stringLiteralData.pData->asString();
+
+        return BaseClass::waitForSignificantToken( 0 /* &tokenPos */ , ParserWaitForTokenFlags::stopOnLinefeed);
+    }
 
 
     bool parse()
@@ -341,7 +425,7 @@ public:
         {
             PacketDiagramItemType item;
 
-            const TokenInfoType *pTokenInfo = BaseClass::waitForSignificantToken(&tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+            const TokenInfoType *pTokenInfo = BaseClass::waitForSignificantToken( 0 /* &tokenPos */ , ParserWaitForTokenFlags::stopOnLinefeed);
             if (!checkNotNul(pTokenInfo))
                 return false;
 
@@ -353,135 +437,37 @@ public:
 
             item.pTokenInfo = pTokenInfo; // На всякий случай инфу сохраняем
 
-            if (isAnyNumber(pTokenInfo->tokenType))
+            if (isAnyNumber(pTokenInfo->tokenType) || isAnyType(pTokenInfo->tokenType))
             {
-                pTokenInfo = parseRange(pTokenInfo, item);
+                pTokenInfo = parseRegularLine(pTokenInfo, item);
             }
-
-            else if (isAnyType(pTokenInfo->tokenType))
+            else if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_PACKET_BETA)
             {
-            
+                pTokenInfo = parsePacketBetaDirective(pTokenInfo);
             }
-
-
-            if (isAnyNumber(pTokenInfo->tokenType))
+            else if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_TITLE)
             {
-                const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
-                auto numericLiteralData = std::get<typename tokenizer_type::IntegerNumericLiteralDataHolder>(*pParsedData);
-                if (numericLiteralData.pData->fOverflow)
-                {
-                    BaseClass::logSimpleMessage(pTokenInfo, "integer-oveflow", "integer oveflow");
-                    return false;
-                }
-
-                item.rangeType = PacketDiagramRangeType::singleValue;
-                item.start     = std::uint64_t(numericLiteralData.pData->value);
-
-                pTokenInfo = BaseClass::waitForSignificantToken(&tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-                if (!checkNotNul(pTokenInfo))
-                    return false;
-
-                if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_OPERATOR_SUBTRACTION)
-                {
-                    pTokenInfo = BaseClass::waitForSignificantToken(&tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-                    if (!checkNotNul(pTokenInfo))
-                        return false;
-                    if (!isAnyNumber(pTokenInfo->tokenType))
-                        return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, "invalid range");
-
-                    pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
-                    // auto 
-                    numericLiteralData = std::get<typename tokenizer_type::IntegerNumericLiteralDataHolder>(*pParsedData);
-                    if (numericLiteralData.pData->fOverflow)
-                    {
-                        BaseClass::logSimpleMessage(pTokenInfo, "integer-oveflow", "integer oveflow");
-                        return false;
-                    }
-        
-                    item.rangeType = PacketDiagramRangeType::range;
-                    item.end       = std::uint64_t(numericLiteralData.pData->value);
-
-                    pTokenInfo = BaseClass::waitForSignificantToken(&tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-                }
+                pTokenInfo = parseTitleDirective(pTokenInfo);
             }
-
-            else if (isAnyType(pTokenInfo->tokenType))
-            {
-                item.rangeType           = PacketDiagramRangeType::explicitType;
-                item.explicitTypeTokenId = pTokenInfo->tokenType;
-
-                pTokenInfo = BaseClass::waitForSignificantToken(&tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-                if (!checkNotNul(pTokenInfo))
-                    return false;
-                if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_OPEN)
-                {
-                    pTokenInfo = BaseClass::waitForSignificantToken(&tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-                    if (!checkNotNul(pTokenInfo))
-                        return false;
-                    if (!isAnyNumber(pTokenInfo->tokenType))
-                        return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, "invalid array size");
-
-                    const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
-                    auto numericLiteralData = std::get<typename tokenizer_type::IntegerNumericLiteralDataHolder>(*pParsedData);
-                    if (numericLiteralData.pData->fOverflow)
-                    {
-                        BaseClass::logSimpleMessage(pTokenInfo, "integer-oveflow", "integer oveflow");
-                        return false;
-                    }
-        
-                    item.arraySize = std::uint64_t(numericLiteralData.pData->value);
-
-                    pTokenInfo = BaseClass::waitForSignificantToken(&tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-                    if (!checkNotNul(pTokenInfo))
-                        return false;
-
-                    if (pTokenInfo->tokenType!=UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE)
-                        return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE}, "invalid array size");
-                
-                    pTokenInfo = BaseClass::waitForSignificantToken(&tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-
-                }
-            }
-
-            else if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_LINEFEED)
-            {
-                continue;
-            }
-
-            else if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
-            {
-                return false; // true;
-            }
-
             else
             {
-                return expectedReachedMsg(pTokenInfo, {MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR, UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC} /* , std::string() */ );
+                expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, MARMAID_TOKEN_SET_TYPES_FIRST, MARMAID_TOKEN_DIRECTIVE_PACKET_BETA /* , MARMAID_TOKEN_DIRECTIVE_TITLE */ } /* , msg */ );
+                return false;
             }
 
-            // Тут у нас в pTokenInfo должен быть следующий токен
-            if (!checkNotNul(pTokenInfo))
+            if (!pTokenInfo)
                 return false;
+    
+            // FIN может быть и в конце выражения, если последняя строка не заканчивается переводом строки, это нормально
+            if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
+                return true; // normal stop
 
-            if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_OPERATOR_TERNARY_ALTERNATIVE}, "invalid record definition"))
+            if (pTokenInfo->tokenType!=UMBA_TOKENIZER_TOKEN_LINEFEED) // Разбор выражения закончился не строкой?
+            {
+                expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_LINEFEED} /* , msg */ );
                 return false;
+            }
 
-            pTokenInfo = BaseClass::waitForSignificantToken(&tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-            if (!checkNotNul(pTokenInfo))
-                return false;
-
-            if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL}, "invalid record definition"))
-                return false;
-
-            const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
-            auto stringLiteralData = std::get<typename tokenizer_type::StringLiteralDataHolder>(*pParsedData);
-            item.text = stringLiteralData.pData->asString();
-
-            pTokenInfo = BaseClass::waitForSignificantToken(&tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-            if (!checkNotNul(pTokenInfo))
-                return false;
-
-            if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_LINEFEED, UMBA_TOKENIZER_TOKEN_CTRL_FIN}, "invalid record definition"))
-                return false;
 
             diagram.data.emplace_back(item);
         }

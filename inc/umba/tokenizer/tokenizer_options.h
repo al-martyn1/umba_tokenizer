@@ -40,34 +40,41 @@ enum class FloatingPointSeparatorType
 
 //----------------------------------------------------------------------------
 #include "umba/warnings/push_disable_padding_added.h"
+template<typename StringType> //  = std::basic_string<CharType>
 struct TokenizerOptions
 {
+    using string_type = StringType;
+    using value_type  = typename StringType::value_type;
+    using char_type   = value_type;
+    using CharType    = char_type;
+
+
     bool                        singleLineCommentOnlyAtBeginning = false;
     bool                        processLineContinuation          = true ;  // '\' before line feed marks next line to be continuation of current line
     bool                        numbersAllowRankSeparator        = true ;
-    char                        numbersRankSeparator             = '\'' ;  // apos ' (39/0x27) or backtick are good for this
+    char_type                   numbersRankSeparator             = (char_type)'\'' ;  // apos ' (39/0x27) or backtick are good for this
     int                         numberDefaultBase                = 10   ;  // Система счисления по умолчанию, применяется, когда не был указан префикс, явно задающий систему счисления.
     bool                        tabsAsSpaces                     = true ;  // 
     bool                        disableFloatingPointNumbers      = false;
-    bool                        unclassifiedCharsRaw             = true ;  //
+    bool                        allowUnclassifiedChars           = true ;  //
     FloatingPointSeparatorType  floatingPointSeparatorType       = FloatingPointSeparatorType::dot;
+    // bool                        rawMode                          = false;
+    // string_type                 rawModeStopSequence;
+
 
     payload_type getTabToken() const
     {
         return tabsAsSpaces ? UMBA_TOKENIZER_TOKEN_SPACE : UMBA_TOKENIZER_TOKEN_TAB;
     }
 
-    template<typename CharType>
     bool isNumberRankSeparator(CharType ch) const
     {
         if (!numbersAllowRankSeparator)
             return false;
 
-        return ch==(CharType)numbersRankSeparator;
+        return ch==numbersRankSeparator;
     }
 
-    template<typename CharType>
-    //constexpr
     bool isFloatingPointSeparator(CharType ch) const
     {
         if (disableFloatingPointNumbers)

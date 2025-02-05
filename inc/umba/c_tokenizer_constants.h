@@ -17,7 +17,7 @@
 
 #define UMBA_TOKENIZER_TOKEN_NUL                                                      0x0000u
 #define UMBA_TOKENIZER_TOKEN_UNEXPECTED                                               0x0001u
-#define UMBA_TOKENIZER_TOKEN_RAW_CHAR                                                 0x0002u
+#define UMBA_TOKENIZER_TOKEN_RAW_DATA                                                 0x0002u
 #define UMBA_TOKENIZER_TOKEN_LINEFEED                                                 0x0003u
 #define UMBA_TOKENIZER_TOKEN_SPACE                                                    0x0004u
 #define UMBA_TOKENIZER_TOKEN_TAB                                                      0x0005u
@@ -26,6 +26,7 @@
 #define UMBA_TOKENIZER_TOKEN_SEMIALPHA                                                0x0008u
 #define UMBA_TOKENIZER_TOKEN_ESCAPE                                                   0x0009u
 #define UMBA_TOKENIZER_TOKEN_LINE_CONTINUATION                                        0x000Au
+#define UMBA_TOKENIZER_TOKEN_UNCLASSIFIED_CHAR                                        0x000Bu
 
 
 #define UMBA_TOKENIZER_TOKEN_CURLY_BRACKET_OPEN                                       0x0011u

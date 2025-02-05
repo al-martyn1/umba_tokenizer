@@ -726,7 +726,7 @@ protected:
         // по достижении конца входного текста нам надо вызвать финализацию
         if (m_inputIt==m_inputEndIt)
         {
-            m_lastTokenizeResult = m_tokenizer.tokenizeFinalize(m_inputEndIt);
+            m_lastTokenizeResult = m_tokenizer.tokenizeFinalize(m_inputIt, m_inputEndIt);
             // Тут в нормальном случае должен капнуть токен UMBA_TOKENIZER_TOKEN_CTRL_FIN
         }
 

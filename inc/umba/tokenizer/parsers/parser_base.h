@@ -35,6 +35,8 @@ public: // types & ctors
     using TokenPosType             = typename TokenCollectionType::token_pos_type;
     using token_parsed_data_type   = typename tokenizer_type::token_parsed_data_type;
     using file_id_type             = umba::TextPositionInfo::file_id_type;
+    using string_type              = typename tokenizer_type::string_type; // Input chars string type
+    using char_type                = typename string_type::value_type;
 
 
     UMBA_RULE_OF_FIVE_COPY_DELETE(ParserBase);
@@ -83,6 +85,12 @@ public: // methods
     {
         return m_pTokens->getTokenPositionInfo(ptki);
     }
+
+    const char_type* getTextPointer(const TokenCollectionItemType *ptki) const
+    {
+        return m_pTokens->getTextPointer(ptki);
+    }
+
 
     void logSimpleMessage(const TokenCollectionItemType *pTokenInfo, const std::string &msgId, const std::string &msg) const
     {
@@ -156,7 +164,7 @@ public: // methods
 
         std::string msg = prefixMsg.empty()
                         ? "expected " + expectedFormatStr + ", but got '$(UnexpectedTokenKind)'" 
-                        : prefixMsg + ". Expected " + expectedFormatStr + ", 'but got $(UnexpectedTokenKind)'"
+                        : prefixMsg + ". Expected " + expectedFormatStr + ", but got '$(UnexpectedTokenKind)'"
                         ;
 
         std::string unexpectedTokenValue;
@@ -240,6 +248,8 @@ public: // methods
         while(pTokenInfo)
         {
             const auto tokenType = umba::TheValue(pTokenInfo->tokenType);
+
+            //if (tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
 
             if ( tokenType.template oneOf< UMBA_TOKENIZER_TOKEN_SPACE, UMBA_TOKENIZER_TOKEN_TAB>()
               && !theFlags.template oneOf<ParserWaitForTokenFlags::stopOnSpace>()

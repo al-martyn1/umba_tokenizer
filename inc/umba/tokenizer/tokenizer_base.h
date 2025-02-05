@@ -55,6 +55,17 @@ enum class TokenizerInternalState
 
 
 //----------------------------------------------------------------------------
+enum class TokenizerRawAutoStopMode
+{
+    noAutoStop         ,  // Остановка происходит только по команде
+    stopOnCharIncluding,  // Останавливаемся на символе, символ также входит в последовательность сырых символов
+    stopOnCharExcluding,  // Останавливаемся на символе, но символ не входит в последовательность сырых символов и будет обработан далее
+    stopOnCharSequence ,  // Останавливаемся, когда в строке сырых символов встречается заданная последовательность. Она входит в последовательность сырых символов
+    stopOnHandler         // Останавливаемся, когда отдельный хэндлер разрешит. Пока не делаем
+};
+
+
+//----------------------------------------------------------------------------
 #if !defined(UMBA_TOKENIZER_DISABLE_TYPES_META)
 template<typename StringType>
 StringType getTokenizerInternalStateStr(TokenizerInternalState s)
@@ -174,6 +185,8 @@ public: // depending types
 
     using ITokenizerLiteralParser  = umba::tokenizer::ITokenizerLiteralParser<CharType, MessagesStringType, InputIteratorType, InputIteratorTraits>;
 
+    using tokenizer_options_type   = TokenizerOptions<string_type>;
+
 
     //------------------------------
     // EmptyData
@@ -201,6 +214,18 @@ public: // depending types
         }
 
     }; // struct CommentData
+
+    //------------------------------
+    struct RawData // Текст сырых данных
+    {
+        string_type  value;
+     
+        StringType asString() const
+        {
+            return value;
+        }
+     
+    }; // struct RawData
 
     //------------------------------
     struct StringLiteralData
@@ -284,6 +309,7 @@ public: // depending types
                 }
 
     UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(CommentData              );
+    UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(RawData                  );
     UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(IdentifierData           );
     UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(StringLiteralData        );
     UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(IntegerNumericLiteralData);
@@ -298,7 +324,7 @@ public: // depending types
     // https://en.cppreference.com/w/cpp/utility/variant/visit
 
     // EmptyData must be a first type in a variant (with zero index)
-    using TokenParsedData = std::variant<EmptyData, CommentDataHolder, IdentifierDataHolder, StringLiteralDataHolder, IntegerNumericLiteralDataHolder, FloatNumericLiteralDataHolder>;
+    using TokenParsedData = std::variant<EmptyData, CommentDataHolder, RawDataHolder, IdentifierDataHolder, StringLiteralDataHolder, IntegerNumericLiteralDataHolder, FloatNumericLiteralDataHolder>;
 
     using TokenParsedDataType                       = TokenParsedData                ;
     using token_parsed_data_type                    = TokenParsedData                ;
@@ -306,6 +332,8 @@ public: // depending types
     using empty_data_type                           = EmptyData                      ;
     
     using comment_data_type                         = CommentData                    ;
+    using raw_data_type                             = RawData                        ;
+    
     using identifier_data_type                      = IdentifierData                 ;
     using string_literal_data_type                  = StringLiteralData              ;
     using integer_numeric_literal_data_type         = IntegerNumericLiteralData      ;
@@ -348,9 +376,10 @@ protected: // fields
 
     StringType            multiLineCommentEndStr;
 
+
     std::vector<std::shared_ptr<ITokenizerLiteralParser> >  literalParsersStorage;
 
-    TokenizerOptions      options; // Не являются состоянием, обычно задаются в начале, и никогда не меняются
+    tokenizer_options_type      options; // Не являются состоянием, обычно задаются в начале, и никогда не меняются
 
     user_data_type        userData;
 
@@ -363,7 +392,15 @@ protected: // fileds - состояние токенизатора
     mutable TokenizerInternalState st            = TokenizerInternalState::stInitial;
     mutable TokenizerInternalState stEscapeSaved = TokenizerInternalState::stInitial;
 
-    mutable int                    rawModeCounter = 0;
+    //mutable int                    rawModeCounter = 0;
+    mutable bool                   rawMode = false;
+    //StringType                     rawDataBuffer;
+    iterator_type                  rawStartIt;
+    iterator_type                  rawEndIt  ;
+    bool                           rawStartValid = false;
+    TokenizerRawAutoStopMode       tokenizerRawAutoStopMode = TokenizerRawAutoStopMode::noAutoStop;
+    StringType                     tokenizerRawStopChars; // or sequence
+
 
     mutable bool                   curPosAtLineBeginning = true;
 
@@ -416,6 +453,25 @@ protected: // fileds - состояние токенизатора
 protected: // methods
 
 
+    void updateStoredRawIterators(iterator_type curIt, iterator_type curEnd)
+    {
+        if (!rawStartValid)
+        {
+            rawStartValid = true ;
+            rawStartIt    = curIt;
+        }
+
+        if (tokenizerRawAutoStopMode==TokenizerRawAutoStopMode::stopOnCharIncluding)
+        {
+            // у нас режим, когда символ, на котором стопимся, входит в число сырых,
+            // поэтому надо передвинуть итератор конца на один символ дальше
+            ++curIt;
+        }
+        
+        rawEndIt = curIt;
+    }
+
+
 //------------------------------
 public: // methods
 
@@ -441,28 +497,62 @@ public: // methods
 
     bool isInRawMode() const
     {
-        return rawModeCounter>0;
+        //return rawModeCounter>0;
+        return rawMode;
+    }
+
+    bool getRawMode() const
+    {
+        return rawMode;
     }
 
     void setRawMode(bool bRawMode)
     {
-        if (bRawMode)
-            ++rawModeCounter;
-        else
-            --rawModeCounter;
+        if (rawMode!=bRawMode)
+        {
+            // Значение меняется
+            if (bRawMode)
+            {
+                // новый режим - сырой
+                rawStartValid = false;
+            }
+            else
+            {
+                // TODO: !!! зафлушить тут (rawStartIt, rawEndIt)
+            }
+        }
+
+        rawMode = bRawMode;
     }
+
+    void setRawModeAutoStop(TokenizerRawAutoStopMode newMode, const string_type &stopChars=string_type())
+    {
+        if (stopChars.empty())
+            newMode = TokenizerRawAutoStopMode::noAutoStop;
+
+        UMBA_ASSERT( newMode==TokenizerRawAutoStopMode::noAutoStop         
+                  || newMode==TokenizerRawAutoStopMode::stopOnCharIncluding 
+                  || newMode==TokenizerRawAutoStopMode::stopOnCharExcluding
+                  || newMode==TokenizerRawAutoStopMode::stopOnCharSequence 
+                  //|| newMode==TokenizerRawAutoStopMode::
+                  );
+
+        tokenizerRawStopChars    = stopChars;
+        tokenizerRawAutoStopMode = newMode  ;
+    }
+
 
     void addOwnershipForLiteralParsers(const std::vector<std::shared_ptr<ITokenizerLiteralParser> > &literalParsers)
     {
         literalParsersStorage.insert(literalParsersStorage.end(), literalParsers.begin(), literalParsers.end());
     }
 
-    void setOptions(const TokenizerOptions &opts)
+    void setOptions(const tokenizer_options_type &opts)
     {
         options = opts;
     }
 
-    const TokenizerOptions& getOptions() const
+    const tokenizer_options_type& getOptions() const
     {
         return options;
     }
@@ -771,9 +861,9 @@ protected: // methods - helpers - из "грязного" проекта, где
 
     bool processUnclassifiedCharsRawLambda(InputIteratorType it, InputIteratorType itEnd) const
     {
-        if (options.unclassifiedCharsRaw)
+        if (options.allowUnclassifiedChars)
         {
-            if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_RAW_CHAR, it, it+1)) // выплюнули
+            if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_UNCLASSIFIED_CHAR, it, it+1)) // выплюнули
                 return false;
             st = TokenizerInternalState::stInitial;
 
@@ -881,6 +971,8 @@ public: // methods - методы собственно разбора
         externHandlerMessage.clear();
         stringLiteralValueCollector.clear();
 
+        //rawDataBuffer.clear();
+
         {
             MessagesStringType msg;
             InputIteratorType b, e;
@@ -893,11 +985,11 @@ public: // methods - методы собственно разбора
 
 
 
-    bool tokenizeFinalize(InputIteratorType itEnd) const
+    bool tokenizeFinalize(InputIteratorType it, InputIteratorType itEnd) const
     {
         if (isInRawMode())
         {
-             if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, itEnd, itEnd))
+             if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, it, itEnd))
                  return false;
              return true;
         }
@@ -905,28 +997,28 @@ public: // methods - методы собственно разбора
         switch(st)
         {
             case TokenizerInternalState::stInitial  :
-                 if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, itEnd, itEnd))
+                 if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, it, itEnd))
                      return false;
                  return true;
 
             case TokenizerInternalState::stReadSpace:
                  if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_SPACE, tokenStartIt, itEnd))
                      return false;
-                 if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, itEnd, itEnd))
+                 if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, it, itEnd))
                      return false;
                  return true;
 
             case TokenizerInternalState::stReadIdentifier:
                  if (!parsingIdentifierHandlerLambda(tokenStartIt, itEnd)) // выплюнули
                      return false;
-                 if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, itEnd, itEnd))
+                 if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, it, itEnd))
                      return false;
                  return true;
 
             case TokenizerInternalState::stReadNumberPrefix:
             {
                  if (numberPrefixIdx==trie_index_invalid)
-                     return unexpectedHandlerLambda(itEnd, itEnd, __FILE__, __LINE__);
+                     return unexpectedHandlerLambda(it, itEnd, __FILE__, __LINE__);
                  {
                      // Надо проверить, является ли то, что уже есть, чисто числом
                      // int charToDigit(CharType ch)
@@ -955,7 +1047,7 @@ public: // methods - методы собственно разбора
                         prefixIsNumber = false; // Нет цифр в префиксе
 
                      if (!prefixIsNumber)
-                         return unexpectedHandlerLambda(itEnd, itEnd, __FILE__, __LINE__);
+                         return unexpectedHandlerLambda(it, itEnd, __FILE__, __LINE__);
 
                      // !!! Тут надо преобразовать префикс в число, и поместить его в numberCurrentIntValue
                      std::reverse(&prefixDigits[0], &prefixDigits[idx]);
@@ -964,10 +1056,10 @@ public: // methods - методы собственно разбора
                          addNumberIntPartDigit(prefixDigits[idx2]);
                      }
 
-                     if (!parsingNumberHandlerLambda(UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER, tokenStartIt, itEnd, itEnd)) // выплёвываем накопленное число как число без префикса, с системой счисления по умолчанию
+                     if (!parsingNumberHandlerLambda(UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER, tokenStartIt, it, itEnd)) // выплёвываем накопленное число как число без префикса, с системой счисления по умолчанию
                          return false;
 
-                     if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, itEnd, itEnd))
+                     if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, it, itEnd))
                          return false;
                      return true;
                  }
@@ -977,16 +1069,16 @@ public: // methods - методы собственно разбора
                  // !!! Не забыть передать numberCurrentIntValue
                  if (numberTokenId==0 || numberTokenId==payload_invalid)
                  {
-                     if (!parsingNumberHandlerLambda(UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER, tokenStartIt, itEnd, itEnd)) // выплёвываем накопленное число как число без префикса, с системой счисления по умолчанию
+                     if (!parsingNumberHandlerLambda(UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER, tokenStartIt, it, itEnd)) // выплёвываем накопленное число как число без префикса, с системой счисления по умолчанию
                          return false;
                  }
                  else
                  {
-                     if (!parsingNumberHandlerLambda(numberTokenId, tokenStartIt, itEnd, itEnd)) // выплёвываем накопленное число с явно указанной системой счисления
+                     if (!parsingNumberHandlerLambda(numberTokenId, tokenStartIt, it, itEnd)) // выплёвываем накопленное число с явно указанной системой счисления
                          return false;
                  }
 
-                 if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, itEnd, itEnd))
+                 if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, it, itEnd))
                      return false;
 
                  return true;
@@ -1001,16 +1093,16 @@ public: // methods - методы собственно разбора
             case TokenizerInternalState::stReadNumberFloat:
                  if (numberTokenId==0 || numberTokenId==payload_invalid)
                  {
-                     if (!parsingFloatNumberHandlerLambda(UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER|UMBA_TOKENIZER_TOKEN_FLOAT_FLAG, tokenStartIt, itEnd, itEnd)) // выплёвываем накопленное число с системой счисления по умолчанию
+                     if (!parsingFloatNumberHandlerLambda(UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER|UMBA_TOKENIZER_TOKEN_FLOAT_FLAG, tokenStartIt, it, itEnd)) // выплёвываем накопленное число с системой счисления по умолчанию
                          return false;
                  }
                  else
                  {
-                     if (!parsingFloatNumberHandlerLambda(numberTokenId|UMBA_TOKENIZER_TOKEN_FLOAT_FLAG, tokenStartIt, itEnd, itEnd)) // выплёвываем накопленное число с явно указанной системой счисления
+                     if (!parsingFloatNumberHandlerLambda(numberTokenId|UMBA_TOKENIZER_TOKEN_FLOAT_FLAG, tokenStartIt, it, itEnd)) // выплёвываем накопленное число с явно указанной системой счисления
                          return false;
                  }
 
-                 if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, itEnd, itEnd))
+                 if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, it, itEnd))
                      return false;
 
                  return true;
@@ -1019,7 +1111,7 @@ public: // methods - методы собственно разбора
                  if (operatorIdx==trie_index_invalid)
                  {
                      reportPossibleUnknownOperatorLambda(tokenStartIt, itEnd);
-                     return unexpectedHandlerLambda(itEnd, itEnd, __FILE__, __LINE__);
+                     return unexpectedHandlerLambda(it, itEnd, __FILE__, __LINE__);
                  }
                  else
                  {
@@ -1027,20 +1119,20 @@ public: // methods - методы собственно разбора
                      if (curPayload==payload_invalid) // текущий оператор нифига не оператор
                      {
                          reportPossibleUnknownOperatorLambda(tokenStartIt, itEnd);
-                         return unexpectedHandlerLambda(itEnd, itEnd, __FILE__, __LINE__);
+                         return unexpectedHandlerLambda(it, itEnd, __FILE__, __LINE__);
                      }
 
                      if (utils::isCommentToken(curPayload)) // на каждом операторе в обрабатываемом тексте у нас это срабатывает. Жирно или нет?
                      {
                          //TODO: !!! Надо уточнить, что за комент
-                         if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, itEnd, itEnd))
+                         if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, it, itEnd))
                              return false;
                          return true; // Пока считаем, что всё нормально
                      }
 
                      if (!parsingHandlerLambda(curPayload, tokenStartIt, itEnd)) // выплюнули текущий оператор
                          return false;
-                     if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, itEnd, itEnd))
+                     if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, it, itEnd))
                          return false;
                      return true;
                  }
@@ -1048,18 +1140,18 @@ public: // methods - методы собственно разбора
             case TokenizerInternalState::stReadSingleLineComment:
                  if (!parsingCommentHandlerLambda(commentTokenId, tokenStartIt, itEnd, commentStartIt, itEnd))
                      return false;
-                 if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, itEnd, itEnd))
+                 if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, it, itEnd))
                      return false;
                  return true;
 
             case TokenizerInternalState::stReadMultilineLineComment:
-                 return unexpectedHandlerLambda(itEnd, itEnd, __FILE__, __LINE__);
+                 return unexpectedHandlerLambda(it, itEnd, __FILE__, __LINE__);
 
             case TokenizerInternalState::stReadStringLiteral:
-                 return unexpectedHandlerLambda(itEnd, itEnd, __FILE__, __LINE__);
+                 return unexpectedHandlerLambda(it, itEnd, __FILE__, __LINE__);
 
             case TokenizerInternalState::stContinuationWaitLinefeed:
-                 return unexpectedHandlerLambda(itEnd, itEnd, __FILE__, __LINE__);
+                 return unexpectedHandlerLambda(it, itEnd, __FILE__, __LINE__);
 
             default: return false;
         }
@@ -1076,7 +1168,7 @@ public: // methods - методы собственно разбора
     {
         if (isInRawMode())
         {
-            if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_RAW_CHAR, it, it+1)) // Сырые символы мы всегда отдельно выплёвываем
+            if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_RAW_DATA, it, it+1)) // Сырые символы мы всегда отдельно выплёвываем
                 return false;
              return true;
         }
@@ -1091,7 +1183,7 @@ public: // methods - методы собственно разбора
             explicit_initial:
             case TokenizerInternalState::stInitial:
             {
-                if (options.isFloatingPointSeparator<value_type>(ch))
+                if (options.isFloatingPointSeparator(ch))
                 {
                     performStartReadingNumberLambda(ch, it);
                     st = TokenizerInternalState::stReadNumberMayBeFloat;
@@ -1168,7 +1260,7 @@ public: // methods - методы собственно разбора
             //------------------------------
             case TokenizerInternalState::stReadSpace:
             {
-                if (options.isFloatingPointSeparator<value_type>(ch))
+                if (options.isFloatingPointSeparator(ch))
                 {
                     if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_SPACE, tokenStartIt, it))
                         return false;
@@ -1473,7 +1565,7 @@ public: // methods - методы собственно разбора
             explicit_readnumber:
             case TokenizerInternalState::stReadNumber:
             {
-                if (options.isFloatingPointSeparator<value_type>(ch))
+                if (options.isFloatingPointSeparator(ch))
                 {
                     st = TokenizerInternalState::stReadNumberFloat;
                     break;

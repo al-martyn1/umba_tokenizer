@@ -16,7 +16,7 @@ namespace filters {
 //----------------------------------------------------------------------------
 //! Фильтр, который буферизирует токены UMBA_TOKENIZER_TOKEN_RAW_CHAR
 template<typename TokenizerType>
-using RawCharsCollectingFilter = TokenCollectingFilter<TokenizerType, UMBA_TOKENIZER_TOKEN_RAW_CHAR>;
+using UnclassifiedCharsCollectingFilter = TokenCollectingFilter<TokenizerType, UMBA_TOKENIZER_TOKEN_UNCLASSIFIED_CHAR>;
 
 //----------------------------------------------------------------------------
 
