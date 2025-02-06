@@ -62,6 +62,8 @@ protected:
 
 public:
 
+    static constexpr inline std::size_t invalidParsedDataIndex = std::size_t(-1);
+
     //TextPositionInfo       textPosition;
     small_size_t           tokenLineNumber;
     std::size_t            tokenOffset ; // От начала файла
@@ -88,6 +90,12 @@ public:
         if (textLen_>=65535u)
             textLen = 65535u;
     } 
+
+    std::size_t getParsedDataIndex() const
+    {
+        return parsedDataIndex==small_size_t(-1) ? invalidParsedDataIndex : std::size_t(parsedDataIndex);
+    }
+
 
     string_type getText(const string_type &allText) const
     {
@@ -502,6 +510,12 @@ public:
         return m_log;
     }
 
+    tokenizer_type& getTokenizer()
+    {
+        return m_tokenizer;
+    }
+
+
     /* Стратегия работы с индексом токена такая:
 
        - внутренний индекс указывает на элемент, который будет возвращен при следующем вызове getToken().
@@ -600,6 +614,38 @@ public:
     void setTokenPos(token_pos_type pos)
     {
         m_nextTokenPos = pos; // +1;
+    }
+
+    // Удаляет все вычитанное ранее, начиная с тукущей позиции
+    void clearFetched()
+    {
+        std::size_t posFromTextStart = 0;
+        std::size_t tokenLineNumber  = 0;
+        if (!m_tokenCollectionList.empty())
+        {
+            posFromTextStart = m_tokenCollectionList.back().tokenOffset;
+            tokenLineNumber  = m_tokenCollectionList.back().tokenLineNumber;
+        }
+        while(m_nextTokenPos<m_tokenCollectionList.size())
+        {
+            const auto &tci = m_tokenCollectionList.back();
+            posFromTextStart = tci.tokenOffset;
+            tokenLineNumber  = tci.tokenLineNumber;
+
+            auto pdi = tci.getParsedDataIndex();
+            if (pdi!=tci.invalidParsedDataIndex)
+            {
+                if (pdi==m_tokenParsedDataCollectionList.size())
+                    m_tokenParsedDataCollectionList.pop_back();
+            }
+
+            m_tokenCollectionList.pop_back();
+        }
+
+
+        // m_tokenizer.resetFilters(); // не нужно - делается при установке сырого режима
+        m_inputIt = iterator_type(m_text.data(), m_text.size(), std::size_t(m_fileId), posFromTextStart);
+        m_inputIt.setLineNumber(tokenLineNumber);
     }
 
     //! 

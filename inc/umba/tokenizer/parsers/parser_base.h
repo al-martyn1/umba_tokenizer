@@ -293,7 +293,15 @@ public: // methods
 
     }
 
+    tokenizer_type& getTokenizer()
+    {
+        return m_pTokens->getTokenizer();
+    }
 
+    void clearFetched()
+    {
+        m_pTokens->clearFetched();
+    }
 
 protected: // fields
 

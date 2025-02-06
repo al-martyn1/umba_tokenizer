@@ -87,6 +87,7 @@ public:
     using TokenPosType             = typename BaseClass::TokenPosType            ;
     using token_parsed_data_type   = typename tokenizer_type::token_parsed_data_type;
     using shared_log_type          = umba::tokenizer::log::SharedParserErrorLog;
+    using string_type              = typename BaseClass::string_type;
 
     using PacketDiagramItemType    = PacketDiagramItem<TokenCollectionItemType>;
     using PacketDiagramType        = PacketDiagram<TokenCollectionItemType>;
@@ -159,6 +160,8 @@ public:
             case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64: return "type"; // return "uint64"; 
             */
 
+            
+            case UMBA_TOKENIZER_TOKEN_RAW_DATA           : return "raw-data";
             case UMBA_TOKENIZER_TOKEN_IDENTIFIER         : return "identifier";
             case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_BIN: return "number";
             //case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_BIN: return "number";
@@ -231,7 +234,7 @@ public:
     }
 
     //! Разбираем токен числового литерала. Возвращается следующий токен для анализа и продолжения разбора строки или ноль при ошибке
-    const TokenInfoType* parseNumber(const TokenInfoType *pTokenInfo, std::uint64_t &val, const std::string &msg=std::string())
+    const TokenInfoType* parseNumber(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, std::uint64_t &val, const std::string &msg=std::string())
     {
         // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
 
@@ -250,11 +253,11 @@ public:
 
         val = std::uint64_t(numericLiteralData.pData->value);
 
-        return BaseClass::waitForSignificantToken( 0 /* &tokenPos */ , ParserWaitForTokenFlags::stopOnLinefeed);
+        return BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     }
 
     //! Разбираем диапазон. Возвращается следующий токен для анализа и продолжения разбора строки или ноль при ошибке
-    const TokenInfoType* parseRange(const TokenInfoType *pTokenInfo, PacketDiagramItemType &item)
+    const TokenInfoType* parseRange(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, PacketDiagramItemType &item)
     {
         // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
 
@@ -263,7 +266,7 @@ public:
 
         using umba::tokenizer::ParserWaitForTokenFlags;
 
-        pTokenInfo = parseNumber(pTokenInfo, item.start, "start offset value");
+        pTokenInfo = parseNumber(tokenPos, pTokenInfo, item.start, "start offset value");
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
@@ -278,21 +281,21 @@ public:
 
         // range sign '-' (UMBA_TOKENIZER_TOKEN_OPERATOR_SUBTRACTION)
         // Читаем второе число из диапазона
-        pTokenInfo = BaseClass::waitForSignificantToken( 0 /* &tokenPos */ , ParserWaitForTokenFlags::stopOnLinefeed);
+        pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
         if (!isAnyNumber(pTokenInfo->tokenType))
             return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, "failed reading range end"), (const TokenInfoType*)0;
 
-        pTokenInfo = parseNumber(pTokenInfo, item.end, "range end value");
+        pTokenInfo = parseNumber(tokenPos, pTokenInfo, item.end, "range end value");
         item.rangeType = EPacketDiagramRangeType::range;
 
         return pTokenInfo;
     }
 
     //! Разбираем тип. Возвращается следующий токен для анализа и продолжения разбора строки или ноль при ошибке
-    const TokenInfoType* parseType(const TokenInfoType *pTokenInfo, PacketDiagramItemType &item)
+    const TokenInfoType* parseType(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, PacketDiagramItemType &item)
     {
         // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
 
@@ -301,37 +304,37 @@ public:
         item.rangeType           = EPacketDiagramRangeType::explicitType;
         item.explicitTypeTokenId = pTokenInfo->tokenType;
 
-        pTokenInfo = BaseClass::waitForSignificantToken( 0 /* &tokenPos */ , ParserWaitForTokenFlags::stopOnLinefeed);
+        pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
         if (pTokenInfo->tokenType!=UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_OPEN)
             return pTokenInfo; // Не массив
 
-        pTokenInfo = BaseClass::waitForSignificantToken( 0 /* &tokenPos */ , ParserWaitForTokenFlags::stopOnLinefeed);
+        pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
         if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, "invalid array size"))
             return 0;
 
-        pTokenInfo = parseNumber(pTokenInfo, item.arraySize, "array size");
+        pTokenInfo = parseNumber(tokenPos, pTokenInfo, item.arraySize, "array size");
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
         if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE}, "invalid array size"))
             return 0;
 
-        return BaseClass::waitForSignificantToken( 0 /* &tokenPos */ , ParserWaitForTokenFlags::stopOnLinefeed);
+        return BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     }
 
     //! Разбор директивы packet-beta. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
-    const TokenInfoType* parsePacketBetaDirective(const TokenInfoType *pTokenInfo)
+    const TokenInfoType* parsePacketBetaDirective(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo)
     {
         // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
 
         // считываем коммент, если есть
-        pTokenInfo = BaseClass::waitForSignificantToken( 0 /* &tokenPos */ , ParserWaitForTokenFlags::stopOnLinefeed | ParserWaitForTokenFlags::stopOnComment);
+        pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed | ParserWaitForTokenFlags::stopOnComment);
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
@@ -343,7 +346,7 @@ public:
         auto commentDataLower = umba::string::tolower_copy(commentData.pData->asString());
 
         // Заранее читаем следующий токен
-        pTokenInfo = BaseClass::waitForSignificantToken( 0 /* &tokenPos */ , ParserWaitForTokenFlags::stopOnLinefeed);
+        pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
 
         if (commentDataLower.empty() || commentDataLower[0]!='!')
             return pTokenInfo;
@@ -363,35 +366,49 @@ public:
     }
 
     //! Разбор директивы title. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
-    const TokenInfoType* parseTitleDirective(const TokenInfoType *pTokenInfo)
+    const TokenInfoType* parseTitleDirective(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo)
     {
         // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
 
-        auto pTextStart = BaseClass::getTextPointer(pTokenInfo);
-        pTokenInfo = BaseClass::waitForSignificantToken( 0 /* &tokenPos */ , ParserWaitForTokenFlags::stopOnLinefeed);
+        //auto pTextStart = BaseClass::getTextPointer(pTokenInfo);
+
+        BaseClass::clearFetched();
+        BaseClass::getTokenizer().setRawModeAutoStop(umba::tokenizer::TokenizerRawAutoStopMode::stopOnCharExcluding, string_type("\r\n"));
+        BaseClass::getTokenizer().setRawMode(true);
+
+        pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
-        auto pTextEnd   = BaseClass::getTextPointer(pTokenInfo);
+        if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_RAW_DATA}, "invalid title directive"))
+            return 0;
+
+
+
+        //auto pTextEnd   = BaseClass::getTextPointer(pTokenInfo);
 
         if (diagram.allowOverrideTitle)
         {
-            pTextStart += 5; // скипнуои сам токен title
-            if (pTextStart<=pTextEnd)
-            diagram.title = umba::string::trim_copy(std::string(pTextStart, pTextEnd));
+            //pTextStart += 5; // скипнули сам токен title
+            // if (pTextStart<=pTextEnd)
+            // diagram.title = umba::string::trim_copy(std::string(pTextStart, pTextEnd));
+            const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
+            auto rawData = std::get<typename tokenizer_type::RawDataHolder>(*pParsedData);
+            diagram.title = umba::string::trim_copy(rawData.pData->asString());
         }
-        return pTokenInfo;
+
+        return BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     }
 
     //! Разбор обычной строки. Может возвращать ноль при ошибке, или токен LF/FIN
-    const TokenInfoType* parseRegularLine(const TokenInfoType *pTokenInfo, PacketDiagramItemType &item)
+    const TokenInfoType* parseRegularLine(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, PacketDiagramItemType &item)
     {
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
         if (isAnyNumber(pTokenInfo->tokenType))
-            pTokenInfo = parseRange(pTokenInfo, item);
+            pTokenInfo = parseRange(tokenPos, pTokenInfo, item);
         else if (isAnyType(pTokenInfo->tokenType))
-            pTokenInfo = parseType(pTokenInfo, item);
+            pTokenInfo = parseType(tokenPos, pTokenInfo, item);
         else
             return 0;
 
@@ -401,7 +418,7 @@ public:
             return 0;
 
         // Читаем следующий токен
-        pTokenInfo = BaseClass::waitForSignificantToken( 0 /* &tokenPos */ , ParserWaitForTokenFlags::stopOnLinefeed);
+        pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
         if (!checkNotNul(pTokenInfo))
             return 0;
 
@@ -412,20 +429,20 @@ public:
         auto stringLiteralData = std::get<typename tokenizer_type::StringLiteralDataHolder>(*pParsedData);
         item.text = stringLiteralData.pData->asString();
 
-        return BaseClass::waitForSignificantToken( 0 /* &tokenPos */ , ParserWaitForTokenFlags::stopOnLinefeed);
+        return BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     }
 
 
     bool parse()
     {
         using umba::tokenizer::ParserWaitForTokenFlags;
-        // TokenPosType tokenPos;
+        TokenPosType tokenPos;
 
         while(true)
         {
             PacketDiagramItemType item;
 
-            const TokenInfoType *pTokenInfo = BaseClass::waitForSignificantToken( 0 /* &tokenPos */ , ParserWaitForTokenFlags::stopOnLinefeed);
+            const TokenInfoType *pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
             if (!checkNotNul(pTokenInfo))
                 return false;
 
@@ -439,15 +456,15 @@ public:
 
             if (isAnyNumber(pTokenInfo->tokenType) || isAnyType(pTokenInfo->tokenType))
             {
-                pTokenInfo = parseRegularLine(pTokenInfo, item);
+                pTokenInfo = parseRegularLine(tokenPos, pTokenInfo, item);
             }
             else if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_PACKET_BETA)
             {
-                pTokenInfo = parsePacketBetaDirective(pTokenInfo);
+                pTokenInfo = parsePacketBetaDirective(tokenPos, pTokenInfo);
             }
             else if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_TITLE)
             {
-                pTokenInfo = parseTitleDirective(pTokenInfo);
+                pTokenInfo = parseTitleDirective(tokenPos, pTokenInfo);
             }
             else
             {

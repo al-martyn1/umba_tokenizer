@@ -395,8 +395,8 @@ protected: // fileds - состояние токенизатора
     //mutable int                    rawModeCounter = 0;
     mutable bool                   rawMode = false;
     //StringType                     rawDataBuffer;
-    iterator_type                  rawStartIt;
-    iterator_type                  rawEndIt  ;
+    mutable iterator_type          rawStartIt;
+    mutable iterator_type          rawEndIt  ;
     mutable bool                   rawStartValid = false;
     TokenizerRawAutoStopMode       tokenizerRawAutoStopMode = TokenizerRawAutoStopMode::noAutoStop;
     StringType                     tokenizerRawStopChars; // or sequence
@@ -453,7 +453,7 @@ protected: // fileds - состояние токенизатора
 protected: // methods
 
 
-    void updateStoredRawIterators(iterator_type curIt, iterator_type itEnd)
+    void updateStoredRawIterators(iterator_type curIt, iterator_type itEnd) const
     {
         if (!rawStartValid)
         {
@@ -471,7 +471,56 @@ protected: // methods
         rawEndIt = curIt;
     }
 
-    // Возвращает результат флуша, по умолчанию - true, если флуш не понадобился
+    // Возвращает не предыдущий режим, а результат флуша, если был
+    bool internalSetRawMode(bool bRawMode) const
+    {
+        bool res = true;
+
+        if (rawMode!=bRawMode)
+        {
+            // Значение меняется
+            if (bRawMode)
+            {
+                // новый режим - сырой
+                rawStartValid = false;
+
+                // Сбрасываем состояния, сбрасываем фильтры
+                st            = TokenizerInternalState::stInitial;
+                stEscapeSaved = TokenizerInternalState::stInitial;
+
+                operatorIdx = trie_index_invalid;
+        
+                // Числовые литералы
+                resetNumberStateVals();
+        
+                // Коментарии
+                //commentStartIt;
+                commentTokenId = 0;
+                commentEndMatchIndex = 0;
+        
+                // Строковые литералы
+                pCurrentLiteralParser = 0;
+                literalTokenId = 0;
+                externHandlerMessage.clear();
+                stringLiteralValueCollector.clear();
+
+                resetFilters();
+            }
+            else
+            {
+                // Новый режим обычный, токенный
+                res = flushRawData();
+            }
+        }
+
+        rawMode = bRawMode;
+
+        return res;
+    }
+
+
+    #if 0
+    // сделал по месту
     bool checkRawForAutoStop(iterator_type curIt, iterator_type itEnd) const
     {
         bool res = true;
@@ -492,6 +541,7 @@ protected: // methods
 
         return res;
     }
+    #endif
 
 
 //     void updateStoredRawIterators(iterator_type curIt, iterator_type curEnd)
@@ -547,26 +597,7 @@ public: // methods
     // Возвращает не предыдущий режим, а результат флуша, если был
     bool setRawMode(bool bRawMode)
     {
-        bool res = true;
-
-        if (rawMode!=bRawMode)
-        {
-            // Значение меняется
-            if (bRawMode)
-            {
-                // новый режим - сырой
-                rawStartValid = false;
-            }
-            else
-            {
-                // Новый режим обычный, токенный
-                res = flushRawData();
-            }
-        }
-
-        rawMode = bRawMode;
-
-        return res;
+        return internalSetRawMode(bRawMode);
     }
 
     void setRawModeAutoStop(TokenizerRawAutoStopMode newMode, const string_type &stopChars=string_type())
@@ -1073,6 +1104,15 @@ public: // methods - методы собственно разбора
     }
 
 
+    void resetFilters() const
+    {
+        MessagesStringType msg;
+        InputIteratorType b, e;
+        static_cast<const TBase*>(this)->hadleToken( false, UMBA_TOKENIZER_TOKEN_CTRL_RST, b, e
+                                                   , EmptyData() // std::basic_string_view<value_type>()
+                                                   , msg
+                                                   );
+    }
 
     bool tokenizeFinalize(InputIteratorType it, InputIteratorType itEnd) const
     {
@@ -1286,10 +1326,50 @@ public: // methods - методы собственно разбора
                       || tokenizerRawAutoStopMode==TokenizerRawAutoStopMode::stopOnCharSequence
                        );
 
-            // TODO: тут надо накалякать, что делать в разных raw режимах
+            updateStoredRawIterators(it, itEnd);
+
+            if (tokenizerRawAutoStopMode==TokenizerRawAutoStopMode::stopOnCharSequence)
+            {
+                if (rawStartValid && !tokenizerRawStopChars.empty())
+                {
+                    auto sv = umba::iterator::makeStringView(rawStartIt, rawEndIt);
+                    // auto stopCharsSv = std::basic_string_view<char_type>(tokenizerRawStopChars.begin(), tokenizerRawStopChars.end()); // Только с C++20, блджад
+                    auto stopCharsSv = std::basic_string_view<char_type>(tokenizerRawStopChars.data(), tokenizerRawStopChars.size()); // Годно для C++17
+                    if (sv.size()<stopCharsSv.size())
+                        return true; // Ничего не делаем - накоплено меньше, чем стоп строка
+                    auto cmpOffset = sv.size()-stopCharsSv.size();
+                    auto cmpRes = sv.compare(cmpOffset, stopCharsSv.size(), stopCharsSv);
+                    if (cmpRes==0) // В хвосте - стоп последовательность
+                    {
+                        return internalSetRawMode(false); // там же и флушится
+                    }
+                }
+
+                return true;
+            }
+
+            else if(tokenizerRawAutoStopMode==TokenizerRawAutoStopMode::stopOnCharIncluding || tokenizerRawAutoStopMode==TokenizerRawAutoStopMode::stopOnCharExcluding)
+            {
+                // Поиск делаем по-простому - предполагаем, что многобайтные символы не используются для останова
+                const auto ch = *it;
+                if (tokenizerRawStopChars.find(ch)!=tokenizerRawStopChars.npos)
+                {
+                    // Стоп символ найден
+                    auto res = internalSetRawMode(false); // там же и флушится
+                    if (!res)
+                        return res; // при ошибке - возвращаем её
+
+                    if (tokenizerRawAutoStopMode==TokenizerRawAutoStopMode::stopOnCharIncluding)
+                        return true; // Дальнейшей обработки текущего символа нет
+
+                    // Пошли на дальнейшую обработку в обычном режиме
+                }
+                else
+                {
+                    return true; // Всё норм, сырые итераторы обновили и выходим
+                }
+            }
         }
-
-
 
         const auto ch = *it;
         UMBA_ASSERT(charClassTable.size()>charToCharClassTableIndex(ch));
