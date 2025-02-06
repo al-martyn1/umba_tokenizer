@@ -25,14 +25,16 @@ struct KebabCaseComposingFilter : FilterBase<TokenizerType, VectorType>
     using token_buffer_vector_type  = typename TBase::token_buffer_vector_type;
     // using string_type               = typename TokenizerType::string_type;
 
-    string_type identifierValueCollector;
+    string_type  identifierValueCollector;
+    payload_type kebabDelimiterTokenId;
 
     // First argument is index in sequence
     UMBA_RULE_OF_FIVE(KebabCaseComposingFilter, default, default, default, default, default);
 
 
-    KebabCaseComposingFilter(token_handler_type curTokenHandler)
+    KebabCaseComposingFilter(token_handler_type curTokenHandler, payload_type kebabDelimiterTokenId_)
     : TBase(curTokenHandler)
+    , kebabDelimiterTokenId(kebabDelimiterTokenId_)
     {
     }
 
@@ -47,8 +49,6 @@ protected:
 
 public:
 
-    // UMBA_TOKENIZER_TOKEN_OPERATOR_SUBTRACTION
-    // UMBA_TOKENIZER_TOKEN_IDENTIFIER
 
     bool passComposedIdentifier( TokenizerType           &tokenizer
                                , iterator_type           &b
@@ -62,7 +62,7 @@ public:
         //TokenInfo<KebabCaseComposingFilter> minusTokenInfo;
         typename TBase::token_buffer_vector_type::value_type minusTokenInfo;
         bool lastMinus = false;
-        if (this->tokenBuffer.back().payloadToken==UMBA_TOKENIZER_TOKEN_OPERATOR_SUBTRACTION)
+        if (this->tokenBuffer.back().payloadToken==kebabDelimiterTokenId)
         {
             lastMinus = true;
             minusTokenInfo = this->tokenBuffer.back();
@@ -76,7 +76,7 @@ public:
         typename token_buffer_vector_type::const_iterator it = this->tokenBuffer.begin();
         for(; it!=this->tokenBuffer.end(); ++it)
         {
-            UMBA_ASSERT(it->payloadToken==UMBA_TOKENIZER_TOKEN_OPERATOR_SUBTRACTION || it->payloadToken==UMBA_TOKENIZER_TOKEN_IDENTIFIER);
+            UMBA_ASSERT(it->payloadToken==kebabDelimiterTokenId || it->payloadToken==UMBA_TOKENIZER_TOKEN_IDENTIFIER);
             if (it->payloadToken==UMBA_TOKENIZER_TOKEN_IDENTIFIER)
             {
                 auto stringLiteralData = std::get<typename TokenizerType::IdentifierDataHolder>(it->parsedData);
@@ -160,7 +160,7 @@ public:
             }
         }
 
-        if (payloadToken!=UMBA_TOKENIZER_TOKEN_OPERATOR_SUBTRACTION && payloadToken!=UMBA_TOKENIZER_TOKEN_IDENTIFIER)
+        if (payloadToken!=kebabDelimiterTokenId && payloadToken!=UMBA_TOKENIZER_TOKEN_IDENTIFIER)
         {
             // У нас не идентификатор и не минус
 
@@ -176,7 +176,7 @@ public:
             return this->callNextTokenHandler(tokenizer, lineStartFlag, payloadToken, b, e, parsedData, msg);
         }
 
-        if (payloadToken==UMBA_TOKENIZER_TOKEN_OPERATOR_SUBTRACTION)
+        if (payloadToken==kebabDelimiterTokenId)
         {
             // Если буфер пустой - пробрасываем текущий минус дальше - идентификатор не может с него начинаться
             if (this->tokenBuffer.empty())
@@ -201,7 +201,7 @@ public:
         // У нас - идентификатор, других вариантов нет
 
         // Буфер пуст или в конце - минус
-        if (this->tokenBuffer.empty() || this->tokenBuffer.back().payloadToken==UMBA_TOKENIZER_TOKEN_OPERATOR_SUBTRACTION)
+        if (this->tokenBuffer.empty() || this->tokenBuffer.back().payloadToken==kebabDelimiterTokenId)
         {
             this->tokenBufferPushBack(lineStartFlag, payloadToken, b, e, parsedData);
             return true;

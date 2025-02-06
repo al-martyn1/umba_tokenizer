@@ -52,26 +52,37 @@
 
 
 
-#define UMBA_TOKENIZER_TOKEN_FLOAT_FLAG                                               0x0080u
+// Кодирование числовых токенов
+// Требуется
+// 1) флаг плавучки - 1 бит
+// 2) флаг miss digit - если префикс есть, а цифр после него нет - этот флаг позволяет трактовать префикс как валидное число
+// 3) Четыре (младших) бита резервируем для пользователя
+// 4) Три бита резервируем под основание системы счисления
+// Итого: 1+1+4+3=9 бит, 0x01FF маска
 
+#define UMBA_TOKENIZER_TOKEN_FLOAT_FLAG                                               0x0100u
+
+// Числовой литерал, целый или плавучка
+// Базовый номер токена, не флаг признака числового литерала!
 #define UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER                                          0x1000u
+
 #define UMBA_TOKENIZER_TOKEN_FLOAT_NUMBER                                             (UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER|UMBA_TOKENIZER_TOKEN_FLOAT_FLAG)
 #define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_FIRST                                     UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER
-#define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_LAST                                      0x1FFFu
+#define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_LAST                                      0x11FFu
 
-#define UMBA_TOKENIZER_TOKEN_NUMBER_USER_LITERAL_FIRST                                (UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_FIRST+1)
-#define UMBA_TOKENIZER_TOKEN_NUMBER_USER_LITERAL_LAST                                 0x11FFu
+// #define UMBA_TOKENIZER_TOKEN_NUMBER_USER_LITERAL_FIRST                                (UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_FIRST+1)
+// #define UMBA_TOKENIZER_TOKEN_NUMBER_USER_LITERAL_LAST                                 0x11FFu
 
 
 // Кодируем признаки числового литерала
-#define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_FLAG_MISS_DIGIT                           0x0800u  /* После префикса может не быть ни одной цифры */
-#define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_MASK                                 0x0700u  /* Маска для системы счисления */
+#define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_FLAG_MISS_DIGIT                           0x0080u  /* После префикса может не быть ни одной цифры */
+#define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_MASK                                 0x0070u  /* Маска для системы счисления */
 #define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_DEC                                  0x0000u
-#define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_BIN                                  0x0100u
-#define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_QUAT                                 0x0200u  /* четвертичная quaternary number system */
-#define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_OCT                                  0x0300u
-#define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_DUOD                                 0x0400u  /* двенадцатеричная duodecimal number system */
-#define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_HEX                                  0x0500u
+#define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_BIN                                  0x0010u
+#define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_QUAT                                 0x0020u  /* четвертичная quaternary number system */
+#define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_OCT                                  0x0030u
+#define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_DUOD                                 0x0040u  /* двенадцатеричная duodecimal number system */
+#define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_HEX                                  0x0050u
 
 
 // #define UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER                                          0x1000u
@@ -92,15 +103,50 @@
 
 
 
+// Переехали из диапазона операторов
+// Или пока не переехали
+#define UMBA_TOKENIZER_TOKEN_COMMENT_BASE                                             0x2000u /* 0x1200u */
+#define UMBA_TOKENIZER_TOKEN_COMMENT_FIRST                                            UMBA_TOKENIZER_TOKEN_COMMENT_BASE
+#define UMBA_TOKENIZER_TOKEN_COMMENT_LAST                                             0x207Fu /* 0x123Fu */
+
+#define UMBA_TOKENIZER_TOKEN_COMMENT_SINGLE_LINE_FIRST                                (UMBA_TOKENIZER_TOKEN_COMMENT_BASE+0x010u)  /*  //    */
+#define UMBA_TOKENIZER_TOKEN_COMMENT_SINGLE_LINE_LAST                                 (UMBA_TOKENIZER_TOKEN_COMMENT_BASE+0x01Fu)  /*        */
+#define UMBA_TOKENIZER_TOKEN_COMMENT_SINGLE_LINE                                      UMBA_TOKENIZER_TOKEN_COMMENT_SINGLE_LINE_FIRST
+
+#define UMBA_TOKENIZER_TOKEN_COMMENT_MULTI_LINE_START                                 (UMBA_TOKENIZER_TOKEN_COMMENT_BASE+0x021u)  /*        */
+#define UMBA_TOKENIZER_TOKEN_COMMENT_MULTI_LINE_END                                   (UMBA_TOKENIZER_TOKEN_COMMENT_BASE+0x022u)  /*        */
+#define UMBA_TOKENIZER_TOKEN_COMMENT_MULTI_LINE                                       UMBA_TOKENIZER_TOKEN_COMMENT_MULTI_LINE_START
+
+
+
+// С какого хрена коменты я присунул в операторы?
+// С какого-то присунул
+// Оставляю для совместимости
+#define UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FIRST                       UMBA_TOKENIZER_TOKEN_COMMENT_SINGLE_LINE_FIRST
+#define UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_LAST                        UMBA_TOKENIZER_TOKEN_COMMENT_SINGLE_LINE_LAST 
+
+#define UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT                             UMBA_TOKENIZER_TOKEN_COMMENT_SINGLE_LINE
+
+
+#define UMBA_TOKENIZER_TOKEN_OPERATOR_MULTI_LINE_COMMENT_START                        UMBA_TOKENIZER_TOKEN_COMMENT_MULTI_LINE_START
+#define UMBA_TOKENIZER_TOKEN_OPERATOR_MULTI_LINE_COMMENT                              UMBA_TOKENIZER_TOKEN_COMMENT_MULTI_LINE
+#define UMBA_TOKENIZER_TOKEN_OPERATOR_MULTI_LINE_COMMENT_END                          UMBA_TOKENIZER_TOKEN_COMMENT_MULTI_LINE_END
+
+#define UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FLAG_AS_REGULAR_OPERATOR    0x040u   /*        */
+#define UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FIRST_AS_REGULAR_OPERATOR   (UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FIRST|UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FLAG_AS_REGULAR_OPERATOR)
+#define UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_LAST_AS_REGULAR_OPERATOR    (UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_LAST |UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FLAG_AS_REGULAR_OPERATOR)
+
+
+
+
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST                                           0x2000u
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_LAST                                            0x2FFFu
                                                                                    // 0x0205u // Последний пока заданный в данном файле
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_USER_FIRST                                      0x27FFu
+#define UMBA_TOKENIZER_TOKEN_OPERATOR_USER_FIRST                                      0x2800u
+#define UMBA_TOKENIZER_TOKEN_OPERATOR_USER_LAST                                       UMBA_TOKENIZER_TOKEN_OPERATOR_LAST
 
-
-
-#define UMBA_TOKENIZER_TOKEN_USER_OPERATOR_FIRST                                      0x2800u
-#define UMBA_TOKENIZER_TOKEN_USER_OPERATOR_LAST                                       UMBA_TOKENIZER_TOKEN_OPERATOR_LAST
+#define UMBA_TOKENIZER_TOKEN_USER_OPERATOR_FIRST                                      UMBA_TOKENIZER_TOKEN_OPERATOR_USER_FIRST
+#define UMBA_TOKENIZER_TOKEN_USER_OPERATOR_LAST                                       UMBA_TOKENIZER_TOKEN_OPERATOR_USER_LAST 
 
 
 #define UMBA_TOKENIZER_TOKEN_STRING_LITERAL_FIRST                                     0x3000u
@@ -146,23 +192,9 @@
 // #define UMBA_TOKENIZER_TOKEN_CTRL_PP_INCLUDE                                          (UMBA_TOKENIZER_TOKEN_CTRL_FLAG|0x0004u) /* empty token, that "include" PP directive detected. Non-paired token */
 
 
-// С какого хрена коменты я присунул в операторы?
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FIRST                       (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x010u)  /*  //    */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_LAST                        (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x01Fu)  /*        */
-
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT                             UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FIRST
 
 
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_MULTI_LINE_COMMENT_START                        (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x021u)  /*        */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_MULTI_LINE_COMMENT                              UMBA_TOKENIZER_TOKEN_OPERATOR_MULTI_LINE_COMMENT_START
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_MULTI_LINE_COMMENT_END                          (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x022u)  /*        */
-
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FLAG_AS_REGULAR_OPERATOR                                         0x040u   /*        */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FIRST_AS_REGULAR_OPERATOR   (UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FIRST|UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FLAG_AS_REGULAR_OPERATOR)
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_LAST_AS_REGULAR_OPERATOR    (UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_LAST |UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FLAG_AS_REGULAR_OPERATOR)
-
-
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST_GENERIC                            (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x030u)
+// #define UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST_GENERIC                            (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x030u)
 
 // C++
 // https://en.wikipedia.org/wiki/Operators_in_C_and_C%2B%2B

@@ -28,6 +28,14 @@ namespace tokenizer {
 namespace marmaid {
 
 
+enum class EPacketDiagramType
+{
+    unknown,
+    bitDiagram,
+    byteDiagram
+};
+
+
 enum class EPacketDiagramRangeType
 {
     singleValue,
@@ -35,12 +43,28 @@ enum class EPacketDiagramRangeType
     explicitType
 };
 
-enum class EPacketDiagramType
+inline
+std::string makeCppNameFromText(const std::string &text, bool bCpp)
 {
-    unknown,
-    bitDiagram,
-    byteDiagram
-};
+    UMBA_USED(bCpp);
+
+    std::string res = text;
+    for(auto &ch : res)
+    {
+        if (ch>='A' && ch<='Z')
+            continue;
+        if (ch>='a' && ch<='z')
+            continue;
+        if (ch>='0' && ch<='9')
+            continue;
+
+        ch = '_';
+    }
+
+    return res;
+}
+
+
 
 
 template<typename TokenCollectionItemType>
@@ -50,12 +74,115 @@ struct PacketDiagramItem
     umba::tokenizer::payload_type   explicitTypeTokenId;
     std::string                     text;
 
-    std::uint64_t                   start;
-    std::uint64_t                   end  ; // входит в диапазон
+    std::uint64_t                   start; // Вычисляем при добавлении, если указан тип
+    std::uint64_t                   end  ; // Вычисляем при добавлении, если указан тип; ходит в диапазон
     std::uint64_t                   arraySize = std::uint64_t(-1);
 
+    std::string                     realTypeName; // For C++ output, full qualified
+
     const TokenCollectionItemType   *pTokenInfo = 0; // стартовый токен, можно получить номер строки
-};
+
+    // Только размер типа
+    std::uint64_t getTypeSize() const
+    {
+        UMBA_ASSERT(rangeType==EPacketDiagramRangeType::explicitType);
+        return std::size_t(explicitTypeTokenId&0x0F);
+    }
+
+    // Размер типа * кол-во элеметов
+    std::uint64_t getTypeFieldSize() const
+    {
+        if (arraySize==std::uint64_t(-1))
+            return getTypeSize();
+        return arraySize*getTypeSize();
+    }
+
+    bool isArray() const
+    {
+        if (rangeType==EPacketDiagramRangeType::explicitType)
+        {
+            if (arraySize==std::uint64_t(-1))
+                return false;
+            else
+                return true;
+        }
+
+        if (rangeType==EPacketDiagramRangeType::singleValue)
+            return false;
+
+        return true;
+    }
+
+    std::uint64_t getArraySize() const
+    {
+        if (rangeType==EPacketDiagramRangeType::explicitType)
+        {
+            if (arraySize==std::uint64_t(-1))
+                return 0;
+            else
+                return arraySize;
+        }
+
+        if (rangeType==EPacketDiagramRangeType::singleValue)
+            return 0;
+
+        return end-start+1;
+    }
+
+    std::string getPlainTypeName() const // For plain C
+    {
+        if (!realTypeName.empty())
+            return realTypeName;
+
+        if (rangeType!=EPacketDiagramRangeType::explicitType)
+            return "uint8_t"; // threat singles and ranges as bytes
+
+        switch(explicitTypeTokenId)
+        {
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR  : return "char"   ;
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8  : return "int8_t" ;
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT16 : return "int16_t";
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT32 : return "int32_t";
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT64 : return "int64_t";
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8 : return "uint8_t" ;
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT16: return "uint16_t";
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT32: return "uint32_t";
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64: return "uint64_t";
+
+            default: return "unknown";
+        }
+
+    }
+
+    std::string getCppTypeName() const // For C++
+    {
+        std::string name = getPlainTypeName();
+        if (!realTypeName.empty())
+            return name;
+
+        if (rangeType!=EPacketDiagramRangeType::explicitType)
+            return "std::" + name;
+
+        if (explicitTypeTokenId!=MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR)
+            return "std::" + name;
+
+        return name;
+    }
+
+    std::string getCppOrCTypeName(bool bCpp) const
+    {
+        return bCpp ? getCppTypeName() : getPlainTypeName();
+    }
+
+    std::string getCppOrCFieldName(bool bCpp) const
+    {
+        return makeCppNameFromText(text, bCpp);
+    }
+
+    
+
+}; // struct PacketDiagramItem
+
 
 
 template<typename TokenCollectionItemType>
@@ -68,8 +195,12 @@ struct PacketDiagram
     std::vector<PacketDiagramItemType>     data ;
     bool                                   allowOverrideTitle = true;
 
+    std::string getCppOrCTitle(bool bCpp) const
+    {
+        return title.empty() ? std::string("untitled") : makeCppNameFromText(title, bCpp);
+    }
 
-};
+}; // struct PacketDiagram
 
 
 
@@ -108,6 +239,84 @@ public:
     , log(a_log)
     {
     }
+
+
+    bool addDiagramItem(PacketDiagramItemType item)
+    {
+        if (item.text.empty())
+        {
+            BaseClass::logMessage(item.pTokenInfo, "diagram", "name is empty");
+            return false;
+        }
+
+        std::uint64_t calculatedStart = 0;
+
+        if (!diagram.data.empty())
+        {
+            calculatedStart = diagram.data.back().end+1;
+        }
+
+        if (item.rangeType==EPacketDiagramRangeType::range)
+        {
+            if (item.start>item.end)
+            {
+                BaseClass::logMessage( item.pTokenInfo, "diagram", "entry '$(Name)': range start offset is greater than range end offset"
+                                     , umba::FormatMessage<std::string>().arg("Name", item.text).values()
+                                     );
+                return false;
+            }
+        }
+
+        if (item.rangeType==EPacketDiagramRangeType::singleValue || item.rangeType==EPacketDiagramRangeType::range)
+        {
+            if (item.start!=calculatedStart)
+            {
+                if (item.start<calculatedStart)
+                {
+                    if (item.rangeType==EPacketDiagramRangeType::singleValue)
+                        BaseClass::logMessage( item.pTokenInfo, "diagram", "entry '$(Name)': range start offset value is less than previous value end"
+                                             , umba::FormatMessage<std::string>().arg("Name", item.text).values()
+                                             );
+                    else
+                        BaseClass::logMessage(item.pTokenInfo, "diagram", "entry '$(Name)': entry offset value is less than previous value end"
+                                             , umba::FormatMessage<std::string>().arg("Name", item.text).values()
+                                             );
+                }
+                else
+                {
+                    BaseClass::logMessage(item.pTokenInfo, "diagram", "entry '$(Name)': gap detected: previous entry '$(PrevName)' ends with $(PrevEnd), but this entry starts with $(CurStart)"
+                                         , umba::FormatMessage<std::string>().arg("Name", item.text)
+                                                                             .arg("PrevName", diagram.data.back().text)
+                                                                             .arg("PrevEnd", diagram.data.back().end)
+                                                                             .arg("CurStart", item.start)
+                                                                             .values()
+                                         );
+                }
+
+                return false;
+            }
+        
+        }
+
+        // Вроде всё проверили
+
+        // Теперь фиксим поля
+
+        if (item.rangeType==EPacketDiagramRangeType::explicitType)
+        {
+            item.start = calculatedStart;
+            item.end   = item.start + item.getTypeFieldSize();
+        }
+        else if (item.rangeType==EPacketDiagramRangeType::singleValue)
+        {
+            item.end = item.start;
+        }
+
+        diagram.data.emplace_back(item);
+
+        return true;
+    }
+
 
     static bool isAnyType(umba::tokenizer::payload_type tk)
     {
@@ -172,8 +381,6 @@ public:
             //case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_HEX: return "number";
             case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_OCT|UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_FLAG_MISS_DIGIT: return "number";
             case UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FIRST: return "comment";
-            case UMBA_TOKENIZER_TOKEN_OPERATOR_SUBTRACTION: return "range-operator";
-            case UMBA_TOKENIZER_TOKEN_OPERATOR_TERNARY_ALTERNATIVE: return "follow-delimiter";
             case UMBA_TOKENIZER_TOKEN_STRING_LITERAL     : return "string";
             case UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_OPEN : return "array-size-start-bracket";
             case UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE: return "array-size-end-bracket";
@@ -183,6 +390,10 @@ public:
             case UMBA_TOKENIZER_TOKEN_FORM_FEED: return "form-feed";
             
             case UMBA_TOKENIZER_TOKEN_CTRL_FIN: return "EOF";
+
+            case MARMAID_TOKEN_OPERATOR_RANGE: return "range-operator";
+            case MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER: return "follow-delimiter";
+
             // case : return "";
             // case : return "";
             // case : return "";
@@ -194,6 +405,9 @@ public:
 
                  if (tk>=MARMAID_TOKEN_SET_TYPES_FIRST && tk<=MARMAID_TOKEN_SET_TYPES_LAST)
                      return "type";
+
+                 if (tk>=MARMAID_TOKEN_SET_OPERATORS_FIRST && tk<=MARMAID_TOKEN_SET_OPERATORS_LAST )
+                     return "operator";
 
                  return "unknown_" + std::to_string(tk);
         }
@@ -270,16 +484,16 @@ public:
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
-        if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_OPERATOR_SUBTRACTION, UMBA_TOKENIZER_TOKEN_OPERATOR_TERNARY_ALTERNATIVE}, "failed reading offset/range"))
+        if (!checkExactTokenType(pTokenInfo, {MARMAID_TOKEN_OPERATOR_RANGE, MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER}, "failed reading offset/range"))
             return 0;
 
-        if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_OPERATOR_TERNARY_ALTERNATIVE)
+        if (pTokenInfo->tokenType==MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER)
         {
             item.rangeType = EPacketDiagramRangeType::singleValue;
             return pTokenInfo;
         }
 
-        // range sign '-' (UMBA_TOKENIZER_TOKEN_OPERATOR_SUBTRACTION)
+        // range sign '-' (MARMAID_TOKEN_OPERATOR_RANGE)
         // Читаем второе число из диапазона
         pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
         if (!pTokenInfo)
@@ -372,16 +586,14 @@ public:
 
         //auto pTextStart = BaseClass::getTextPointer(pTokenInfo);
 
-        BaseClass::clearFetched();
-        BaseClass::getTokenizer().setRawModeAutoStop(umba::tokenizer::TokenizerRawAutoStopMode::stopOnCharExcluding, string_type("\r\n"));
-        BaseClass::getTokenizer().setRawMode(true);
+        BaseClass::setRawModeAutoStop(umba::tokenizer::TokenizerRawAutoStopMode::stopOnCharExcluding, string_type("\r\n"));
+        BaseClass::setRawMode(true);
 
         pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
         if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_RAW_DATA}, "invalid title directive"))
             return 0;
-
 
 
         //auto pTextEnd   = BaseClass::getTextPointer(pTokenInfo);
@@ -414,7 +626,7 @@ public:
 
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
-        if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_OPERATOR_TERNARY_ALTERNATIVE}, "invalid record definition"))
+        if (!checkExactTokenType(pTokenInfo, {MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER}, "invalid record definition"))
             return 0;
 
         // Читаем следующий токен
@@ -435,13 +647,10 @@ public:
 
     bool parse()
     {
-        using umba::tokenizer::ParserWaitForTokenFlags;
         TokenPosType tokenPos;
 
         while(true)
         {
-            PacketDiagramItemType item;
-
             const TokenInfoType *pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
             if (!checkNotNul(pTokenInfo))
                 return false;
@@ -452,11 +661,16 @@ public:
             if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
                 return true; // normal stop
 
-            item.pTokenInfo = pTokenInfo; // На всякий случай инфу сохраняем
 
             if (isAnyNumber(pTokenInfo->tokenType) || isAnyType(pTokenInfo->tokenType))
             {
+                PacketDiagramItemType item;
+                item.pTokenInfo = pTokenInfo; // На всякий случай инфу сохраняем
                 pTokenInfo = parseRegularLine(tokenPos, pTokenInfo, item);
+                if (!pTokenInfo)
+                    return false;
+                if (!addDiagramItem(item))
+                    return false;
             }
             else if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_PACKET_BETA)
             {
@@ -484,9 +698,6 @@ public:
                 expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_LINEFEED} /* , msg */ );
                 return false;
             }
-
-
-            diagram.data.emplace_back(item);
         }
 
         return false;

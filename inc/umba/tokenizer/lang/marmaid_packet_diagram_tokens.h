@@ -42,12 +42,46 @@
 #define MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8                 (MARMAID_TOKEN_SET_TYPES|MARMAID_PRIM_TYPE_FLAG_INTEGRAL|0x001u)
 #define MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT16                (MARMAID_TOKEN_SET_TYPES|MARMAID_PRIM_TYPE_FLAG_INTEGRAL|0x002u)
 #define MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT32                (MARMAID_TOKEN_SET_TYPES|MARMAID_PRIM_TYPE_FLAG_INTEGRAL|0x004u)
-#define MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT64                (MARMAID_TOKEN_SET_TYPES|MARMAID_PRIM_TYPE_FLAG_INTEGRAL|0x00u)
+#define MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT64                (MARMAID_TOKEN_SET_TYPES|MARMAID_PRIM_TYPE_FLAG_INTEGRAL|0x008u)
 
 #define MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8                (MARMAID_TOKEN_SET_TYPES|MARMAID_PRIM_TYPE_FLAG_INTEGRAL|0x001u|MARMAID_PRIM_TYPE_FLAG_UNSIGNED)
 #define MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT16               (MARMAID_TOKEN_SET_TYPES|MARMAID_PRIM_TYPE_FLAG_INTEGRAL|0x002u|MARMAID_PRIM_TYPE_FLAG_UNSIGNED)
 #define MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT32               (MARMAID_TOKEN_SET_TYPES|MARMAID_PRIM_TYPE_FLAG_INTEGRAL|0x004u|MARMAID_PRIM_TYPE_FLAG_UNSIGNED)
 #define MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64               (MARMAID_TOKEN_SET_TYPES|MARMAID_PRIM_TYPE_FLAG_INTEGRAL|0x008u|MARMAID_PRIM_TYPE_FLAG_UNSIGNED)
+
+
+
+#define MARMAID_TOKEN_SET_OPERATORS                            UMBA_TOKENIZER_TOKEN_OPERATOR_USER_FIRST
+#define MARMAID_TOKEN_SET_OPERATORS_FIRST                      UMBA_TOKENIZER_TOKEN_OPERATOR_USER_FIRST
+#define MARMAID_TOKEN_SET_OPERATORS_LAST                       ((UMBA_TOKENIZER_TOKEN_OPERATOR_USER_FIRST)+0x1FF)
+
+// Двоеточие
+#define MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER               ((MARMAID_TOKEN_SET_OPERATORS_FIRST)+1)
+#define MARMAID_TOKEN_OPERATOR_RANGE                          ((MARMAID_TOKEN_SET_OPERATORS_FIRST)+2)
+#define MARMAID_TOKEN_OPERATOR_OPTIONS_DELIMITER              ((MARMAID_TOKEN_SET_OPERATORS_FIRST)+3)
+
+
+
+/*
+    Атрибуты будем вычитывать после оператора 
+
+    packet-beta %%#! byte-diagram, byte, bit-diagram, bit. Может, ещё register? Тогда описание у нас от младших к старшим, 
+
+    %%#! native le 32 bits bit byte bytes - для байтовой диаграммы задаём размер и endiannes по умолчанию
+
+    Атрибуты порядка байт: little-endian, big-endian, little-endian-big-endian, big-endian-little-endian, le, be, le-be, be-le
+    могут быть как в директиве native, так и в атрибутах поля.
+    le-be, be-le - явно прописывает разделить поле на две половинки, порядок байт в каждой их них как в первой части, ... запутался
+    А если так: middle-endian, me и little-endian-middle-endian, big-endian-middle-endian, le-me, be-me - 
+    middle-endian - работает относительно нативного порядка байт, если указано в директиве native
+    le-me, be-me - говорит нам, что 
+
+    %%#! width 16/32/64 сколько бит/байт умещается в одной строке
+
+
+
+
+*/
 
 
 

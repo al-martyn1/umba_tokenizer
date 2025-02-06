@@ -59,8 +59,10 @@ makeTokenizerBuilderPacketDiagram()
 
                           // .addSingleLineComment(make_string<StringType>("#"), UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FIRST)
 
-                          .addOperator(make_string<StringType>("-"  ), UMBA_TOKENIZER_TOKEN_OPERATOR_SUBTRACTION                   )
-                          .addOperator(make_string<StringType>(":"  ), UMBA_TOKENIZER_TOKEN_OPERATOR_TERNARY_ALTERNATIVE           )
+                          .addOperator(make_string<StringType>("-"   ), MARMAID_TOKEN_OPERATOR_RANGE                   )
+                          .addOperator(make_string<StringType>(":"   ), MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER        )
+                          .addOperator(make_string<StringType>("%%#!"), MARMAID_TOKEN_OPERATOR_OPTIONS_DELIMITER       ) // Как комент, но специальный
+                          
                           //.addOperator( )
 
                           .template addStringLiteralParser<CppStringLiteralParser>( UMBA_TOKENIZER_TOKEN_STRING_LITERAL
@@ -115,7 +117,7 @@ struct PacketDiagramTokenizerConfigurator
                                                                                   , false // not case sensitive
                                                                                   );
 
-        tokenizer.template installTokenFilter<KebabCaseComposingFilter>();
+        tokenizer.template installTokenFilter<KebabCaseComposingFilter>(MARMAID_TOKEN_OPERATOR_RANGE);
         return tokenizer;
     }
 };
