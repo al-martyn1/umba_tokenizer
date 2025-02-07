@@ -15,195 +15,31 @@
 #include "umba/tokenizer/token_collection.h"
 //
 #include "parser_base.h"
+#include "marmaid_packet_diagram_parser_types.h"
 #include "umba/tokenizer/lang/marmaid_packet_diagram.h"
+
+//
+#include "umba/enum_helpers.h"
+#include "umba/flag_helpers.h"
+#include "umba/the.h"
+
 
 //
 #include <stdexcept>
 #include <initializer_list>
 
 
+//----------------------------------------------------------------------------
 // umba::tokenizer::marmaid::
 namespace umba {
 namespace tokenizer {
 namespace marmaid {
 
-
-enum class EPacketDiagramType
-{
-    unknown,
-    bitDiagram,
-    byteDiagram
-};
-
-
-enum class EPacketDiagramRangeType
-{
-    singleValue,
-    range      ,
-    explicitType
-};
-
-inline
-std::string makeCppNameFromText(const std::string &text, bool bCpp)
-{
-    UMBA_USED(bCpp);
-
-    std::string res = text;
-    for(auto &ch : res)
-    {
-        if (ch>='A' && ch<='Z')
-            continue;
-        if (ch>='a' && ch<='z')
-            continue;
-        if (ch>='0' && ch<='9')
-            continue;
-
-        ch = '_';
-    }
-
-    return res;
-}
+//----------------------------------------------------------------------------
 
 
 
-
-template<typename TokenCollectionItemType>
-struct PacketDiagramItem
-{
-    EPacketDiagramRangeType         rangeType;
-    umba::tokenizer::payload_type   explicitTypeTokenId;
-    std::string                     text;
-
-    std::uint64_t                   start; // Вычисляем при добавлении, если указан тип
-    std::uint64_t                   end  ; // Вычисляем при добавлении, если указан тип; ходит в диапазон
-    std::uint64_t                   arraySize = std::uint64_t(-1);
-
-    std::string                     realTypeName; // For C++ output, full qualified
-
-    const TokenCollectionItemType   *pTokenInfo = 0; // стартовый токен, можно получить номер строки
-
-    // Только размер типа
-    std::uint64_t getTypeSize() const
-    {
-        UMBA_ASSERT(rangeType==EPacketDiagramRangeType::explicitType);
-        return std::size_t(explicitTypeTokenId&0x0F);
-    }
-
-    // Размер типа * кол-во элеметов
-    std::uint64_t getTypeFieldSize() const
-    {
-        if (arraySize==std::uint64_t(-1))
-            return getTypeSize();
-        return arraySize*getTypeSize();
-    }
-
-    bool isArray() const
-    {
-        if (rangeType==EPacketDiagramRangeType::explicitType)
-        {
-            if (arraySize==std::uint64_t(-1))
-                return false;
-            else
-                return true;
-        }
-
-        if (rangeType==EPacketDiagramRangeType::singleValue)
-            return false;
-
-        return true;
-    }
-
-    std::uint64_t getArraySize() const
-    {
-        if (rangeType==EPacketDiagramRangeType::explicitType)
-        {
-            if (arraySize==std::uint64_t(-1))
-                return 0;
-            else
-                return arraySize;
-        }
-
-        if (rangeType==EPacketDiagramRangeType::singleValue)
-            return 0;
-
-        return end-start+1;
-    }
-
-    std::string getPlainTypeName() const // For plain C
-    {
-        if (!realTypeName.empty())
-            return realTypeName;
-
-        if (rangeType!=EPacketDiagramRangeType::explicitType)
-            return "uint8_t"; // threat singles and ranges as bytes
-
-        switch(explicitTypeTokenId)
-        {
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR  : return "char"   ;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8  : return "int8_t" ;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT16 : return "int16_t";
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT32 : return "int32_t";
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT64 : return "int64_t";
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8 : return "uint8_t" ;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT16: return "uint16_t";
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT32: return "uint32_t";
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64: return "uint64_t";
-
-            default: return "unknown";
-        }
-
-    }
-
-    std::string getCppTypeName() const // For C++
-    {
-        std::string name = getPlainTypeName();
-        if (!realTypeName.empty())
-            return name;
-
-        if (rangeType!=EPacketDiagramRangeType::explicitType)
-            return "std::" + name;
-
-        if (explicitTypeTokenId!=MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR)
-            return "std::" + name;
-
-        return name;
-    }
-
-    std::string getCppOrCTypeName(bool bCpp) const
-    {
-        return bCpp ? getCppTypeName() : getPlainTypeName();
-    }
-
-    std::string getCppOrCFieldName(bool bCpp) const
-    {
-        return makeCppNameFromText(text, bCpp);
-    }
-
-    
-
-}; // struct PacketDiagramItem
-
-
-
-template<typename TokenCollectionItemType>
-struct PacketDiagram
-{
-    using PacketDiagramItemType = PacketDiagramItem<TokenCollectionItemType>;
-
-    EPacketDiagramType                     diagramType = EPacketDiagramType::unknown;
-    std::string                            title;
-    std::vector<PacketDiagramItemType>     data ;
-    bool                                   allowOverrideTitle = true;
-
-    std::string getCppOrCTitle(bool bCpp) const
-    {
-        return title.empty() ? std::string("untitled") : makeCppNameFromText(title, bCpp);
-    }
-
-}; // struct PacketDiagram
-
-
-
+//----------------------------------------------------------------------------
 template<typename TokenizerType>
 class PacketDiagramParser : public umba::tokenizer::ParserBase<TokenizerType>
 {
@@ -388,6 +224,7 @@ public:
             case UMBA_TOKENIZER_TOKEN_SPACE    : return "space";
             case UMBA_TOKENIZER_TOKEN_TAB      : return "tab";
             case UMBA_TOKENIZER_TOKEN_FORM_FEED: return "form-feed";
+            case MARMAID_TOKEN_OPERATOR_EXTRA  : return "extra-options-operator";
             
             case UMBA_TOKENIZER_TOKEN_CTRL_FIN: return "EOF";
 
@@ -408,6 +245,9 @@ public:
 
                  if (tk>=MARMAID_TOKEN_SET_OPERATORS_FIRST && tk<=MARMAID_TOKEN_SET_OPERATORS_LAST )
                      return "operator";
+
+                 if (tk>=MARMAID_TOKEN_SET_ATTRS_FIRST && tk<=MARMAID_TOKEN_SET_ATTRS_LAST )
+                     return "attribute/option";
 
                  return "unknown_" + std::to_string(tk);
         }
@@ -547,34 +387,61 @@ public:
     {
         // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
 
-        // считываем коммент, если есть
-        pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed | ParserWaitForTokenFlags::stopOnComment);
+        pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
-        if (pTokenInfo->tokenType<UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FIRST || pTokenInfo->tokenType>UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_LAST)
-            return pTokenInfo;
+        if (pTokenInfo->tokenType!=MARMAID_TOKEN_OPERATOR_EXTRA)
+            return pTokenInfo; // Что-то пришло, но не расширенные опции
 
-        const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
-        auto commentData = std::get<typename tokenizer_type::CommentDataHolder>(*pParsedData);
-        auto commentDataLower = umba::string::tolower_copy(commentData.pData->asString());
-
-        // Заранее читаем следующий токен
         pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+        if (!pTokenInfo)
+            return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
-        if (commentDataLower.empty() || commentDataLower[0]!='!')
-            return pTokenInfo;
+        // В данном контексте MARMAID_TOKEN_ATTR_BYTE_DIA==MARMAID_TOKEN_ATTR_BYTE
+        // и MARMAID_TOKEN_ATTR_BIT_DIA==MARMAID_TOKEN_ATTR_BIT
 
-        commentDataLower.erase(0, 1);
-        commentDataLower = umba::string::trim_copy(commentDataLower);
+        if (!checkExactTokenType(pTokenInfo, {MARMAID_TOKEN_ATTR_BYTE_DIA, MARMAID_TOKEN_ATTR_BIT_DIA, MARMAID_TOKEN_ATTR_MEMORY_DIA, MARMAID_TOKEN_ATTR_BYTE, MARMAID_TOKEN_ATTR_BIT, UMBA_TOKENIZER_TOKEN_LINEFEED}, "invalid 'packet-beta' directive options"))
+            return 0;
 
-        if (commentDataLower.empty())
-            return pTokenInfo;
+        if ((diagram.parsingOptions&DiagramParsingOptions::allowOverrideType)!=0u)
+        {
+            switch(pTokenInfo->tokenType)
+            {
+                case MARMAID_TOKEN_ATTR_BYTE      :  [[fallthrough]]
+                case MARMAID_TOKEN_ATTR_BYTE_DIA  :  diagram.diagramType = EPacketDiagramType::byteDiagram; break;
+                case MARMAID_TOKEN_ATTR_BIT       :  [[fallthrough]]
+                case MARMAID_TOKEN_ATTR_BIT_DIA   :  diagram.diagramType = EPacketDiagramType::bitDiagram ; break;
 
-        if (commentDataLower=="bit" || commentDataLower=="bit-diagram")
-            diagram.diagramType = EPacketDiagramType::bitDiagram;
-        else if (commentDataLower=="byte" || commentDataLower=="byte-diagram")
-            diagram.diagramType = EPacketDiagramType::byteDiagram;
+                case MARMAID_TOKEN_ATTR_MEMORY_DIA:  diagram.diagramType = EPacketDiagramType::memDiagram ; break;
+                case UMBA_TOKENIZER_TOKEN_LINEFEED:  return pTokenInfo;
+            }
+        }
+
+        return BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    }
+
+    //! Разбор директивы packet-beta. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
+    const TokenInfoType* parseDisplayWidthDirective(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo)
+    {
+        // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
+
+        pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+        if (!pTokenInfo)
+            return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+        if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, "invalid 'display-width' directive: missing width value"))
+            return 0;
+
+        std::uint64_t displayWidth = 0;
+        pTokenInfo = parseNumber(tokenPos, pTokenInfo, displayWidth, "'display-width' directive");
+        if (!pTokenInfo)
+            return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+        if ((diagram.parsingOptions&DiagramParsingOptions::allowOverrideDisplayWidth)!=0u)
+        {
+            diagram.displayWidth = displayWidth;
+        }
 
         return pTokenInfo;
     }
@@ -592,23 +459,166 @@ public:
         pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
-        if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_RAW_DATA}, "invalid title directive"))
+        if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_RAW_DATA}, "invalid 'title' directive"))
             return 0;
 
 
-        //auto pTextEnd   = BaseClass::getTextPointer(pTokenInfo);
+        //allowOverrideType
 
-        if (diagram.allowOverrideTitle)
+        if ((diagram.parsingOptions&DiagramParsingOptions::allowOverrideTitle)!=0u)
         {
-            //pTextStart += 5; // скипнули сам токен title
-            // if (pTextStart<=pTextEnd)
-            // diagram.title = umba::string::trim_copy(std::string(pTextStart, pTextEnd));
             const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
             auto rawData = std::get<typename tokenizer_type::RawDataHolder>(*pParsedData);
             diagram.title = umba::string::trim_copy(rawData.pData->asString());
         }
 
         return BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    }
+
+    // native le 32 bits bit byte bytes
+    //! Разбор директивы native. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
+    const TokenInfoType* parseNativeDirective(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo)
+    {
+        bool endiannessTaken = false;
+        //bool sizeTaken       = false;
+        const TokenInfoType* pTokenInfoBitSize = 0;
+
+        std::uint64_t       bitSize = 0;
+        Endianness          endianness = Endianness::littleEndian;
+        EPacketDiagramType  bitSizeSizeType = EPacketDiagramType::unknown; // Используем не по назначению, а для хринения типа биты или байты в числе (bitDiagram, byteDiagram)
+
+        pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+
+        auto optionsCounter = -1;
+
+        //------------------------------
+        auto returnCheckUpdateOptions = [&]() -> const TokenInfoType*
+        {
+            if (optionsCounter<1)
+                return BaseClass::logMessage(pTokenInfo, "native-options", "there is no options taken in the 'native' directive"), (const TokenInfoType*)0;
+
+            if (pTokenInfoBitSize)
+            {
+                if (bitSizeSizeType==EPacketDiagramType::unknown)
+                {
+                    // детектим бит/байт размер, 16/32/64/128/256 - размер в битах
+                    //                           1/2/4    - размер в байтах
+                    //                           8        - неоднозначно, 8 бит или 8 байт (64 бита?)
+                    //                           16 и 32 в качестве размера в байтах никто уже не задаст в здравом уме - будут использовать битность 128/256
+                    if (!umba::TheValue(bitSize).oneOf(1u,2u,4u,8u,16u,32u,64u,128u,256u))
+                        return BaseClass::logMessage(pTokenInfoBitSize, "native-options", "'native' directive: bit size must be 1/2/4/8 bytes ot 8/16/32/64/128/256 bits"), (const TokenInfoType*)0;
+
+                    if (bitSize==8)
+                        return BaseClass::logMessage(pTokenInfoBitSize, "native-options", "'native' directive: bit size 8 bits or bytes?"), (const TokenInfoType*)0;
+
+                    if (!umba::TheValue(bitSize).oneOf(1u,2u,4u))
+                        bitSize *= 8; // Из байт в биты
+                }
+                else if (bitSizeSizeType==EPacketDiagramType::byteDiagram)
+                {
+                    if (!umba::TheValue(bitSize).oneOf(1u,2u,4u,8u))
+                        return BaseClass::logMessage(pTokenInfoBitSize, "native-options", "'native' directive: bit size must be 1/2/4/8 bytes ot 8/16/32/64/128/256 bits"), (const TokenInfoType*)0;
+                    bitSize *= 8; // Из байт в биты
+                }
+                else // bits
+                {
+                    if (!umba::TheValue(bitSize).oneOf(8u,16u,32u,64u,128u,256u))
+                        return BaseClass::logMessage(pTokenInfoBitSize, "native-options", "'native' directive: bit size must be 1/2/4/8 bytes ot 8/16/32/64/128/256 bits"), (const TokenInfoType*)0;
+                    // Только проверка, перевода нет, и так биты
+                }
+
+                if ((diagram.parsingOptions&DiagramParsingOptions::allowOverrideBitSize)!=0u)
+                {
+                    diagram.bitSize = bitSize;
+                }
+
+            }
+
+            if (endiannessTaken)
+            {
+                if ((diagram.parsingOptions&DiagramParsingOptions::allowOverrideEndianness)!=0u)
+                {
+                    diagram.endianness = endianness;
+                }
+            }
+
+            return pTokenInfo;
+        };
+
+        //------------------------------
+        auto updateEndianness = [&](Endianness e)
+        {
+            if (endiannessTaken)
+                return BaseClass::logMessage(pTokenInfo, "native-options", "endianness already taken"), false;
+
+            endianness = e;
+            endiannessTaken = true;
+
+            return true;
+        };
+
+
+        //------------------------------
+        while(true)
+        {
+            if (!pTokenInfo)
+                return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+            ++optionsCounter;
+
+            if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
+            {
+                return returnCheckUpdateOptions();
+            }
+
+            if (!isAnyNumber(pTokenInfo->tokenType) && !umba::TheValue(pTokenInfo->tokenType).oneOf(MARMAID_TOKEN_ATTR_LE,MARMAID_TOKEN_ATTR_BE, UMBA_TOKENIZER_TOKEN_LINEFEED))
+            {
+                expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, MARMAID_TOKEN_ATTR_LE /* , MARMAID_TOKEN_ATTR_BE */  | UMBA_TOKENIZER_TOKEN_LINEFEED }, "invalid 'native' directive options" );
+                return 0;
+            }
+
+            if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_LINEFEED)
+            {
+                return returnCheckUpdateOptions();
+            }
+
+            if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_LE)
+            {
+                if (!updateEndianness(Endianness::littleEndian))
+                    return 0;
+                pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+            }
+
+            else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_BE)
+            {
+                if (!updateEndianness(Endianness::bigEndian))
+                    return 0;
+                pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+            }
+
+            else // Остались толькор числа
+            {
+                if (pTokenInfoBitSize)
+                    return BaseClass::logMessage(pTokenInfo, "native-options", "bit size already taken"), (const TokenInfoType*)0;
+
+                pTokenInfoBitSize = pTokenInfo;
+
+                pTokenInfo = parseNumber(tokenPos, pTokenInfo, bitSize, "'native' directive");
+                if (!pTokenInfo)
+                    return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+                pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+                if (!pTokenInfo)
+                    return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+                if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_BYTE || pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_BIT )
+                {
+                    bitSizeSizeType = (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_BYTE) ? EPacketDiagramType::byteDiagram : EPacketDiagramType::bitDiagram;
+                    pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+                }
+            }
+        }
+
     }
 
     //! Разбор обычной строки. Может возвращать ноль при ошибке, или токен LF/FIN
@@ -641,7 +651,59 @@ public:
         auto stringLiteralData = std::get<typename tokenizer_type::StringLiteralDataHolder>(*pParsedData);
         item.text = stringLiteralData.pData->asString();
 
-        return BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+        pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+
+        if (pTokenInfo->tokenType!=MARMAID_TOKEN_OPERATOR_EXTRA)
+            return pTokenInfo;
+
+        Endianness endianness = Endianness::unknown;
+        bool hasCrc   = false;
+        bool hasSeed  = false;
+        bool hasPoly  = false;
+        //bool hasRange = false;
+
+        std::uint64_t crcRangeStart = 0;
+        std::uint64_t crcRangeEnd   = 0;
+
+        auto returnCheckUpdateOptions = [&]()
+        {
+            return pTokenInfo;
+        };
+
+
+        // %%#! le be middle-endian le-me be-me crc 0-10 seed 10 poly 0x1234
+
+        while(true)
+        {
+            if (!pTokenInfo)
+                return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+            if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
+            {
+                return returnCheckUpdateOptions();
+            }
+
+            if ( !isAnyNumber(pTokenInfo->tokenType)
+              && !umba::TheValue(pTokenInfo->tokenType)
+                     .oneOf( MARMAID_TOKEN_ATTR_LE, MARMAID_TOKEN_ATTR_BE
+                           , MARMAID_TOKEN_ATTR_ME, MARMAID_TOKEN_ATTR_LE_ME, MARMAID_TOKEN_ATTR_BE_ME
+                           , UMBA_TOKENIZER_TOKEN_LINEFEED
+                           , MARMAID_TOKEN_ATTR_CRC, MARMAID_TOKEN_ATTR_SEED, MARMAID_TOKEN_ATTR_POLY
+                           )
+               )
+            {
+                expectedReachedMsg(pTokenInfo, { /* UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, */  MARMAID_TOKEN_ATTR_LE /* , MARMAID_TOKEN_ATTR_BE */  | UMBA_TOKENIZER_TOKEN_LINEFEED }, "invalid 'native' directive options" );
+                return 0;
+            }
+
+            if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_LINEFEED)
+            {
+                return returnCheckUpdateOptions();
+            }
+
+
+
+        }
     }
 
 
@@ -672,17 +734,51 @@ public:
                 if (!addDiagramItem(item))
                     return false;
             }
+
             else if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_PACKET_BETA)
             {
                 pTokenInfo = parsePacketBetaDirective(tokenPos, pTokenInfo);
             }
+
             else if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_TITLE)
             {
                 pTokenInfo = parseTitleDirective(tokenPos, pTokenInfo);
             }
+
+            else if (pTokenInfo->tokenType==MARMAID_TOKEN_OPERATOR_EXTRA)
+            {
+                pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+                if (!pTokenInfo)
+                    return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+                if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_LINEFEED)
+                    continue;
+    
+                if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
+                    return true; // normal stop
+    
+                if (!umba::TheValue(pTokenInfo->tokenType).oneOf(MARMAID_TOKEN_DIRECTIVE_NATIVE, MARMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH))
+                {
+                     expectedReachedMsg(pTokenInfo, {MARMAID_TOKEN_DIRECTIVE_NATIVE } /* , msg */ );
+                     return 0;
+                }
+                // if (!checkExactTokenType(pTokenInfo, {MARMAID_TOKEN_DIRECTIVE_NATIVE, MARMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH} /* , "invalid 'packet-beta' directive options" */ ))
+                //     return 0;
+
+                if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_NATIVE)
+                {
+                    pTokenInfo = parseNativeDirective(tokenPos, pTokenInfo);
+                }
+    
+                else if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH)
+                {
+                    pTokenInfo = parseDisplayWidthDirective(tokenPos, pTokenInfo);
+                }
+            }
+
             else
             {
-                expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, MARMAID_TOKEN_SET_TYPES_FIRST, MARMAID_TOKEN_DIRECTIVE_PACKET_BETA /* , MARMAID_TOKEN_DIRECTIVE_TITLE */ } /* , msg */ );
+                expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, MARMAID_TOKEN_SET_TYPES_FIRST, MARMAID_TOKEN_DIRECTIVE_PACKET_BETA, MARMAID_TOKEN_OPERATOR_EXTRA /* , MARMAID_TOKEN_DIRECTIVE_TITLE */ } /* , msg */ );
                 return false;
             }
 

@@ -67,7 +67,8 @@
 #define MARMAID_TOKEN_DIRECTIVE_PACKET_BETA                    (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x001u)  /* packet-beta */
 #define MARMAID_TOKEN_DIRECTIVE_TITLE                          (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x002u)  /* title  */
 #define MARMAID_TOKEN_DIRECTIVE_NATIVE                         (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x003u)  /* native */
-#define MARMAID_TOKEN_DIRECTIVE_WIDTH                          (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x004u)  /* width  */
+#define MARMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH                  (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x004u)  /* width  */
+#define MARMAID_TOKEN_DIRECTIVE_ORG                            (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x005u)  /* width  */
 // #define MARMAID_TOKEN_DIRECTIVE_                          (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x000u)  /*  */
 
 //----------------------------------------------------------------------------
@@ -81,6 +82,9 @@
 #define MARMAID_TOKEN_ATTR_ME                             (MARMAID_TOKEN_SET_ATTRS_FIRST+0x008u)  /* middle-endian */
 #define MARMAID_TOKEN_ATTR_LE_ME                          (MARMAID_TOKEN_SET_ATTRS_FIRST+0x009u)  /* little-endian-middle-endian */
 #define MARMAID_TOKEN_ATTR_BE_ME                          (MARMAID_TOKEN_SET_ATTRS_FIRST+0x00Au)  /* big-endian-middle-endian */
+#define MARMAID_TOKEN_ATTR_CRC                            (MARMAID_TOKEN_SET_ATTRS_FIRST+0x00Bu)  /* crc */
+#define MARMAID_TOKEN_ATTR_SEED                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x00Cu)  /* seed */
+#define MARMAID_TOKEN_ATTR_POLY                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x00Du)  /* poly */
 // #define MARMAID_TOKEN_ATTR_                               (MARMAID_TOKEN_SET_ATTRS_FIRST+0x000u)  /*  */
 // #define MARMAID_TOKEN_ATTR_                               (MARMAID_TOKEN_SET_ATTRS_FIRST+0x000u)  /*  */
 // #define MARMAID_TOKEN_ATTR_                               (MARMAID_TOKEN_SET_ATTRS_FIRST+0x000u)  /*  */
@@ -109,7 +113,37 @@
 
     %%#! width 16/32/64 сколько бит/байт умещается в одной строке
 
+    Директива org XXXX - задаёт текущий базовый адрес. Может встречаться более одного раза.
+    Надо проверять, если XXX попадает куда-то в уже заполненное пространство, то это ошибка.
+    Если пропуск/gap от предыдущего - предупреждение
 
+    %%#! org 0x80000 "Hardware Info"
+
+    Каждый org - стартует отдельную структуру. Если в описании только один org - то генерим одну структуру,
+    если несколько - то генерим для каждого org свою структуру. Если нет имени - предупреждаем, имя делаем 
+    из тайтла всего файла, добавляя порядковый номер org'а.
+
+    После каждого org'а. нумерация байт идёт с нуля (если данные размечаются числовыми диапазонами, а не типами).
+
+    Надо уметь делать constexpr указатель на всю структуру.
+
+    %%#! org +0x20 - задаём org относительно предыдущего org'а
+
+    По умолчанию, если базовый адрес не задан, добавляем org +0
+    Или, если базовый адрес не задан, задаём org 0?
+    А если базовый адрес задан, то задаём его в виде элемента с директивой org?
+
+    При добавлении директивы org, если у нас gap с предыдущими данными, выводим не только варнинг, 
+    но и дополнительный fill_ элемент, он присутствует в сишной структуре, но игнорируется при генерации
+    HEX'а.
+
+    Если мы выводим сишный код для структуры, то нам надо:
+
+     1) нагенерить различные fill_ имена
+     2) нагенерить org имена
+
+    Если мы выводим всё по разным структурам,
+    то fill'ы вставляются в главной структуре
 
 
 */

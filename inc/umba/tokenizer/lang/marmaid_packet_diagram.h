@@ -112,7 +112,9 @@ struct PacketDiagramTokenizerConfigurator
                                                                                     , {"packet-beta"     , MARMAID_TOKEN_DIRECTIVE_PACKET_BETA       }
                                                                                     , {"title"           , MARMAID_TOKEN_DIRECTIVE_TITLE             }
                                                                                     , {"native"          , MARMAID_TOKEN_DIRECTIVE_NATIVE            }
-                                                                                    , {"width"           , MARMAID_TOKEN_DIRECTIVE_WIDTH             }
+                                                                                    , {"display-width"   , MARMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH     }
+                                                                                    , {"org"             , MARMAID_TOKEN_DIRECTIVE_ORG               }
+                                                                                    
 
                                                                                     , {"byte-diagram"    , MARMAID_TOKEN_ATTR_BYTE_DIA               }
                                                                                     , {"bit-diagram"     , MARMAID_TOKEN_ATTR_BIT_DIA                }
@@ -120,9 +122,10 @@ struct PacketDiagramTokenizerConfigurator
                                                                                     , {"memory-layout"   , MARMAID_TOKEN_ATTR_MEMORY_DIA             }
                                                                                     , {"memory"          , MARMAID_TOKEN_ATTR_MEMORY_DIA             }
 
-
                                                                                     , {"byte"            , MARMAID_TOKEN_ATTR_BYTE                   }
+                                                                                    , {"bytes"           , MARMAID_TOKEN_ATTR_BYTE                   }
                                                                                     , {"bit"             , MARMAID_TOKEN_ATTR_BIT                    }
+                                                                                    , {"bits"            , MARMAID_TOKEN_ATTR_BIT                    }
                                                                                     , {"little-endian"   , MARMAID_TOKEN_ATTR_LE                     }
                                                                                     , {"le"              , MARMAID_TOKEN_ATTR_LE                     }
                                                                                     , {"big-endian"      , MARMAID_TOKEN_ATTR_BE                     }
@@ -133,7 +136,11 @@ struct PacketDiagramTokenizerConfigurator
                                                                                     , {"le-me"           , MARMAID_TOKEN_ATTR_LE_ME                  }
                                                                                     , {"big-endian-middle-endian", MARMAID_TOKEN_ATTR_BE_ME          }
                                                                                     , {"be-me"           , MARMAID_TOKEN_ATTR_BE_ME                  }
+                                                                                    , {"crc"             , MARMAID_TOKEN_ATTR_CRC                    }
+                                                                                    , {"seed"            , MARMAID_TOKEN_ATTR_SEED                   }
+                                                                                    , {"poly"            , MARMAID_TOKEN_ATTR_POLY                   }
 
+                                                                                    //, {""           ,              }
                                                                                     //, {""           ,              }
 
 
