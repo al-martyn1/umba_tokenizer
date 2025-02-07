@@ -61,7 +61,7 @@ makeTokenizerBuilderPacketDiagram()
 
                           .addOperator(make_string<StringType>("-"   ), MARMAID_TOKEN_OPERATOR_RANGE                   )
                           .addOperator(make_string<StringType>(":"   ), MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER        )
-                          .addOperator(make_string<StringType>("%%#!"), MARMAID_TOKEN_OPERATOR_OPTIONS_DELIMITER       ) // Как комент, но специальный
+                          .addOperator(make_string<StringType>("%%#!"), MARMAID_TOKEN_OPERATOR_EXTRA                   ) // Как комент, но специальный. Игнорится оригинальным marmaid'ом, но обрабатывается нами
                           
                           //.addOperator( )
 
@@ -111,6 +111,31 @@ struct PacketDiagramTokenizerConfigurator
 
                                                                                     , {"packet-beta"     , MARMAID_TOKEN_DIRECTIVE_PACKET_BETA       }
                                                                                     , {"title"           , MARMAID_TOKEN_DIRECTIVE_TITLE             }
+                                                                                    , {"native"          , MARMAID_TOKEN_DIRECTIVE_NATIVE            }
+                                                                                    , {"width"           , MARMAID_TOKEN_DIRECTIVE_WIDTH             }
+
+                                                                                    , {"byte-diagram"    , MARMAID_TOKEN_ATTR_BYTE_DIA               }
+                                                                                    , {"bit-diagram"     , MARMAID_TOKEN_ATTR_BIT_DIA                }
+                                                                                    , {"memory-diagram"  , MARMAID_TOKEN_ATTR_MEMORY_DIA             }
+                                                                                    , {"memory-layout"   , MARMAID_TOKEN_ATTR_MEMORY_DIA             }
+                                                                                    , {"memory"          , MARMAID_TOKEN_ATTR_MEMORY_DIA             }
+
+
+                                                                                    , {"byte"            , MARMAID_TOKEN_ATTR_BYTE                   }
+                                                                                    , {"bit"             , MARMAID_TOKEN_ATTR_BIT                    }
+                                                                                    , {"little-endian"   , MARMAID_TOKEN_ATTR_LE                     }
+                                                                                    , {"le"              , MARMAID_TOKEN_ATTR_LE                     }
+                                                                                    , {"big-endian"      , MARMAID_TOKEN_ATTR_BE                     }
+                                                                                    , {"be"              , MARMAID_TOKEN_ATTR_BE                     }
+                                                                                    , {"middle-endian"   , MARMAID_TOKEN_ATTR_ME                     }
+                                                                                    , {"me"              , MARMAID_TOKEN_ATTR_ME                     }
+                                                                                    , {"little-endian-middle-endian", MARMAID_TOKEN_ATTR_LE_ME       }
+                                                                                    , {"le-me"           , MARMAID_TOKEN_ATTR_LE_ME                  }
+                                                                                    , {"big-endian-middle-endian", MARMAID_TOKEN_ATTR_BE_ME          }
+                                                                                    , {"be-me"           , MARMAID_TOKEN_ATTR_BE_ME                  }
+
+                                                                                    //, {""           ,              }
+
 
                                                                                     //, {""          ,        }
                                                                                     }

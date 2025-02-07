@@ -16,13 +16,12 @@
 #define MARMAID_TOKEN_SET_TYPES_FIRST                          UMBA_TOKENIZER_TOKEN_KEYWORD_SET2_FIRST
 #define MARMAID_TOKEN_SET_TYPES_LAST                           UMBA_TOKENIZER_TOKEN_KEYWORD_SET2_LAST
 
+#define MARMAID_TOKEN_SET_ATTRS                                UMBA_TOKENIZER_TOKEN_KEYWORD_SET3_FIRST
+#define MARMAID_TOKEN_SET_ATTRS_FIRST                          UMBA_TOKENIZER_TOKEN_KEYWORD_SET3_FIRST
+#define MARMAID_TOKEN_SET_ATTRS_LAST                           UMBA_TOKENIZER_TOKEN_KEYWORD_SET3_LAST
+
 //----------------------------------------------------------------------------
 
-
-
-//----------------------------------------------------------------------------
-#define MARMAID_TOKEN_DIRECTIVE_PACKET_BETA                    (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x001u)
-#define MARMAID_TOKEN_DIRECTIVE_TITLE                          (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x002u)
 
 
 //----------------------------------------------------------------------------
@@ -58,8 +57,40 @@
 // Двоеточие
 #define MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER               ((MARMAID_TOKEN_SET_OPERATORS_FIRST)+1)
 #define MARMAID_TOKEN_OPERATOR_RANGE                          ((MARMAID_TOKEN_SET_OPERATORS_FIRST)+2)
-#define MARMAID_TOKEN_OPERATOR_OPTIONS_DELIMITER              ((MARMAID_TOKEN_SET_OPERATORS_FIRST)+3)
+#define MARMAID_TOKEN_OPERATOR_EXTRA                          ((MARMAID_TOKEN_SET_OPERATORS_FIRST)+3)
 
+//----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
+#define MARMAID_TOKEN_DIRECTIVE_PACKET_BETA                    (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x001u)  /* packet-beta */
+#define MARMAID_TOKEN_DIRECTIVE_TITLE                          (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x002u)  /* title  */
+#define MARMAID_TOKEN_DIRECTIVE_NATIVE                         (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x003u)  /* native */
+#define MARMAID_TOKEN_DIRECTIVE_WIDTH                          (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x004u)  /* width  */
+// #define MARMAID_TOKEN_DIRECTIVE_                          (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x000u)  /*  */
+
+//----------------------------------------------------------------------------
+#define MARMAID_TOKEN_ATTR_BYTE_DIA                       (MARMAID_TOKEN_SET_ATTRS_FIRST+0x001u)  /* byte-diagram */
+#define MARMAID_TOKEN_ATTR_BIT_DIA                        (MARMAID_TOKEN_SET_ATTRS_FIRST+0x002u)  /* bit-diagram */
+#define MARMAID_TOKEN_ATTR_MEMORY_DIA                     (MARMAID_TOKEN_SET_ATTRS_FIRST+0x003u)  /* memory-diagram memory-layout memory */
+#define MARMAID_TOKEN_ATTR_BYTE                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x004u)  /* byte */
+#define MARMAID_TOKEN_ATTR_BIT                            (MARMAID_TOKEN_SET_ATTRS_FIRST+0x005u)  /* bit */
+#define MARMAID_TOKEN_ATTR_LE                             (MARMAID_TOKEN_SET_ATTRS_FIRST+0x006u)  /* little-endian */
+#define MARMAID_TOKEN_ATTR_BE                             (MARMAID_TOKEN_SET_ATTRS_FIRST+0x007u)  /* big-endian */
+#define MARMAID_TOKEN_ATTR_ME                             (MARMAID_TOKEN_SET_ATTRS_FIRST+0x008u)  /* middle-endian */
+#define MARMAID_TOKEN_ATTR_LE_ME                          (MARMAID_TOKEN_SET_ATTRS_FIRST+0x009u)  /* little-endian-middle-endian */
+#define MARMAID_TOKEN_ATTR_BE_ME                          (MARMAID_TOKEN_SET_ATTRS_FIRST+0x00Au)  /* big-endian-middle-endian */
+// #define MARMAID_TOKEN_ATTR_                               (MARMAID_TOKEN_SET_ATTRS_FIRST+0x000u)  /*  */
+// #define MARMAID_TOKEN_ATTR_                               (MARMAID_TOKEN_SET_ATTRS_FIRST+0x000u)  /*  */
+// #define MARMAID_TOKEN_ATTR_                               (MARMAID_TOKEN_SET_ATTRS_FIRST+0x000u)  /*  */
+// #define MARMAID_TOKEN_ATTR_                               (MARMAID_TOKEN_SET_ATTRS_FIRST+0x000u)  /*  */
+// #define MARMAID_TOKEN_ATTR_                               (MARMAID_TOKEN_SET_ATTRS_FIRST+0x000u)  /*  */
+// #define MARMAID_TOKEN_ATTR_                               (MARMAID_TOKEN_SET_ATTRS_FIRST+0x000u)  /*  */
+// #define MARMAID_TOKEN_ATTR_                               (MARMAID_TOKEN_SET_ATTRS_FIRST+0x000u)  /*  */
+// #define MARMAID_TOKEN_ATTR_                               (MARMAID_TOKEN_SET_ATTRS_FIRST+0x000u)  /*  */
+// #define MARMAID_TOKEN_ATTR_                               (MARMAID_TOKEN_SET_ATTRS_FIRST+0x000u)  /*  */
+// #define MARMAID_TOKEN_ATTR_                               (MARMAID_TOKEN_SET_ATTRS_FIRST+0x000u)  /*  */
 
 
 /*
