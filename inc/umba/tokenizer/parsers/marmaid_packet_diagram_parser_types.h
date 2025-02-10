@@ -360,33 +360,56 @@ struct PacketDiagram
 
         for(std::size_t i=0; i!=data.size(); ++i)
         {
-            if (data[i].itemType!=EPacketDiagramItemType::org)
+            const auto & curData = data[i];
+
+            if (curData.itemType!=EPacketDiagramItemType::org)
             {
-                if (!data[i].fillEntry)
-                    cur.data.emplace_back(data[i]);
+                // Обычная запись, просто добавляем
+                // if (!curData.fillEntry)
+                    cur.data.emplace_back(curData);
                 continue;
             }
 
             if (cur.data.size()>1) // Есть записи помимо org
             {
                 resVec.emplace_back(cur);
-            }
-            else if ( cur.data.size()==1 && cur.data.back().itemType==EPacketDiagramItemType::org && cur.data.back().orgAddress==data[i].orgAddress)
-            {
-                // Всё совпадает
-                if (!data[i].textGenerated) // текущий элемент - не сгенерённый, заменяем на него, не важно, что там лежит
-                {
-                     cur.data.back() = data[i];
-                }
-
-                // Если текущий сгенерённый, оставляем то, что лежит, а это - пропускаем
-
+                cur.data.clear();
+                cur.orgAddress = curData.orgAddress;
+                cur.title      = curData.text;
+                cur.data.emplace_back(curData);
                 continue;
             }
 
+            if ( cur.data.size()==1)
+            {
+                if (cur.data.back().itemType==EPacketDiagramItemType::org) // предыдущая и единственная запись - тоже org
+                {
+                    if (cur.data.back().orgAddress==curData.orgAddress) // Адреса одинаковые?
+                    {
+                        if (!curData.textGenerated) // текущий элемент - не сгенерённый, заменяем на него, не важно, что там лежало - сгенеренное или нет
+                        {
+                             cur.data.back() = curData;
+                        }
+                        // Иначе ничего не делаем
+                    }
+                    else
+                    {
+                        // Адреса разные, перетираем безусловно
+                        cur.data.back() = curData;
+                    }
+
+                    continue;
+                }
+            }
+
+            if (!cur.data.empty()) // Есть записи помимо org
+            {
+                resVec.emplace_back(cur);
+            }
             cur.data.clear();
-            cur.orgAddress = data[i].orgAddress;
-            cur.title      = data[i].text;
+            cur.orgAddress = curData.orgAddress;
+            cur.title      = curData.text;
+            cur.data.emplace_back(curData);
         }
 
         if (cur.data.size()>1) // Есть записи помимо org
@@ -404,7 +427,7 @@ struct PacketDiagram
         data.clear();
         for(const auto &smp : simpleVec)
         {
-            data.insert(data.end(), smp.begin(), smp.end());
+            data.insert(data.end(), smp.data.begin(), smp.data.end());
         }
 
         for(std::size_t i=0; i!=data.size(); ++i)

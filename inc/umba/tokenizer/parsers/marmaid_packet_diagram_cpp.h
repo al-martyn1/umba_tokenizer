@@ -1,5 +1,5 @@
 /*! \file
-    \brief Хклперы для вывода в сишечку и плюсики
+    \brief Хелперы для вывода в сишечку и плюсики
  */
 
 
@@ -10,6 +10,8 @@
 //
 
 #include <string>
+#include <sstream>
+#include <iomanip>
 
 
 // umba::tokenizer::marmaid::cpp::
@@ -69,51 +71,15 @@ void printPacketDiagramItem( StreamType &oss
     oss << std::string(nameExtraSpace, ' ') << " // " << item.addressRange.start;
     if (item.addressRange.start!=item.addressRange.end)
         oss << " - " << item.addressRange.end;
- 
-
-
-    #if 0
-    oss << std::string(indent, ' ');
-
-    std::string typeName = item.getCppOrCTypeName(fCpp);
-
-    std::size_t nExtraSpace = 0;
-    if (typeName.size()<typeFieldWidth)
-        nExtraSpace = typeFieldWidth - typeName.size();
-
-    oss << typeName << std::string(nExtraSpace, ' ');
-
-    auto fieldName = marty_cpp::formatName( item.getCppOrCFieldName(fCpp), nameStyle, true /* fixStartDigit */ , true /* fixKeywords */ );
-    oss << " " << fieldName;
-    std::size_t nameWidth = fieldName.size();
-
-    if (item.isArray())
-    {
-        std::string sizeStr = std::to_string(item.getArraySize());
-        oss << "[" << sizeStr << "]";
-        nameWidth += 2 + sizeStr.size();
-    }
-
-    oss << ";";
-
-    nExtraSpace = 0;
-    if (nameWidth<nameFieldWidth)
-        nExtraSpace = nameFieldWidth - nameWidth;
-
-
-    oss << std::string(nExtraSpace, ' ') << " // " << item.addressRange.start;
-    if (item.addressRange.start!=item.addressRange.end)
-        oss << " - " << item.addressRange.end;
-
-    #endif
 }
 
 // Простой вывод, для тестов
 template<typename StreamType, typename TokenCollectionItemType>
 void simplePrintCppPacketDiagram( StreamType &oss
                                 , const PacketDiagram<TokenCollectionItemType> &diagram
-                                , bool skipNormalRecords  = false // print only fill and struct
+                                , bool skipNormalRecords       = false // print only fill and struct
                                 , bool printOrgsAsStructFields = false
+                                , bool printOrgsComment        = false
                                 , bool fCpp=true
                                 , marty_cpp::NameStyle itemStyle=marty_cpp::NameStyle::camelStyle
                                 , marty_cpp::NameStyle structStyle=marty_cpp::NameStyle::pascalStyle
@@ -144,18 +110,24 @@ void simplePrintCppPacketDiagram( StreamType &oss
                                                                     ,  /* item.isArray() ? item.getArraySize() : */  std::uint64_t(-1)
                                                                     , itemIndent, typeFieldWidth, nameFieldWidth
                                                                     );
-                oss << std::string(nameExtraSpace, ' ') << " // ORG " << item.orgAddress << "\n";
+                std::ostringstream strss;
+                strss << std::uppercase << std::hex << item.orgAddress;
+
+                oss << std::string(nameExtraSpace, ' ') << " // ORG " << "0x" << strss.str() << "\n";
             }
             else
             {
-                oss << "\n";
-                auto subStructName = marty_cpp::formatName( item.getCppOrCFieldName(fCpp), structStyle, true /* fixStartDigit */ , true /* fixKeywords */ );
-                oss << indentStr << std::string(itemIndent, ' ') << "// " << subStructName << "\n";
+                if (printOrgsComment)
+                {
+                    oss << "\n";
+                    auto subStructName = marty_cpp::formatName( item.getCppOrCFieldName(fCpp), structStyle, true /* fixStartDigit */ , true /* fixKeywords */ );
+                    oss << indentStr << std::string(itemIndent, ' ') << "// " << subStructName << "\n";
+                }
             }
             continue;
         }
 
-        if (skipNormalRecords && !item.fillEntry)
+        if (skipNormalRecords != item.fillEntry)
             continue;
 
         oss << indentStr;
@@ -188,6 +160,7 @@ void printCppPacketDiagram( StreamType &oss
         simplePrintCppPacketDiagram( oss, d
                                    , false // !skipNormalRecords - print only fill and struct
                                    , false // !printOrgsAsStructFields
+                                   , false // !printOrgsComment
                                    , fCpp
                                    , itemStyle
                                    , structStyle
@@ -202,6 +175,7 @@ void printCppPacketDiagram( StreamType &oss
     simplePrintCppPacketDiagram( oss, diagram
                                , true // skipNormalRecords - print only fill and struct
                                , true // printOrgsAsStructFields
+                               , false // !printOrgsComment
                                , fCpp
                                , itemStyle
                                , structStyle
