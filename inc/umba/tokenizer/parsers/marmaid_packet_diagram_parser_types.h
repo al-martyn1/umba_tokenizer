@@ -164,10 +164,14 @@ struct PacketDiagramItem
     umba::tokenizer::payload_type   explicitTypeTokenId;
     std::string                     text;
     bool                            fillEntry = false;
+    std::string                     reusedOrg;
+    bool                            emptyOrg = false; // no data records after this
+    bool                            textGenerated = false; // no data records after this
 
     Endianness                      endianness   = Endianness::undefined; // use project endianness or override endianness for this entry
     AddressRange                    addressRange; // Если указан тип - вычисляем при добавлении, 
-    std::uint64_t                   arraySize = std::uint64_t(-1); // работает только для явно заданного типа
+    std::uint64_t                   orgAddress   = 0;
+    std::uint64_t                   arraySize    = std::uint64_t(-1); // работает только для явно заданного типа
 
     std::string                     realTypeName; // For C++ output, full qualified
 
@@ -217,7 +221,7 @@ struct PacketDiagramItem
         if (itemType==EPacketDiagramItemType::singleValue)
             return 0;
 
-        return addressRange.end- addressRange.start+1;
+        return addressRange.end - addressRange.start+1;
     }
 
     std::string getPlainTypeName() const // For plain C
@@ -299,6 +303,7 @@ struct PacketDiagram
     std::uint64_t                          bitSize      = 32;
     std::uint64_t                          displayWidth = 32;
     std::uint64_t                          lastOrg      = 0 ;
+    std::uint64_t                          orgAddress   = std::uint64_t(-1);
 
 
     std::unordered_map<std::string, std::size_t>     entryNames;  // храним индекс в векторе data
@@ -321,6 +326,113 @@ struct PacketDiagram
 
         return false;
     }
+
+    // Вычисляет базовый адрес для записи с индексом entryIdx
+    std::uint64_t calcBaseAddress(std::size_t entryIdx=std::size_t(-1)) const
+    {
+        if (entryIdx>data.size())
+            entryIdx = data.size();
+
+        std::uint64_t addr = 0;
+
+        for(std::size_t i=0; i!=entryIdx; ++i)
+        {
+            if (data[i].itemType!=EPacketDiagramItemType::org)
+                continue;
+
+            addr = data[i].orgAddress; // item.addressRange.start; // адрес в записи типа org всегда абсолютный, auto и rel обсчитываем при добавлении
+        }
+
+        return addr;
+    }
+
+    std::string generateOrgName(std::size_t &orgCounter) const
+    {
+        return getCppOrCTitle(false) + "_Org" + std::to_string(orgCounter++);
+    }
+
+    std::vector<PacketDiagram> splitToSimple() const
+    {
+        std::vector<PacketDiagram> resVec;
+
+        PacketDiagram cur = *this;
+        cur.data.clear();
+
+        for(std::size_t i=0; i!=data.size(); ++i)
+        {
+            if (data[i].itemType!=EPacketDiagramItemType::org)
+            {
+                if (!data[i].fillEntry)
+                    cur.data.emplace_back(data[i]);
+                continue;
+            }
+
+            if (cur.data.size()>1) // Есть записи помимо org
+            {
+                resVec.emplace_back(cur);
+            }
+            else if ( cur.data.size()==1 && cur.data.back().itemType==EPacketDiagramItemType::org && cur.data.back().orgAddress==data[i].orgAddress)
+            {
+                // Всё совпадает
+                if (!data[i].textGenerated) // текущий элемент - не сгенерённый, заменяем на него, не важно, что там лежит
+                {
+                     cur.data.back() = data[i];
+                }
+
+                // Если текущий сгенерённый, оставляем то, что лежит, а это - пропускаем
+
+                continue;
+            }
+
+            cur.data.clear();
+            cur.orgAddress = data[i].orgAddress;
+            cur.title      = data[i].text;
+        }
+
+        if (cur.data.size()>1) // Есть записи помимо org
+        {
+            resVec.emplace_back(cur);
+        }
+
+        return resVec;
+    }
+
+
+    void detectEmptyOrgs()
+    {
+        auto simpleVec = splitToSimple();
+        data.clear();
+        for(const auto &smp : simpleVec)
+        {
+            data.insert(data.end(), smp.begin(), smp.end());
+        }
+
+        for(std::size_t i=0; i!=data.size(); ++i)
+        {
+            if (data[i].itemType==EPacketDiagramItemType::org && i!=0)
+            {
+                if (data[i-1].itemType==EPacketDiagramItemType::org)
+                    data[i-1].emptyOrg = true;
+            }
+        }
+
+        if (!data.empty() && data.back().itemType==EPacketDiagramItemType::org)
+            data.back().emptyOrg = true;
+
+    }
+
+
+    // PacketDiagram
+    // reusedOrg
+
+
+    // EPacketDiagramItemType          itemType = EPacketDiagramItemType::undefined;
+    // EOrgType                        orgType  = EOrgType::undefined;
+    // umba::tokenizer::payload_type   explicitTypeTokenId;
+    // std::string                     text;
+    // bool                            fillEntry = false;
+    // bool                            reusedOrg = false;
+
 
 
 }; // struct PacketDiagram

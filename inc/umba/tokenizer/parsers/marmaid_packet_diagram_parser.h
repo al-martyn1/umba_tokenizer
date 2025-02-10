@@ -60,11 +60,16 @@ public:
     using PacketDiagramType        = PacketDiagram<TokenCollectionItemType>;
 
 
-    PacketDiagramType              diagram;
     shared_log_type                log    ;
 
+
+protected:
+
+    PacketDiagramType              diagram;
     std::size_t                    orgCounter = 0;
 
+
+public:
 
     UMBA_RULE_OF_FIVE_COPY_DELETE(PacketDiagramParser);
     UMBA_RULE_OF_FIVE_MOVE_DEFAULT(PacketDiagramParser);
@@ -76,6 +81,13 @@ public:
     : BaseClass(tc)
     , log(a_log)
     {
+    }
+
+    PacketDiagramType getDiagram() const
+    {
+        auto diagramCopy = diagram;
+        diagramCopy.detectEmptyOrgs();
+        return diagramCopy;
     }
 
 
@@ -92,10 +104,11 @@ public:
         {
             if (item.itemType==EPacketDiagramItemType::org)
             {
+                if (fieldId=="_")
+                   return BaseClass::logMessage(item.pTokenInfo, "diagram", "'org' directive name contains only insignificant symbols"), false;
                 // Анонимный ORG - генерим имя на базе текущего заголовка диаграмы
-                auto orgName = diagram.getCppOrCTitle(false) + "_Org" + std::to_string(orgCounter);
-                ++orgCounter;
-                item.text = orgName;
+                item.text = diagram.generateOrgName(orgCounter);
+                item.textGenerated = true;
                 fieldId = item.getFieldId();
             }
             else
@@ -113,7 +126,10 @@ public:
 
         if (entriesMap.find(fieldId)!=entriesMap.end())
         {
-            BaseClass::logMessage(item.pTokenInfo, "diagram", entryTypeStr + " already exists");
+            BaseClass::logMessage( item.pTokenInfo, "diagram", entryTypeStr + " with same name already exists ('$(Name)')"
+                                   , umba::FormatMessage<std::string>().arg("Name", item.text)
+                                                                       .values()
+                                 );
             return false;
         }
 
@@ -123,9 +139,14 @@ public:
 
         std::uint64_t calculatedStart = 0;
 
+        // Все адреса у нас не абсолютные, а относительно базы.
+        // Директива/запись org задаёт новую базу
         if (!diagram.data.empty())
         {
-            calculatedStart = diagram.data.back().addressRange.end+1;
+            if (diagram.data.back().itemType==EPacketDiagramItemType::org)
+                calculatedStart = 0;
+            else
+                calculatedStart = diagram.data.back().addressRange.end+1;
         }
 
         if (item.itemType==EPacketDiagramItemType::range)
@@ -145,26 +166,24 @@ public:
             {
                 if (item.addressRange.start<calculatedStart)
                 {
-                    if (item.itemType==EPacketDiagramItemType::singleValue)
-                        BaseClass::logMessage( item.pTokenInfo, "diagram", "entry '$(Name)': range start offset value is less than previous value end ($(End))"
-                                             , umba::FormatMessage<std::string>().arg("Name", item.text)
-                                                                                 .arg("End", calculatedStart)
-                                                                                 .values()
-                                             );
-                    else
-                        BaseClass::logMessage(item.pTokenInfo, "diagram", "entry '$(Name)': entry offset value is greater than previous value end ($(End))"
-                                             , umba::FormatMessage<std::string>().arg("Name", item.text)
-                                                                                 .arg("End", calculatedStart)
-                                                                                 .values()
-                                             );
+                    std::string msg = std::string("entry '$(Name)': ") 
+                                    + (item.itemType==EPacketDiagramItemType::singleValue ? "entry" : "range start")
+                                    + " offset value is less than previous value end+1 ($(Start) < $(End))";
+                    BaseClass::logMessage( item.pTokenInfo, "diagram", msg
+                                         , umba::FormatMessage<std::string>().arg("Name" , item.text)
+                                                                             .arg("Start", item.addressRange.start)
+                                                                             .arg("End"  , calculatedStart)
+                                                                             .values()
+                                         );
                 }
                 else
                 {
-                    BaseClass::logMessage(item.pTokenInfo, "diagram", "entry '$(Name)': gap detected: previous entry '$(PrevName)' ends with $(PrevEnd), but this entry starts with $(CurStart)"
+                    BaseClass::logMessage(item.pTokenInfo, "diagram", "entry '$(Name)': gap detected: previous entry '$(PrevName)' ends with $(PrevEnd), but current entry starts with $(CurStart) instead of $(ExpectedStart)"
                                          , umba::FormatMessage<std::string>().arg("Name"    , item.text)
                                                                              .arg("PrevName", diagram.data.back().text)
                                                                              .arg("PrevEnd" , diagram.data.back().addressRange.end)
                                                                              .arg("CurStart", item.addressRange.start)
+                                                                             .arg("ExpectedStart", calculatedStart)
                                                                              .values()
                                          );
                 }
@@ -176,19 +195,20 @@ public:
         if (item.itemType==EPacketDiagramItemType::org)
         {
             // Вычислить новый org
+            std::uint64_t baseAddress = diagram.calcBaseAddress();
+
+
             switch(item.orgType)
             {
                 case EOrgType::orgAuto:
-                     item.addressRange.start = calculatedStart; // задаём фикс адрес
-                     item.addressRange.end   = calculatedStart;
+                     item.orgAddress = baseAddress + calculatedStart;
                      break;
 
-                case EOrgType::orgAbs : // Ничего не делаем
+                case EOrgType::orgAbs : // Ничего не делаем, задан абсолютный адрес
                      break;
 
                 case EOrgType::orgRel :
-                     item.addressRange.start += calculatedStart; // Прибавляем смещение к текущему адресу
-                     item.addressRange.end    = item.addressRange.start;
+                     item.orgAddress += baseAddress; // прибавили базовый адрес, который высчитан по предыдущим org директивам
                      break;
 
                 case EOrgType::invalid  : [[fallthrough]];
@@ -198,29 +218,29 @@ public:
 
             }
 
+            auto calculatedFinalAddress = baseAddress+calculatedStart;
             // Проверить, не налез ли он на уже размеченную память
-            if (item.addressRange.start<calculatedStart)
+            if (item.orgAddress<calculatedFinalAddress)
             {
                 // попадает в уже размеченную память - falls into already mapped memory
                 // попадает в уже неразмеченную память - ends up in already unallocated memory
                 // 
-                BaseClass::logMessage(item.pTokenInfo, "diagram", "'org' address hits into previous ayout");
+                BaseClass::logMessage(item.pTokenInfo, "diagram", "'org' address hits into previous layout");
                 return false;
             }
 
             // Если новый org создаёт gap - добавить fill
-            if (item.addressRange.start>calculatedStart)
+            if (item.orgAddress>calculatedFinalAddress && !diagram.data.empty()) // а данные не пусты, значит, надо заполнить место
             {
-                // std::size_t gapSize = item.addressRange.start - calculatedStart;
-                // Размер гэпа не надо отдельно вычислять, гэп задаём ренджем
+                std::size_t gapSize = item.orgAddress - calculatedFinalAddress;
 
                 auto gapItem = PacketDiagramItemType();
 
                 gapItem.itemType  = EPacketDiagramItemType::range;
-                gapItem.fillEntry = true;
+                gapItem.fillEntry = true; // поле для заполнения
 
                 gapItem.addressRange.start = calculatedStart;
-                gapItem.addressRange.end   = item.addressRange.start - 1;
+                gapItem.addressRange.end   = gapItem.addressRange.start + gapSize - 1;
 
                 gapItem.pTokenInfo = item.pTokenInfo;
 
@@ -234,7 +254,7 @@ public:
 
             // Установить lastOrg. Задаём абсолютное значение
 
-            diagram.lastOrg = item.addressRange.start;
+            diagram.lastOrg = item.orgAddress;
         
         }
 
@@ -245,7 +265,7 @@ public:
         if (item.itemType==EPacketDiagramItemType::explicitType)
         {
             item.addressRange.start = calculatedStart;
-            item.addressRange.end   = item.addressRange.start + item.getTypeFieldSize();
+            item.addressRange.end   = item.addressRange.start + item.getTypeFieldSize()-1;
         }
 
         else if (item.itemType==EPacketDiagramItemType::singleValue)
@@ -255,6 +275,28 @@ public:
 
         else if (item.itemType==EPacketDiagramItemType::org)
         {
+        }
+
+        // Если никаких данных не было, и добавляемый элемент - не org, надо вставить org 0
+        if (diagram.data.empty() && item.itemType!=EPacketDiagramItemType::org)
+        {
+            PacketDiagramItemType orgItem;
+            orgItem.pTokenInfo    = item.pTokenInfo;
+            orgItem.itemType      = EPacketDiagramItemType::org;
+            orgItem.orgType       = EOrgType::orgAbs;
+            orgItem.text          = diagram.generateOrgName(orgCounter);
+            orgItem.textGenerated = true;
+            orgItem.addressRange.start = 0;
+            orgItem.addressRange.end   = 0;
+            orgItem.orgAddress         = 0;
+
+            diagram.data.emplace_back(orgItem);
+            diagram.orgAddress = 0;
+        }
+
+        if (item.itemType==EPacketDiagramItemType::org && diagram.orgAddress==std::uint64_t(-1))
+        {
+            diagram.orgAddress = item.orgAddress;
         }
 
 
@@ -589,7 +631,7 @@ public:
 
         if (isAnyNumber(pTokenInfo->tokenType))
         {
-            pTokenInfo = parseNumber(tokenPos, pTokenInfo, item.addressRange.start, "'org' directive");
+            pTokenInfo = parseNumber(tokenPos, pTokenInfo, item.orgAddress, "'org' directive");
             item.orgType = hasPlus ? EOrgType::orgRel : EOrgType::orgAbs;
         }
         else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_AUTO)
@@ -605,8 +647,9 @@ public:
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
-        item.addressRange.end = item.addressRange.start;
-        item.itemType         = EPacketDiagramItemType::org;
+        item.addressRange.start = 0;
+        item.addressRange.end   = 0;
+        item.itemType           = EPacketDiagramItemType::org;
 
 
         if (pTokenInfo->tokenType!=MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER) // В отличие от регулярной записи, тут название опционально, нагенерим, если надо будет
@@ -947,7 +990,7 @@ public:
             else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_CRC)
             {
                 if (hasCrc)
-                    BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'crc' option already taken" ), (const TokenInfoType*)0;
+                    return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'crc' option already taken" ), (const TokenInfoType*)0;
 
                 hasCrc = true;
 
@@ -975,7 +1018,7 @@ public:
             else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_SEED)
             {
                 if (hasSeed)
-                    BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'seed' option already taken" ), (const TokenInfoType*)0;
+                    return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'seed' option already taken" ), (const TokenInfoType*)0;
 
                 hasSeed = true;
 
@@ -990,8 +1033,8 @@ public:
 
             else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_POLY)
             {
-                if (hasSeed)
-                    BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'poly' option already taken" ), (const TokenInfoType*)0;
+                if (hasPoly)
+                    return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'poly' option already taken" ), (const TokenInfoType*)0;
 
                 hasPoly = true;
 
