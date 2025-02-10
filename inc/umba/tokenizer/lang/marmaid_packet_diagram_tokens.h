@@ -58,6 +58,7 @@
 #define MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER               ((MARMAID_TOKEN_SET_OPERATORS_FIRST)+1)
 #define MARMAID_TOKEN_OPERATOR_RANGE                          ((MARMAID_TOKEN_SET_OPERATORS_FIRST)+2)
 #define MARMAID_TOKEN_OPERATOR_EXTRA                          ((MARMAID_TOKEN_SET_OPERATORS_FIRST)+3)
+#define MARMAID_TOKEN_OPERATOR_PLUS                           ((MARMAID_TOKEN_SET_OPERATORS_FIRST)+4)
 
 //----------------------------------------------------------------------------
 
@@ -85,6 +86,7 @@
 #define MARMAID_TOKEN_ATTR_CRC                            (MARMAID_TOKEN_SET_ATTRS_FIRST+0x00Bu)  /* crc */
 #define MARMAID_TOKEN_ATTR_SEED                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x00Cu)  /* seed */
 #define MARMAID_TOKEN_ATTR_POLY                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x00Du)  /* poly */
+#define MARMAID_TOKEN_ATTR_AUTO                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x00Eu)  /* auto */
 // #define MARMAID_TOKEN_ATTR_                               (MARMAID_TOKEN_SET_ATTRS_FIRST+0x000u)  /*  */
 // #define MARMAID_TOKEN_ATTR_                               (MARMAID_TOKEN_SET_ATTRS_FIRST+0x000u)  /*  */
 // #define MARMAID_TOKEN_ATTR_                               (MARMAID_TOKEN_SET_ATTRS_FIRST+0x000u)  /*  */
@@ -137,6 +139,13 @@
     но и дополнительный fill_ элемент, он присутствует в сишной структуре, но игнорируется при генерации
     HEX'а.
 
+    А может, в директиве org сделать другой синтаксис?
+    %%#! org 0x20 - это смещение от предыдущего org
+    %%#! org .0x800200 - это абсолютный org? Типа, точка, всё абсолютно
+
+    %%#! org auto "Some Entry" - автоматическое вычисление адреса
+    OrgType orgAuto, orgAbs, orgRel
+
     Если мы выводим сишный код для структуры, то нам надо:
 
      1) нагенерить различные fill_ имена
@@ -144,6 +153,9 @@
 
     Если мы выводим всё по разным структурам,
     то fill'ы вставляются в главной структуре
+
+    CRC range - как работает? Если числовой рендж, то внутри текущего org?
+    Если имена/литералы, то глобально 
 
 
 */

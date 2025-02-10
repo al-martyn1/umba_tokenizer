@@ -139,6 +139,7 @@ struct PacketDiagramTokenizerConfigurator
                                                                                     , {"crc"             , MARMAID_TOKEN_ATTR_CRC                    }
                                                                                     , {"seed"            , MARMAID_TOKEN_ATTR_SEED                   }
                                                                                     , {"poly"            , MARMAID_TOKEN_ATTR_POLY                   }
+                                                                                    , {"auto"            , MARMAID_TOKEN_ATTR_AUTO                   }
 
                                                                                     //, {""           ,              }
                                                                                     //, {""           ,              }

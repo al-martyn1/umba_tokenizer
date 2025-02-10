@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "umba/string_plus.h"
+#include "umba/string.h"
 //
 
 #include "umba/tokenizer.h"
@@ -24,6 +24,7 @@
 //
 #include <stdexcept>
 #include <initializer_list>
+#include <unordered_map>
 
 
 //----------------------------------------------------------------------------
@@ -31,46 +32,6 @@
 namespace umba {
 namespace tokenizer {
 namespace marmaid {
-
-//----------------------------------------------------------------------------
-
-
-
-//----------------------------------------------------------------------------
-enum class EPacketDiagramType
-{
-    unknown,
-    bitDiagram ,
-    byteDiagram,
-    memDiagram     // Memory diagram/layout
-};
-
-//----------------------------------------------------------------------------
-
-
-
-//----------------------------------------------------------------------------
-enum class EPacketDiagramRangeType
-{
-    singleValue,
-    range      ,
-    explicitType
-};
-
-//----------------------------------------------------------------------------
-
-
-
-//----------------------------------------------------------------------------
-enum class Endianness
-{
-    unknown,
-    littleEndian,
-    bigEndian,
-    middleEndian,
-    leMiddleEndian,
-    beMiddleEndian
-};
 
 //----------------------------------------------------------------------------
 
@@ -89,26 +50,62 @@ enum class DiagramParsingOptions : std::uint32_t
 
     all = allowOverrideTitle | allowOverrideType | allowOverrideEndianness | allowOverrideBitSize | allowOverrideDisplayWidth
 
-}; // enum 
+}; // enum class DiagramParsingOptions : std::uint32_t
 
 UMBA_ENUM_CLASS_IMPLEMENT_FLAG_OPERATORS(DiagramParsingOptions)
 
 //----------------------------------------------------------------------------
+enum class EPacketDiagramType
+{
+    unknown, invalid = unknown, undefined = unknown,
+    bitDiagram, byteDiagram, memDiagram     // Memory diagram/layout
+};
 
+//----------------------------------------------------------------------------
+enum class EPacketDiagramItemType
+{
+    unknown, invalid = unknown, undefined = unknown,
+    singleValue, range, explicitType, org
+};
 
+//----------------------------------------------------------------------------
+enum class EOrgType
+{
+    unknown, invalid = unknown, undefined = unknown,
+    orgAuto, orgAbs, orgRel
+};
 
+//----------------------------------------------------------------------------
+enum class Endianness
+{
+    unknown, invalid = unknown, undefined = unknown,
+    littleEndian, bigEndian, middleEndian, leMiddleEndian, beMiddleEndian
+};
+
+//----------------------------------------------------------------------------
+struct AddressRange
+{
+    std::uint64_t  start;
+    std::uint64_t  end  ; // Тоже входит в диапазон
+};
+
+//----------------------------------------------------------------------------
+struct CrcGeneratorConfig
+{
+    std::uint64_t   size    = 0; // 1/2/4
+    std::uint64_t   seed    = 0;
+    std::uint64_t   poly    = 0;
+};
 
 //----------------------------------------------------------------------------
 // crc 0-20 seed 0 poly 0x1234
 struct CrcOptions
 {
-    std::size_t     cellIndex  = 0; // Индекс в массиве data, по которому расположена информация о ячейке
-    std::uint64_t   crcSize    = 0; // 1/2/4 - высчитывается от размера элемента, в который помещается, если размер не 1/2/4 - это ошибка
-    std::uint64_t   seed       = 0;
-    std::uint64_t   poly       = 0;
-    std::uint64_t   start      = 0; // Индексы начального и 
-    std::uint64_t   end        = 0; // конечного байт данных, сам CRC не должен туда входить
-};
+    std::size_t          cellIndex  = std::size_t(-1); // Индекс в массиве data, по которому расположена информация о ячейке
+    CrcGeneratorConfig   crcConfig; // Размер crc (size) высчитывается от размера элемента, в который помещается, если размер не 1/2/4 - это ошибка
+    AddressRange         addressRange; // Индексы начального и конечного байт данных, сам CRC не должен туда входить
+
+}; // struct CrcOptions
 
 
 
@@ -135,6 +132,25 @@ std::string makeCppNameFromText(const std::string &text, bool bCpp)
     return res;
 }
 
+inline
+std::string makeIdFromText(const std::string &text)
+{
+    auto res = umba::string::tolower_copy(makeCppNameFromText(text, false));
+    if (res.empty())
+        return res;
+    
+    auto ch1 = res.front();
+    for(auto ch: res)
+    {
+        if (ch!=ch1)
+            return res;
+    }
+    
+    return std::string(1, ch1);
+}
+
+
+
 //----------------------------------------------------------------------------
 
 
@@ -143,13 +159,15 @@ std::string makeCppNameFromText(const std::string &text, bool bCpp)
 template<typename TokenCollectionItemType>
 struct PacketDiagramItem
 {
-    EPacketDiagramRangeType         rangeType;
+    EPacketDiagramItemType          itemType = EPacketDiagramItemType::undefined;
+    EOrgType                        orgType  = EOrgType::undefined;
     umba::tokenizer::payload_type   explicitTypeTokenId;
     std::string                     text;
+    bool                            fillEntry = false;
 
-    std::uint64_t                   start; // Вычисляем при добавлении, если указан тип
-    std::uint64_t                   end  ; // Вычисляем при добавлении, если указан тип; ходит в диапазон
-    std::uint64_t                   arraySize = std::uint64_t(-1);
+    Endianness                      endianness   = Endianness::undefined; // use project endianness or override endianness for this entry
+    AddressRange                    addressRange; // Если указан тип - вычисляем при добавлении, 
+    std::uint64_t                   arraySize = std::uint64_t(-1); // работает только для явно заданного типа
 
     std::string                     realTypeName; // For C++ output, full qualified
 
@@ -158,7 +176,7 @@ struct PacketDiagramItem
     // Только размер типа
     std::uint64_t getTypeSize() const
     {
-        UMBA_ASSERT(rangeType==EPacketDiagramRangeType::explicitType);
+        UMBA_ASSERT(itemType==EPacketDiagramItemType::explicitType);
         return std::size_t(explicitTypeTokenId&0x0F);
     }
 
@@ -172,7 +190,7 @@ struct PacketDiagramItem
 
     bool isArray() const
     {
-        if (rangeType==EPacketDiagramRangeType::explicitType)
+        if (itemType==EPacketDiagramItemType::explicitType)
         {
             if (arraySize==std::uint64_t(-1))
                 return false;
@@ -180,7 +198,7 @@ struct PacketDiagramItem
                 return true;
         }
 
-        if (rangeType==EPacketDiagramRangeType::singleValue)
+        if (itemType==EPacketDiagramItemType::singleValue)
             return false;
 
         return true;
@@ -188,7 +206,7 @@ struct PacketDiagramItem
 
     std::uint64_t getArraySize() const
     {
-        if (rangeType==EPacketDiagramRangeType::explicitType)
+        if (itemType==EPacketDiagramItemType::explicitType)
         {
             if (arraySize==std::uint64_t(-1))
                 return 0;
@@ -196,10 +214,10 @@ struct PacketDiagramItem
                 return arraySize;
         }
 
-        if (rangeType==EPacketDiagramRangeType::singleValue)
+        if (itemType==EPacketDiagramItemType::singleValue)
             return 0;
 
-        return end-start+1;
+        return addressRange.end- addressRange.start+1;
     }
 
     std::string getPlainTypeName() const // For plain C
@@ -207,7 +225,7 @@ struct PacketDiagramItem
         if (!realTypeName.empty())
             return realTypeName;
 
-        if (rangeType!=EPacketDiagramRangeType::explicitType)
+        if (itemType!=EPacketDiagramItemType::explicitType)
             return "uint8_t"; // threat singles and ranges as bytes
 
         switch(explicitTypeTokenId)
@@ -233,7 +251,7 @@ struct PacketDiagramItem
         if (!realTypeName.empty())
             return name;
 
-        if (rangeType!=EPacketDiagramRangeType::explicitType)
+        if (itemType!=EPacketDiagramItemType::explicitType)
             return "std::" + name;
 
         if (explicitTypeTokenId!=MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR)
@@ -252,7 +270,11 @@ struct PacketDiagramItem
         return makeCppNameFromText(text, bCpp);
     }
 
-    
+    std::string getFieldId() const
+    {
+        return makeIdFromText(text);
+    }
+
 
 }; // struct PacketDiagramItem
 
@@ -273,14 +295,33 @@ struct PacketDiagram
     
     DiagramParsingOptions                  parsingOptions = DiagramParsingOptions::all;
 
-    Endianness                             endianness   = Endianness::littleEndian;
+    Endianness                             endianness   = Endianness::unknown;
     std::uint64_t                          bitSize      = 32;
     std::uint64_t                          displayWidth = 32;
+    std::uint64_t                          lastOrg      = 0 ;
+
+
+    std::unordered_map<std::string, std::size_t>     entryNames;  // храним индекс в векторе data
+    std::unordered_map<std::string, std::size_t>     orgNames  ;  // храним индекс в векторе data
+    std::size_t                                      fillEntryCounter = 0;
+
 
     std::string getCppOrCTitle(bool bCpp) const
     {
         return title.empty() ? std::string("untitled") : makeCppNameFromText(title, bCpp);
     }
+
+    bool isDataEmpty() const
+    {
+        if (data.empty())
+            return true;
+
+        if (data.size()==1u && data.back().itemType==EPacketDiagramItemType::org)
+            return true; // Одна запись, и она содержит задание адреса
+
+        return false;
+    }
+
 
 }; // struct PacketDiagram
 

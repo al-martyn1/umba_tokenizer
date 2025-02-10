@@ -63,6 +63,8 @@ public:
     PacketDiagramType              diagram;
     shared_log_type                log    ;
 
+    std::size_t                    orgCounter = 0;
+
 
     UMBA_RULE_OF_FIVE_COPY_DELETE(PacketDiagramParser);
     UMBA_RULE_OF_FIVE_MOVE_DEFAULT(PacketDiagramParser);
@@ -79,22 +81,56 @@ public:
 
     bool addDiagramItem(PacketDiagramItemType item)
     {
-        if (item.text.empty())
+        if (item.text.empty() && item.itemType!=EPacketDiagramItemType::org) // Для org директив имя/текст необязателен
         {
-            BaseClass::logMessage(item.pTokenInfo, "diagram", "name is empty");
+            BaseClass::logMessage(item.pTokenInfo, "diagram", "data entry name is empty");
             return false;
         }
+
+        auto fieldId = item.getFieldId();
+        if (fieldId.empty() || fieldId=="_")
+        {
+            if (item.itemType==EPacketDiagramItemType::org)
+            {
+                // Анонимный ORG - генерим имя на базе текущего заголовка диаграмы
+                auto orgName = diagram.getCppOrCTitle(false) + "_Org" + std::to_string(orgCounter);
+                ++orgCounter;
+                item.text = orgName;
+                fieldId = item.getFieldId();
+            }
+            else
+            {
+                BaseClass::logMessage(item.pTokenInfo, "diagram", "data entry name is empty or contains only insignificant symbols");
+                return false;
+            }
+        }
+
+        // С наличием имени поля и годного идентификатора этого поля разобрались
+
+        std::unordered_map<std::string, std::size_t> &entriesMap = (item.itemType==EPacketDiagramItemType::org) ? diagram.orgNames : diagram.entryNames;
+
+        std::string entryTypeStr = (item.itemType==EPacketDiagramItemType::org) ? "'org' directive" : "data entry";
+
+        if (entriesMap.find(fieldId)!=entriesMap.end())
+        {
+            BaseClass::logMessage(item.pTokenInfo, "diagram", entryTypeStr + " already exists");
+            return false;
+        }
+
+        entriesMap[fieldId] = diagram.data.size();
+
+
 
         std::uint64_t calculatedStart = 0;
 
         if (!diagram.data.empty())
         {
-            calculatedStart = diagram.data.back().end+1;
+            calculatedStart = diagram.data.back().addressRange.end+1;
         }
 
-        if (item.rangeType==EPacketDiagramRangeType::range)
+        if (item.itemType==EPacketDiagramItemType::range)
         {
-            if (item.start>item.end)
+            if (item.addressRange.start>item.addressRange.end)
             {
                 BaseClass::logMessage( item.pTokenInfo, "diagram", "entry '$(Name)': range start offset is greater than range end offset"
                                      , umba::FormatMessage<std::string>().arg("Name", item.text).values()
@@ -103,34 +139,102 @@ public:
             }
         }
 
-        if (item.rangeType==EPacketDiagramRangeType::singleValue || item.rangeType==EPacketDiagramRangeType::range)
+        if (item.itemType==EPacketDiagramItemType::singleValue || item.itemType==EPacketDiagramItemType::range)
         {
-            if (item.start!=calculatedStart)
+            if (item.addressRange.start!=calculatedStart)
             {
-                if (item.start<calculatedStart)
+                if (item.addressRange.start<calculatedStart)
                 {
-                    if (item.rangeType==EPacketDiagramRangeType::singleValue)
-                        BaseClass::logMessage( item.pTokenInfo, "diagram", "entry '$(Name)': range start offset value is less than previous value end"
-                                             , umba::FormatMessage<std::string>().arg("Name", item.text).values()
+                    if (item.itemType==EPacketDiagramItemType::singleValue)
+                        BaseClass::logMessage( item.pTokenInfo, "diagram", "entry '$(Name)': range start offset value is less than previous value end ($(End))"
+                                             , umba::FormatMessage<std::string>().arg("Name", item.text)
+                                                                                 .arg("End", calculatedStart)
+                                                                                 .values()
                                              );
                     else
-                        BaseClass::logMessage(item.pTokenInfo, "diagram", "entry '$(Name)': entry offset value is less than previous value end"
-                                             , umba::FormatMessage<std::string>().arg("Name", item.text).values()
+                        BaseClass::logMessage(item.pTokenInfo, "diagram", "entry '$(Name)': entry offset value is greater than previous value end ($(End))"
+                                             , umba::FormatMessage<std::string>().arg("Name", item.text)
+                                                                                 .arg("End", calculatedStart)
+                                                                                 .values()
                                              );
                 }
                 else
                 {
                     BaseClass::logMessage(item.pTokenInfo, "diagram", "entry '$(Name)': gap detected: previous entry '$(PrevName)' ends with $(PrevEnd), but this entry starts with $(CurStart)"
-                                         , umba::FormatMessage<std::string>().arg("Name", item.text)
+                                         , umba::FormatMessage<std::string>().arg("Name"    , item.text)
                                                                              .arg("PrevName", diagram.data.back().text)
-                                                                             .arg("PrevEnd", diagram.data.back().end)
-                                                                             .arg("CurStart", item.start)
+                                                                             .arg("PrevEnd" , diagram.data.back().addressRange.end)
+                                                                             .arg("CurStart", item.addressRange.start)
                                                                              .values()
                                          );
                 }
 
                 return false;
             }
+        }
+
+        if (item.itemType==EPacketDiagramItemType::org)
+        {
+            // Вычислить новый org
+            switch(item.orgType)
+            {
+                case EOrgType::orgAuto:
+                     item.addressRange.start = calculatedStart; // задаём фикс адрес
+                     item.addressRange.end   = calculatedStart;
+                     break;
+
+                case EOrgType::orgAbs : // Ничего не делаем
+                     break;
+
+                case EOrgType::orgRel :
+                     item.addressRange.start += calculatedStart; // Прибавляем смещение к текущему адресу
+                     item.addressRange.end    = item.addressRange.start;
+                     break;
+
+                case EOrgType::invalid  : [[fallthrough]];
+
+                default:
+                     return BaseClass::logMessage(item.pTokenInfo, "diagram", "'org': invalid 'org' type"), false;
+
+            }
+
+            // Проверить, не налез ли он на уже размеченную память
+            if (item.addressRange.start<calculatedStart)
+            {
+                // попадает в уже размеченную память - falls into already mapped memory
+                // попадает в уже неразмеченную память - ends up in already unallocated memory
+                // 
+                BaseClass::logMessage(item.pTokenInfo, "diagram", "'org' address hits into previous ayout");
+                return false;
+            }
+
+            // Если новый org создаёт gap - добавить fill
+            if (item.addressRange.start>calculatedStart)
+            {
+                // std::size_t gapSize = item.addressRange.start - calculatedStart;
+                // Размер гэпа не надо отдельно вычислять, гэп задаём ренджем
+
+                auto gapItem = PacketDiagramItemType();
+
+                gapItem.itemType  = EPacketDiagramItemType::range;
+                gapItem.fillEntry = true;
+
+                gapItem.addressRange.start = calculatedStart;
+                gapItem.addressRange.end   = item.addressRange.start - 1;
+
+                gapItem.pTokenInfo = item.pTokenInfo;
+
+                // Вроде всё необходимое задано для гэп записи
+
+                gapItem.text = "fill_" + std::to_string(diagram.fillEntryCounter);
+                ++diagram.fillEntryCounter;
+
+                diagram.data.emplace_back(gapItem); // Добавляем gap fill
+            }
+
+            // Установить lastOrg. Задаём абсолютное значение
+
+            diagram.lastOrg = item.addressRange.start;
         
         }
 
@@ -138,15 +242,21 @@ public:
 
         // Теперь фиксим поля
 
-        if (item.rangeType==EPacketDiagramRangeType::explicitType)
+        if (item.itemType==EPacketDiagramItemType::explicitType)
         {
-            item.start = calculatedStart;
-            item.end   = item.start + item.getTypeFieldSize();
+            item.addressRange.start = calculatedStart;
+            item.addressRange.end   = item.addressRange.start + item.getTypeFieldSize();
         }
-        else if (item.rangeType==EPacketDiagramRangeType::singleValue)
+
+        else if (item.itemType==EPacketDiagramItemType::singleValue)
         {
-            item.end = item.start;
+            item.addressRange.end = item.addressRange.start;
         }
+
+        else if (item.itemType==EPacketDiagramItemType::org)
+        {
+        }
+
 
         diagram.data.emplace_back(item);
 
@@ -311,39 +421,47 @@ public:
     }
 
     //! Разбираем диапазон. Возвращается следующий токен для анализа и продолжения разбора строки или ноль при ошибке
-    const TokenInfoType* parseRange(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, PacketDiagramItemType &item)
+    const TokenInfoType* parseRange(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, AddressRange &addressRange, EPacketDiagramItemType &itemType, const std::string &msg=std::string())
     {
         // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
+        // Хотя не всегда, иногда мы ожидаем, что у нас диапазон, и переходим сюда без проверки
 
-        // if (!checkNotNul(pTokenInfo))
-        //     return 0;
+        auto makeMsg = [&](const std::string &details)
+        {
+            return msg.empty() ? details : msg + ": " + details;
+        };
+
+        if (!checkNotNul(pTokenInfo))
+            return 0;
+
+        if (!isAnyNumber(pTokenInfo->tokenType))
+            return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, makeMsg("failed reading range start")), (const TokenInfoType*)0;
+
 
         using umba::tokenizer::ParserWaitForTokenFlags;
 
-        pTokenInfo = parseNumber(tokenPos, pTokenInfo, item.start, "start offset value");
+        pTokenInfo = parseNumber(tokenPos, pTokenInfo, addressRange.start, makeMsg("start offset value"));
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
-        if (!checkExactTokenType(pTokenInfo, {MARMAID_TOKEN_OPERATOR_RANGE, MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER}, "failed reading offset/range"))
-            return 0;
-
-        if (pTokenInfo->tokenType==MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER)
+        // У нас не обязательно будет на входе range, за которым идёт MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER
+        // Так что выше должны это проверить
+        if (pTokenInfo->tokenType!=MARMAID_TOKEN_OPERATOR_RANGE)
         {
-            item.rangeType = EPacketDiagramRangeType::singleValue;
+            itemType = EPacketDiagramItemType::singleValue;
             return pTokenInfo;
         }
 
-        // range sign '-' (MARMAID_TOKEN_OPERATOR_RANGE)
         // Читаем второе число из диапазона
         pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
         if (!isAnyNumber(pTokenInfo->tokenType))
-            return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, "failed reading range end"), (const TokenInfoType*)0;
+            return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, makeMsg("failed reading range end")), (const TokenInfoType*)0;
 
-        pTokenInfo = parseNumber(tokenPos, pTokenInfo, item.end, "range end value");
-        item.rangeType = EPacketDiagramRangeType::range;
+        pTokenInfo = parseNumber(tokenPos, pTokenInfo, addressRange.end, makeMsg("range end value"));
+        itemType = EPacketDiagramItemType::range;
 
         return pTokenInfo;
     }
@@ -355,7 +473,7 @@ public:
 
         using umba::tokenizer::ParserWaitForTokenFlags;
 
-        item.rangeType           = EPacketDiagramRangeType::explicitType;
+        item.itemType           = EPacketDiagramItemType::explicitType;
         item.explicitTypeTokenId = pTokenInfo->tokenType;
 
         pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
@@ -408,13 +526,13 @@ public:
         {
             switch(pTokenInfo->tokenType)
             {
-                case MARMAID_TOKEN_ATTR_BYTE      :  [[fallthrough]]
-                case MARMAID_TOKEN_ATTR_BYTE_DIA  :  diagram.diagramType = EPacketDiagramType::byteDiagram; break;
-                case MARMAID_TOKEN_ATTR_BIT       :  [[fallthrough]]
-                case MARMAID_TOKEN_ATTR_BIT_DIA   :  diagram.diagramType = EPacketDiagramType::bitDiagram ; break;
+                case MARMAID_TOKEN_ATTR_BYTE      : [[fallthrough]]; // error C2416: attribute 'fallthrough' cannot be applied in this context
+                case MARMAID_TOKEN_ATTR_BYTE_DIA  : diagram.diagramType = EPacketDiagramType::byteDiagram; break;
+                case MARMAID_TOKEN_ATTR_BIT       : [[fallthrough]]; // error C2416: attribute 'fallthrough' cannot be applied in this context
+                case MARMAID_TOKEN_ATTR_BIT_DIA   : diagram.diagramType = EPacketDiagramType::bitDiagram ; break;
 
-                case MARMAID_TOKEN_ATTR_MEMORY_DIA:  diagram.diagramType = EPacketDiagramType::memDiagram ; break;
-                case UMBA_TOKENIZER_TOKEN_LINEFEED:  return pTokenInfo;
+                case MARMAID_TOKEN_ATTR_MEMORY_DIA: diagram.diagramType = EPacketDiagramType::memDiagram ; break;
+                case UMBA_TOKENIZER_TOKEN_LINEFEED: return pTokenInfo;
             }
         }
 
@@ -444,6 +562,61 @@ public:
         }
 
         return pTokenInfo;
+    }
+
+    //! Разбор директивы org. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
+    const TokenInfoType* parseOrgDirective(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, PacketDiagramItemType &item) 
+    {
+        // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
+
+        // %%#! org + 0x20 : "name" - смещение от предыдущего org
+        // %%#! org 0x800200 : "name" - абсолютный org
+        // %%#! org auto : "Some Entry" - автоматическое вычисление адреса
+
+        pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+        if (!pTokenInfo)
+            return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+        bool hasPlus = false;
+
+        if (pTokenInfo->tokenType==MARMAID_TOKEN_OPERATOR_PLUS)
+        {
+            hasPlus = true;
+            pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+            if (!pTokenInfo)
+                return 0; // Сообщение уже выведено, просто возвращаем ошибку
+        }
+
+        if (isAnyNumber(pTokenInfo->tokenType))
+        {
+            pTokenInfo = parseNumber(tokenPos, pTokenInfo, item.addressRange.start, "'org' directive");
+            item.orgType = hasPlus ? EOrgType::orgRel : EOrgType::orgAbs;
+        }
+        else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_AUTO)
+        {
+            if (hasPlus)
+                return BaseClass::logSimpleMessage(pTokenInfo, "unexpected-auto", "'org' directive: unexpected 'auto' after relative address option ('+')"), (const TokenInfoType*)0;
+
+            item.orgType = EOrgType::orgAuto;
+
+            pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+        }
+
+        if (!pTokenInfo)
+            return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+        item.addressRange.end = item.addressRange.start;
+        item.itemType         = EPacketDiagramItemType::org;
+
+
+        if (pTokenInfo->tokenType!=MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER) // В отличие от регулярной записи, тут название опционально, нагенерим, если надо будет
+            return pTokenInfo;
+
+        pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+        if (!pTokenInfo)
+            return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+        return readStringLiteral(tokenPos, pTokenInfo, item.text, "'org' directive");
     }
 
     //! Разбор директивы title. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
@@ -622,20 +795,39 @@ public:
     }
 
     //! Разбор обычной строки. Может возвращать ноль при ошибке, или токен LF/FIN
-    const TokenInfoType* parseRegularLine(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, PacketDiagramItemType &item)
+    const TokenInfoType* readStringLiteral(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, std::string &str, const std::string &msg=std::string())
+    {
+        if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL}, msg))
+            return 0;
+
+        const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
+        auto stringLiteralData = std::get<typename tokenizer_type::StringLiteralDataHolder>(*pParsedData);
+        str = stringLiteralData.pData->asString();
+
+        return BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    }
+
+
+    //! Разбор обычной строки. Может возвращать ноль при ошибке, или токен LF/FIN
+    const TokenInfoType* parseRegularLine(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, PacketDiagramItemType &item, CrcOptions &crcOptions)
     {
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
+
         if (isAnyNumber(pTokenInfo->tokenType))
-            pTokenInfo = parseRange(tokenPos, pTokenInfo, item);
+            pTokenInfo = parseRange(tokenPos, pTokenInfo, item.addressRange, item.itemType);
+
         else if (isAnyType(pTokenInfo->tokenType))
             pTokenInfo = parseType(tokenPos, pTokenInfo, item);
+        
         else
             return 0;
 
+
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
         if (!checkExactTokenType(pTokenInfo, {MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER}, "invalid record definition"))
             return 0;
 
@@ -647,26 +839,37 @@ public:
         if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL}, "invalid record definition"))
             return 0;
 
-        const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
-        auto stringLiteralData = std::get<typename tokenizer_type::StringLiteralDataHolder>(*pParsedData);
-        item.text = stringLiteralData.pData->asString();
-
-        pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+        pTokenInfo = readStringLiteral(tokenPos, pTokenInfo, item.text, "invalid record definition");
+        if (!pTokenInfo)
+            return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
         if (pTokenInfo->tokenType!=MARMAID_TOKEN_OPERATOR_EXTRA)
             return pTokenInfo;
 
-        Endianness endianness = Endianness::unknown;
+        pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+
+        if (!pTokenInfo)
+            return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+        Endianness &endianness = item.endianness; // = Endianness::unknown;
         bool hasCrc   = false;
         bool hasSeed  = false;
         bool hasPoly  = false;
-        //bool hasRange = false;
 
-        std::uint64_t crcRangeStart = 0;
-        std::uint64_t crcRangeEnd   = 0;
+        crcOptions.crcConfig.seed = 0;
+        endianness = Endianness::undefined;
 
-        auto returnCheckUpdateOptions = [&]()
+        auto returnCheckUpdateOptions = [&]() -> const TokenInfoType*
         {
+            if (hasCrc)
+            {
+                // seed по умолчанию 0
+                // if (!hasSeed)
+                //     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'crc' option taken, but no 'seed' option taken" ), (const TokenInfoType*)0;
+                if (!hasPoly)
+                    return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'crc' option taken, but no 'poly' option taken" ), (const TokenInfoType*)0;
+            }
+
             return pTokenInfo;
         };
 
@@ -692,7 +895,7 @@ public:
                            )
                )
             {
-                expectedReachedMsg(pTokenInfo, { /* UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, */  MARMAID_TOKEN_ATTR_LE /* , MARMAID_TOKEN_ATTR_BE */  | UMBA_TOKENIZER_TOKEN_LINEFEED }, "invalid 'native' directive options" );
+                expectedReachedMsg(pTokenInfo, { /* UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, */  MARMAID_TOKEN_ATTR_LE /* , MARMAID_TOKEN_ATTR_BE */  | UMBA_TOKENIZER_TOKEN_LINEFEED } /*, "invalid 'native' directive options" */ );
                 return 0;
             }
 
@@ -701,7 +904,111 @@ public:
                 return returnCheckUpdateOptions();
             }
 
+            if ( umba::TheValue(pTokenInfo->tokenType)
+                     .oneOf( MARMAID_TOKEN_ATTR_LE, MARMAID_TOKEN_ATTR_BE
+                           , MARMAID_TOKEN_ATTR_ME, MARMAID_TOKEN_ATTR_LE_ME, MARMAID_TOKEN_ATTR_BE_ME
+                           )
+               )
+            {
+                if (endianness!=Endianness::unknown)
+                    return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: endianness option already taken" ), (const TokenInfoType*)0;
 
+                if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_ME)
+                {
+                    if (diagram.endianness==Endianness::unknown)
+                        return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: middle-endian option taken, but project endianness not set" ), (const TokenInfoType*)0;
+
+                    else if (diagram.endianness==Endianness::littleEndian)
+                        item.endianness = Endianness::leMiddleEndian;
+
+                    else if (diagram.endianness==Endianness::bigEndian)
+                        item.endianness = Endianness::beMiddleEndian;
+
+                    else
+                        return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: unknown byte order in project definition" ), (const TokenInfoType*)0;
+                }
+                else
+                {
+                    switch(pTokenInfo->tokenType)
+                    {
+                        case MARMAID_TOKEN_ATTR_LE    : item.endianness = Endianness::littleEndian  ; break;
+                        case MARMAID_TOKEN_ATTR_BE    : item.endianness = Endianness::bigEndian     ; break;
+                        case MARMAID_TOKEN_ATTR_LE_ME : item.endianness = Endianness::leMiddleEndian; break;
+                        case MARMAID_TOKEN_ATTR_BE_ME : item.endianness = Endianness::beMiddleEndian; break;
+                        default:
+                            return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: something goes wrong" ), (const TokenInfoType*)0;
+                    }
+                }
+
+                // Берем следующий токен и пилим по циклу дальше
+                pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+            }
+
+            else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_CRC)
+            {
+                if (hasCrc)
+                    BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'crc' option already taken" ), (const TokenInfoType*)0;
+
+                hasCrc = true;
+
+                pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+                if (!pTokenInfo)
+                    return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+                // Хотим тут range
+                // !!! Тут надо делать селект - если токен не числовой внутри орга, то литеральный глобальный
+                // Пока только числовой делаем
+
+                EPacketDiagramItemType itemType = EPacketDiagramItemType::invalid;
+                pTokenInfo = parseRange(tokenPos, pTokenInfo, crcOptions.addressRange, itemType, "record definition 'crc' option");
+                if (!pTokenInfo)
+                    return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+                if (itemType!=EPacketDiagramItemType::range)
+                {
+                    // parseRange тут немного херню даёт, и диагностика хромает, показывает следующую запись, но пока так
+                    // !!! Надо разобраться, почему диагностика не туда пырит
+                    return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: expected adress range, but got a single value or something else" ), (const TokenInfoType*)0;
+                }
+            }
+
+            else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_SEED)
+            {
+                if (hasSeed)
+                    BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'seed' option already taken" ), (const TokenInfoType*)0;
+
+                hasSeed = true;
+
+                pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+                if (!pTokenInfo)
+                    return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+                pTokenInfo = parseNumber(tokenPos, pTokenInfo, crcOptions.crcConfig.seed, "record definition 'seed' option");
+                if (!pTokenInfo)
+                    return 0; // Сообщение уже выведено, просто возвращаем ошибку
+            }
+
+            else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_POLY)
+            {
+                if (hasSeed)
+                    BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'poly' option already taken" ), (const TokenInfoType*)0;
+
+                hasPoly = true;
+
+                pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+                if (!pTokenInfo)
+                    return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+                pTokenInfo = parseNumber(tokenPos, pTokenInfo, crcOptions.crcConfig.poly, "record definition 'poly' option");
+                if (!pTokenInfo)
+                    return 0; // Сообщение уже выведено, просто возвращаем ошибку
+            }
+
+            else
+            {
+                BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: something goes wrong" );
+                return 0;
+            }
 
         }
     }
@@ -727,21 +1034,28 @@ public:
             if (isAnyNumber(pTokenInfo->tokenType) || isAnyType(pTokenInfo->tokenType))
             {
                 PacketDiagramItemType item;
+                CrcOptions crcOptions;
                 item.pTokenInfo = pTokenInfo; // На всякий случай инфу сохраняем
-                pTokenInfo = parseRegularLine(tokenPos, pTokenInfo, item);
+                pTokenInfo = parseRegularLine(tokenPos, pTokenInfo, item, crcOptions);
                 if (!pTokenInfo)
                     return false;
                 if (!addDiagramItem(item))
                     return false;
+
+                // TODO: !!! Надо добавить crcOptions
             }
 
             else if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_PACKET_BETA)
             {
+                if (!diagram.isDataEmpty())
+                    return BaseClass::logMessage( pTokenInfo, "unexpected-packet-beta", "'packet-beta' directive must follow before the data records definition" ), false;
                 pTokenInfo = parsePacketBetaDirective(tokenPos, pTokenInfo);
             }
 
             else if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_TITLE)
             {
+                if (!diagram.isDataEmpty())
+                    return BaseClass::logMessage( pTokenInfo, "unexpected-title", "'title' directive must follow before the data records definition" ), false;
                 pTokenInfo = parseTitleDirective(tokenPos, pTokenInfo);
             }
 
@@ -757,7 +1071,11 @@ public:
                 if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
                     return true; // normal stop
     
-                if (!umba::TheValue(pTokenInfo->tokenType).oneOf(MARMAID_TOKEN_DIRECTIVE_NATIVE, MARMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH))
+                if (!umba::TheValue(pTokenInfo->tokenType).oneOf( MARMAID_TOKEN_DIRECTIVE_NATIVE
+                                                                , MARMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH
+                                                                , MARMAID_TOKEN_DIRECTIVE_ORG
+                                                                )
+                   )
                 {
                      expectedReachedMsg(pTokenInfo, {MARMAID_TOKEN_DIRECTIVE_NATIVE } /* , msg */ );
                      return 0;
@@ -767,13 +1085,30 @@ public:
 
                 if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_NATIVE)
                 {
+                    if (!diagram.isDataEmpty())
+                        return BaseClass::logMessage( pTokenInfo, "unexpected-native", "'native' directive must follow before the data records definition" ), false;
                     pTokenInfo = parseNativeDirective(tokenPos, pTokenInfo);
                 }
     
                 else if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH)
                 {
+                    if (!diagram.isDataEmpty())
+                        return BaseClass::logMessage( pTokenInfo, "unexpected-display-width", "'display-width' directive must follow before the data records definition" ), false;
                     pTokenInfo = parseDisplayWidthDirective(tokenPos, pTokenInfo);
                 }
+
+                else if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_ORG)
+                {
+                    PacketDiagramItemType item;
+                    item.pTokenInfo = pTokenInfo; // На всякий случай инфу сохраняем
+                    pTokenInfo = parseOrgDirective(tokenPos, pTokenInfo, item);
+                    if (!pTokenInfo)
+                        return false;
+                    if (!addDiagramItem(item))
+                        return false;
+                }
+
+                // const TokenInfoType* parseOrgDirective(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, PacketDiagramItemType &item) 
             }
 
             else

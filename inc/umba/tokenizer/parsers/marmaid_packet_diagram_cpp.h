@@ -26,7 +26,7 @@ void printPacketDiagramItem( StreamType &oss
                            , bool fCpp=true
                            , marty_cpp::NameStyle nameStyle=marty_cpp::NameStyle::camelStyle
                            , std::size_t indent=4
-                           , std::size_t width=32
+                           , std::size_t width=24
                            )
 {
     oss << std::string(indent, ' ');
@@ -56,7 +56,7 @@ void printCppPacketDiagram( StreamType &oss
                           , marty_cpp::NameStyle structStyle=marty_cpp::NameStyle::pascalStyle
                           , std::size_t indent=0
                           , std::size_t itemIndent=4
-                          , std::size_t width=32
+                          , std::size_t width=24
                           )
 {
     std::string structName = marty_cpp::formatName( diagram.getCppOrCTitle(fCpp), structStyle, true /* fixStartDigit */ , true /* fixKeywords */ );

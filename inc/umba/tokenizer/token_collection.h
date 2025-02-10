@@ -552,12 +552,20 @@ public:
 
         // Самому лень считать, а в итераторе уже сделан поиск начала строки
         auto posIt = umba::iterator::TextPositionCountingIterator<char>(m_text.data(), m_text.size(), m_fileId, ptki->tokenOffset);
+        #if defined(DEBUG) || defined(_DEBUG)
+        auto pStr = m_text.data() + std::ptrdiff_t(ptki->tokenOffset);
+        UMBA_USED(pStr);
+        #endif
         return umba::iterator::makeString(posIt.getLineStartIterator(), posIt.getLineEndIterator());
     }
 
     std::string getTokenTextLine(const TextPositionInfo &textPosInfo) const
     {
         auto posIt = umba::iterator::TextPositionCountingIterator<char>(m_text.data(), m_text.size(), textPosInfo.fileId, textPosInfo.lineOffset+textPosInfo.symbolOffset);
+        #if defined(DEBUG) || defined(_DEBUG)
+        auto pStr = m_text.data() + std::ptrdiff_t(textPosInfo.lineOffset+textPosInfo.symbolOffset);
+        UMBA_USED(pStr);
+        #endif
         return umba::iterator::makeString(posIt.getLineStartIterator(), posIt.getLineEndIterator());
     }
 
