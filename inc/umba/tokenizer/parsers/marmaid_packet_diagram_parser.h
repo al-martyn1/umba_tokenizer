@@ -86,7 +86,7 @@ public:
     PacketDiagramType getDiagram() const
     {
         auto diagramCopy = diagram;
-        diagramCopy.detectEmptyOrgs();
+        diagramCopy.removeEmptyOrgs();
         return diagramCopy;
     }
 
@@ -911,6 +911,17 @@ public:
                 //     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'crc' option taken, but no 'seed' option taken" ), (const TokenInfoType*)0;
                 if (!hasPoly)
                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'crc' option taken, but no 'poly' option taken" ), (const TokenInfoType*)0;
+
+                auto tfs = item.getTypeFieldSize();
+                if (tfs!=1 && tfs!=2 && tfs!=4)
+                {
+                    BaseClass::logMessage( item.pTokenInfo, "r-definition", "record definition: 'crc' option taken, but size of field is invalid ($(SizeOfField)). Size of field can be only 1, 2 or 4"
+                                         , umba::FormatMessage<std::string>().arg("SizeOfField", tfs).values()
+                                         );
+                    return 0;
+                }
+
+                item.crcIndex = 0; // сигналим, что CRC опции валидны. Это поле потом следует установить в реальный индекс CRC опций.
             }
 
             return pTokenInfo;
@@ -1082,10 +1093,16 @@ public:
                 pTokenInfo = parseRegularLine(tokenPos, pTokenInfo, item, crcOptions);
                 if (!pTokenInfo)
                     return false;
+
+                if (item.crcIndex==0)
+                {
+                    // Есть CRC опции
+                    item.crcIndex = diagram.crcList.size();
+                    diagram.crcList.emplace_back(crcOptions);
+                }
+
                 if (!addDiagramItem(item))
                     return false;
-
-                // TODO: !!! Надо добавить crcOptions
             }
 
             else if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_PACKET_BETA)
