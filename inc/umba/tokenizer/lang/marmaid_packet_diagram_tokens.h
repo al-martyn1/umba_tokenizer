@@ -104,7 +104,12 @@
 
     packet-beta %%#! byte-diagram, byte, bit-diagram, bit. Может, ещё register? Тогда описание у нас от младших к старшим, 
 
-    %%#! native le 32 bits bit byte bytes - для байтовой диаграммы задаём размер и endiannes по умолчанию
+    %%#! native le 32 bits bit byte bytes - для байтовой диаграммы задаём размер и endianness по умолчанию
+
+    segmented-memory - атрибут архитектуры (native) - как назвать одним словом? segmented? Хотя, можно и двумя - segmented-memory тоже норм.
+    Пока не реализовано.
+    Если буду реализовывать, надо будет проверить все вычисления адресов - младшие 16 бит не переносяться в старшие, а заворачиваются.
+    Чтение адреса в директивах org сделать сегментированное XXXX:XXXX
 
     Атрибуты порядка байт: little-endian, big-endian, little-endian-big-endian, big-endian-little-endian, le, be, le-be, be-le
     могут быть как в директиве native, так и в атрибутах поля.

@@ -574,7 +574,7 @@ std::uint64_t getLoHalf(std::uint64_t val, std::uint64_t size)
 inline
 std::uint64_t getHiHalf(std::uint64_t val, std::uint64_t size)
 {
-    return (val>>(size/2)) & makeByteSizeMask(size/2);
+    return (val>>((size/2))*8) & makeByteSizeMask(size/2);
 }
 
 inline
@@ -605,7 +605,7 @@ void makeByteVector(std::uint64_t val, std::uint64_t size, Endianness endianness
                      resVec.push_back(std::uint8_t(val));
 
                  if (val)
-                     throw std::out_of_range("value can't fit into " + std::to_string(size) + " bytes: " + std::to_string(orgVal))
+                     throw std::out_of_range("value can't fit into " + std::to_string(size) + " bytes: " + std::to_string(orgVal));
              }
              break;
 
@@ -613,22 +613,22 @@ void makeByteVector(std::uint64_t val, std::uint64_t size, Endianness endianness
              if (size!=4 && size!=8)
                  throw std::invalid_argument("middle-endian values can be only 4 or 8 bytes len");
              // половинки идут в littleEndian формате, но старшая половинка - первая
-             makeByteVector(getHiHalf(val), size, Endianness::littleEndian, resVec);
-             makeByteVector(getLoHalf(val), size, Endianness::littleEndian, resVec);
+             makeByteVector(getHiHalf(val, size), size/2, Endianness::littleEndian, resVec);
+             makeByteVector(getLoHalf(val, size), size/2, Endianness::littleEndian, resVec);
              return;
 
         case Endianness::beMiddleEndian:
              if (size!=4 && size!=8)
                  throw std::invalid_argument("middle-endian values can be only 4 or 8 bytes len");
              // половинки идут в bigEndian формате, но младшая половинка - первая
-             makeByteVector(getLoHalf(val), size, Endianness::bigEndian, resVec);
-             makeByteVector(getHiHalf(val), size, Endianness::bigEndian, resVec);
+             makeByteVector(getLoHalf(val, size), size/2, Endianness::bigEndian, resVec);
+             makeByteVector(getHiHalf(val, size), size/2, Endianness::bigEndian, resVec);
              return;
     }
 
     if (endianness==Endianness::bigEndian)
     {
-        std::reverse(resVec.begin()+resVecOrgSize, resVec.end()); // меняем только то, что добавили сами
+        std::reverse(resVec.begin()+std::ptrdiff_t(resVecOrgSize), resVec.end()); // меняем только то, что добавили сами
     }
 
 }
@@ -637,7 +637,7 @@ inline
 byte_vector_t makeByteVector(std::uint64_t val, std::uint64_t size, Endianness endianness)
 {
     byte_vector_t resVec;
-    makeByteVector(val, size, endianness);
+    makeByteVector(val, size, endianness, resVec);
     return resVec;
 }
 
@@ -669,6 +669,7 @@ std::string makeByteVectorDump(const byte_vector_t &v)
     }
 
     resStr.pop_back(); // remove last space
+    return resStr;
 }
 
 inline
@@ -686,8 +687,8 @@ std::string makeHexString(std::uint64_t val, std::uint64_t size)
     // Старшие - у нас в конце
     // auto nCut = 16u-std::size_t(size*2);
 
-    strRes.erase(size*2);
-    std::reverse(strRes.begin(), strRes.end());
+    resStr.erase(size*2);
+    std::reverse(resStr.begin(), resStr.end());
 
     return resStr;
 
@@ -703,6 +704,7 @@ std::string endiannessToString(Endianness endianness)
         case Endianness::bigEndian     : return "big-endian";
         case Endianness::leMiddleEndian: return "le-middle-endian";
         case Endianness::beMiddleEndian: return "be-middle-endian";
+        case Endianness::invalid       : [[fallthrough]];
         default: return "undefined";
     }
 }
