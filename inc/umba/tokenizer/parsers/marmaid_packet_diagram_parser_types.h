@@ -85,14 +85,37 @@ enum class Endianness
 };
 
 //----------------------------------------------------------------------------
+enum class AddressRangeKind
+{
+    unknown, invalid = unknown, undefined = unknown,
+    localIndexes, // индексы внутри ORG
+    globalLabels  // по меткам/именам глобально
+
+};
+
+//----------------------------------------------------------------------------
 struct AddressRange
 {
-    std::uint64_t  start;
+    std::uint64_t  start; // Это индексы внутри одного org
     std::uint64_t  end  ; // Тоже входит в диапазон
 };
 
 //----------------------------------------------------------------------------
-struct CrcGeneratorConfig
+struct AddressRangeLabels
+{
+    std::string  start;
+    std::string  end  ; // Тоже входит в диапазон
+};
+
+//----------------------------------------------------------------------------
+enum class ChecksumKind
+{
+    unknown, invalid = unknown, undefined = unknown,
+    crc, simpleSum, simpleSumComplement, simpleSumInvert, simpleXor, simpleXorComplement, simpleXorInvert
+};
+
+//----------------------------------------------------------------------------
+struct CrcConfig
 {
     std::uint64_t   size    = 0; // 1/2/4
     std::uint64_t   seed    = 0;
@@ -100,14 +123,19 @@ struct CrcGeneratorConfig
 };
 
 //----------------------------------------------------------------------------
-// crc 0-20 seed 0 poly 0x1234
-struct CrcOptions
-{
-    // std::size_t          cellIndex  = std::size_t(-1); // Индекс в массиве data, по которому расположена информация о ячейке
-    CrcGeneratorConfig   crcConfig; // Размер crc (size) высчитывается от размера элемента, в который помещается, если размер не 1/2/4 - это ошибка
-    AddressRange         addressRange; // Индексы начального и конечного байт данных, сам CRC не должен туда входить
 
-}; // struct CrcOptions
+// crc 0-20 seed 0 poly 0x1234
+struct ChecksumOptions
+{
+    ChecksumKind         kind = ChecksumKind::undefined;
+    // std::size_t          cellIndex  = std::size_t(-1); // Индекс в массиве data, по которому расположена информация о ячейке
+    CrcConfig            crcConfig    ; // Размер checksum (size) высчитывается от размера элемента, в который помещается, если размер не 1/2/4 - это ошибка
+
+    AddressRangeKind     addressRangeKind = AddressRangeKind::undefined;
+    AddressRange         addressRange ; // Индексы начального и конечного байт данных, сам CRC не должен туда входить. Индексы внутри одного org
+    AddressRangeLabels   addressRangeLabels; // Названия полей. Могут относится к разным org, при условии, что между ними нет gaps
+
+}; // struct ChecksumOptions
 
 
 
@@ -177,8 +205,8 @@ struct PacketDiagramItem
 
     std::string                     realTypeName; // For C++ output, full qualified
 
-    std::size_t                     crcIndex = std::size_t(-1); // При разборе строки записи, если там нет опции CRC, то выходной параметр 
-                                                                // CrcOptions не заполнен и не валиден, это поле содержит -1.
+    std::size_t                     checksumIndex = std::size_t(-1); // При разборе строки записи, если там нет опции CRC, то выходной параметр 
+                                                                // ChecksumOptions не заполнен и не валиден, это поле содержит -1.
                                                                 // Если опции CRC корректно заданы, то это поле устанавливается в 0,
                                                                 // и парсер должен добавить опции CRC в отдельный массив, а сюда поместить
                                                                 // реальный индекс.
@@ -309,7 +337,7 @@ struct PacketDiagram
     EPacketDiagramType                     diagramType = EPacketDiagramType::unknown;
     std::string                            title  ;
     std::vector<PacketDiagramItemType>     data   ;
-    std::vector<CrcOptions>                crcList;
+    std::vector<ChecksumOptions>           checksumList;
     
     DiagramParsingOptions                  parsingOptions = DiagramParsingOptions::all;
 
@@ -384,21 +412,21 @@ struct PacketDiagram
         }
     }
 
-    void rebuildCrcList()
+    void rebuildChecksumList()
     {
-        std::vector<CrcOptions> newCrcList;
+        std::vector<ChecksumOptions> newChecksumList;
         for(std::size_t i=0; i!=data.size(); ++i)
         {
             auto & curData = data[i];
-            if (curData.crcIndex!=std::size_t(-1))
+            if (curData.checksumIndex!=std::size_t(-1))
             {
-                std::size_t newCrcIndex = newCrcList.size();
-                newCrcList.emplace_back(crcList[curData.crcIndex]);
-                curData.crcIndex = newCrcIndex;
+                std::size_t newChecksumIndex = newChecksumList.size();
+                newChecksumList.emplace_back(checksumList[curData.checksumIndex]);
+                curData.checksumIndex = newChecksumIndex;
             }
         }
 
-        swap(crcList, newCrcList);
+        swap(checksumList, newChecksumList);
     }
 
     std::vector<PacketDiagram> splitToSimple() const
@@ -470,8 +498,8 @@ struct PacketDiagram
         for(auto &rv : resVec)
         {
             rv.rebuildNameMaps();
-            rv.crcList = crcList; // Тупо копируем всё
-            rv.rebuildCrcList();
+            rv.checksumList = checksumList; // Тупо копируем всё
+            rv.rebuildChecksumList();
         }
 
         return resVec;
@@ -481,7 +509,7 @@ struct PacketDiagram
     void removeEmptyOrgs()
     {
         {
-            std::vector<CrcOptions> newCrcList;
+            std::vector<ChecksumOptions> newChecksumList;
     
             auto simpleVec = splitToSimple();
             data.clear();
@@ -491,17 +519,17 @@ struct PacketDiagram
                 for(; newItemsIt!=data.end(); ++newItemsIt)
                 {
                     auto & curData = *newItemsIt;
-                    if (curData.crcIndex!=std::size_t(-1))
+                    if (curData.checksumIndex!=std::size_t(-1))
                     {
-                        std::size_t newCrcIndex = newCrcList.size();
-                        newCrcList.emplace_back(smp.crcList[curData.crcIndex]);
-                        curData.crcIndex = newCrcIndex;
+                        std::size_t newChecksumIndex = newChecksumList.size();
+                        newChecksumList.emplace_back(smp.checksumList[curData.checksumIndex]);
+                        curData.checksumIndex = newChecksumIndex;
                     }
     
                 }
             }
     
-            swap(crcList, newCrcList);
+            swap(checksumList, newChecksumList);
         }
 
         rebuildNameMaps();
@@ -548,6 +576,7 @@ using unordered_memory_t = std::unordered_map<std::uint64_t, std::uint8_t>;
 
 #endif
 
+//----------------------------------------------------------------------------
 inline
 std::uint64_t makeByteSizeMask(std::size_t n)
 {
@@ -565,18 +594,21 @@ std::uint64_t makeByteSizeMask(std::size_t n)
 }
 
 
+//----------------------------------------------------------------------------
 inline
 std::uint64_t getLoHalf(std::uint64_t val, std::uint64_t size)
 {
     return val & makeByteSizeMask(size/2);
 }
 
+//----------------------------------------------------------------------------
 inline
 std::uint64_t getHiHalf(std::uint64_t val, std::uint64_t size)
 {
     return (val>>((size/2))*8) & makeByteSizeMask(size/2);
 }
 
+//----------------------------------------------------------------------------
 inline
 void makeByteVector(std::uint64_t val, std::uint64_t size, Endianness endianness, byte_vector_t &resVec)
 {
@@ -633,6 +665,7 @@ void makeByteVector(std::uint64_t val, std::uint64_t size, Endianness endianness
 
 }
 
+//----------------------------------------------------------------------------
 inline
 byte_vector_t makeByteVector(std::uint64_t val, std::uint64_t size, Endianness endianness)
 {
@@ -655,7 +688,7 @@ char digitToChar(int d, bool bLower=false)
     return char((bLower?'a':'A')+d-10);
 }
 
-
+//----------------------------------------------------------------------------
 inline
 std::string makeByteVectorDump(const byte_vector_t &v)
 {
@@ -672,6 +705,7 @@ std::string makeByteVectorDump(const byte_vector_t &v)
     return resStr;
 }
 
+//----------------------------------------------------------------------------
 inline
 std::string makeHexString(std::uint64_t val, std::uint64_t size)
 {
@@ -694,6 +728,7 @@ std::string makeHexString(std::uint64_t val, std::uint64_t size)
 
 }
 
+//----------------------------------------------------------------------------
 inline
 std::string endiannessToString(Endianness endianness)
 {

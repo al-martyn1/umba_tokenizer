@@ -101,47 +101,54 @@ struct PacketDiagramTokenizerConfigurator
         tokenizer.template installTokenFilter<IdentifierToKeywordConversionFilter>( UMBA_TOKENIZER_TOKEN_IDENTIFIER
                                                                                   , std::unordered_map<string_type, umba::tokenizer::payload_type>
     
-                                                                                    { {"char"            , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR    }
-                                                                                    , {"int8"            , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8    }
-                                                                                    , {"int16"           , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT16   }
-                                                                                    , {"int32"           , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT32   }
-                                                                                    , {"int64"           , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT64   }
-                                                                                    , {"uint8"           , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8   }
-                                                                                    , {"uint16"          , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT16  }
-                                                                                    , {"uint32"          , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT32  }
-                                                                                    , {"uint64"          , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64  }
+                                                                                    { {"char"                      , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR    }
+                                                                                    , {"int8"                      , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8    }
+                                                                                    , {"int16"                     , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT16   }
+                                                                                    , {"int32"                     , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT32   }
+                                                                                    , {"int64"                     , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT64   }
+                                                                                    , {"uint8"                     , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8   }
+                                                                                    , {"uint16"                    , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT16  }
+                                                                                    , {"uint32"                    , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT32  }
+                                                                                    , {"uint64"                    , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64  }
 
-                                                                                    , {"packet-beta"     , MARMAID_TOKEN_DIRECTIVE_PACKET_BETA       }
-                                                                                    , {"title"           , MARMAID_TOKEN_DIRECTIVE_TITLE             }
-                                                                                    , {"native"          , MARMAID_TOKEN_DIRECTIVE_NATIVE            }
-                                                                                    , {"display-width"   , MARMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH     }
-                                                                                    , {"org"             , MARMAID_TOKEN_DIRECTIVE_ORG               }
-                                                                                    
+                                                                                    , {"packet-beta"                , MARMAID_TOKEN_DIRECTIVE_PACKET_BETA      }
+                                                                                    , {"title"                      , MARMAID_TOKEN_DIRECTIVE_TITLE            }
+                                                                                    , {"native"                     , MARMAID_TOKEN_DIRECTIVE_NATIVE           }
+                                                                                    , {"display-width"              , MARMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH    }
+                                                                                    , {"org"                        , MARMAID_TOKEN_DIRECTIVE_ORG              }
 
-                                                                                    , {"byte-diagram"    , MARMAID_TOKEN_ATTR_BYTE_DIA               }
-                                                                                    , {"bit-diagram"     , MARMAID_TOKEN_ATTR_BIT_DIA                }
-                                                                                    , {"memory-diagram"  , MARMAID_TOKEN_ATTR_MEMORY_DIA             }
-                                                                                    , {"memory-layout"   , MARMAID_TOKEN_ATTR_MEMORY_DIA             }
-                                                                                    , {"memory"          , MARMAID_TOKEN_ATTR_MEMORY_DIA             }
+                                                                                    , {"byte-diagram"               , MARMAID_TOKEN_ATTR_BYTE_DIA              }
+                                                                                    , {"bit-diagram"                , MARMAID_TOKEN_ATTR_BIT_DIA               }
+                                                                                    , {"memory-diagram"             , MARMAID_TOKEN_ATTR_MEMORY_DIA            }
+                                                                                    , {"memory-layout"              , MARMAID_TOKEN_ATTR_MEMORY_DIA            }
+                                                                                    , {"memory"                     , MARMAID_TOKEN_ATTR_MEMORY_DIA            }
 
-                                                                                    , {"byte"            , MARMAID_TOKEN_ATTR_BYTE                   }
-                                                                                    , {"bytes"           , MARMAID_TOKEN_ATTR_BYTE                   }
-                                                                                    , {"bit"             , MARMAID_TOKEN_ATTR_BIT                    }
-                                                                                    , {"bits"            , MARMAID_TOKEN_ATTR_BIT                    }
-                                                                                    , {"little-endian"   , MARMAID_TOKEN_ATTR_LE                     }
-                                                                                    , {"le"              , MARMAID_TOKEN_ATTR_LE                     }
-                                                                                    , {"big-endian"      , MARMAID_TOKEN_ATTR_BE                     }
-                                                                                    , {"be"              , MARMAID_TOKEN_ATTR_BE                     }
-                                                                                    , {"middle-endian"   , MARMAID_TOKEN_ATTR_ME                     }
-                                                                                    , {"me"              , MARMAID_TOKEN_ATTR_ME                     }
-                                                                                    , {"little-endian-middle-endian", MARMAID_TOKEN_ATTR_LE_ME       }
-                                                                                    , {"le-me"           , MARMAID_TOKEN_ATTR_LE_ME                  }
-                                                                                    , {"big-endian-middle-endian", MARMAID_TOKEN_ATTR_BE_ME          }
-                                                                                    , {"be-me"           , MARMAID_TOKEN_ATTR_BE_ME                  }
-                                                                                    , {"crc"             , MARMAID_TOKEN_ATTR_CRC                    }
-                                                                                    , {"seed"            , MARMAID_TOKEN_ATTR_SEED                   }
-                                                                                    , {"poly"            , MARMAID_TOKEN_ATTR_POLY                   }
-                                                                                    , {"auto"            , MARMAID_TOKEN_ATTR_AUTO                   }
+                                                                                    , {"byte"                       , MARMAID_TOKEN_ATTR_BYTE                  }
+                                                                                    , {"bytes"                      , MARMAID_TOKEN_ATTR_BYTE                  }
+                                                                                    , {"bit"                        , MARMAID_TOKEN_ATTR_BIT                   }
+                                                                                    , {"bits"                       , MARMAID_TOKEN_ATTR_BIT                   }
+                                                                                    , {"little-endian"              , MARMAID_TOKEN_ATTR_LE                    }
+                                                                                    , {"le"                         , MARMAID_TOKEN_ATTR_LE                    }
+                                                                                    , {"big-endian"                 , MARMAID_TOKEN_ATTR_BE                    }
+                                                                                    , {"be"                         , MARMAID_TOKEN_ATTR_BE                    }
+                                                                                    , {"middle-endian"              , MARMAID_TOKEN_ATTR_ME                    }
+                                                                                    , {"me"                         , MARMAID_TOKEN_ATTR_ME                    }
+                                                                                    , {"little-endian-middle-endian", MARMAID_TOKEN_ATTR_LE_ME                 }
+                                                                                    , {"le-me"                      , MARMAID_TOKEN_ATTR_LE_ME                 }
+                                                                                    , {"big-endian-middle-endian"   , MARMAID_TOKEN_ATTR_BE_ME                 }
+                                                                                    , {"be-me"                      , MARMAID_TOKEN_ATTR_BE_ME                 }
+                                                                                    , {"checksum"                   , MARMAID_TOKEN_ATTR_CHECKSUM              }
+                                                                                    , {"simple-sum"                 , MARMAID_TOKEN_ATTR_SIMPLE_SUM            }
+                                                                                    , {"simple-sum-complement"      , MARMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT }
+                                                                                    , {"simple-sum-invert"          , MARMAID_TOKEN_ATTR_SIMPLE_SUM            }
+                                                                                    , {"simple-xor"                 , MARMAID_TOKEN_ATTR_SIMPLE_XOR            }
+                                                                                    , {"simple-xor-complement"      , MARMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT }
+                                                                                    , {"simple-xor-invert"          , MARMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT     }
+                                                                                    , {"crc"                        , MARMAID_TOKEN_ATTR_CRC                   }
+                                                                                    , {"seed"                       , MARMAID_TOKEN_ATTR_SEED                  }
+                                                                                    , {"poly"                       , MARMAID_TOKEN_ATTR_POLY                  }
+                                                                                    , {"auto"                       , MARMAID_TOKEN_ATTR_AUTO                  }
+
 
                                                                                     //, {""           ,              }
                                                                                     //, {""           ,              }

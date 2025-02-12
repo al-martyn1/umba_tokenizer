@@ -83,10 +83,24 @@
 #define MARMAID_TOKEN_ATTR_ME                             (MARMAID_TOKEN_SET_ATTRS_FIRST+0x008u)  /* middle-endian */
 #define MARMAID_TOKEN_ATTR_LE_ME                          (MARMAID_TOKEN_SET_ATTRS_FIRST+0x009u)  /* little-endian-middle-endian */
 #define MARMAID_TOKEN_ATTR_BE_ME                          (MARMAID_TOKEN_SET_ATTRS_FIRST+0x00Au)  /* big-endian-middle-endian */
-#define MARMAID_TOKEN_ATTR_CRC                            (MARMAID_TOKEN_SET_ATTRS_FIRST+0x00Bu)  /* crc */
-#define MARMAID_TOKEN_ATTR_SEED                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x00Cu)  /* seed */
-#define MARMAID_TOKEN_ATTR_POLY                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x00Du)  /* poly */
-#define MARMAID_TOKEN_ATTR_AUTO                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x00Eu)  /* auto */
+
+
+#define MARMAID_TOKEN_ATTR_CHECKSUM                       (MARMAID_TOKEN_SET_ATTRS_FIRST+0x010u)  /*  */
+#define MARMAID_TOKEN_ATTR_SIMPLE_SUM                     (MARMAID_TOKEN_SET_ATTRS_FIRST+0x011u)  /*  */
+#define MARMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT          (MARMAID_TOKEN_SET_ATTRS_FIRST+0x012u)  /*  */
+#define MARMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT              (MARMAID_TOKEN_SET_ATTRS_FIRST+0x013u)  /*  */
+#define MARMAID_TOKEN_ATTR_SIMPLE_XOR                     (MARMAID_TOKEN_SET_ATTRS_FIRST+0x014u)  /*  */
+#define MARMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT          (MARMAID_TOKEN_SET_ATTRS_FIRST+0x015u)  /*  */
+#define MARMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT              (MARMAID_TOKEN_SET_ATTRS_FIRST+0x016u)  /*  */
+#define MARMAID_TOKEN_ATTR_CRC                            (MARMAID_TOKEN_SET_ATTRS_FIRST+0x017u)  /* crc */
+#define MARMAID_TOKEN_ATTR_SEED                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x018u)  /* seed */
+#define MARMAID_TOKEN_ATTR_POLY                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x019u)  /* poly */
+#define MARMAID_TOKEN_ATTR_AUTO                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x01Au)  /* auto */
+
+
+
+
+
 // #define MARMAID_TOKEN_ATTR_                               (MARMAID_TOKEN_SET_ATTRS_FIRST+0x000u)  /*  */
 // #define MARMAID_TOKEN_ATTR_                               (MARMAID_TOKEN_SET_ATTRS_FIRST+0x000u)  /*  */
 // #define MARMAID_TOKEN_ATTR_                               (MARMAID_TOKEN_SET_ATTRS_FIRST+0x000u)  /*  */
@@ -162,8 +176,24 @@
     CRC range - как работает? Если числовой рендж, то внутри текущего org?
     Если имена/литералы, то глобально 
 
+    checksum crc
+    checksum simple-sum
+    и тп
+
     Сделать литералы для crc.
-    Сделать задание алгоритма - simple-sum simple-sum-complement simple-xor-complement
+    Сделать задание алгоритма
+      Простые алгоритмы. Работают побайтно и выдают 8 битную контрольную сумму
+        simple-sum            - сумма байт
+        simple-sum-complement - сумма байт с дополнением до 2 (вычитаем из нуля)
+        simple-sum-invert     - сумма байт с инверсией
+        simple-xor            - xor побайтный
+        simple-xor-complement - xor побайтный с дополнением до 2 (вычитаем из нуля)
+        simple-xor-invert     - xor побайтный с инверсией
+
+    Adler-32 - https://ru.wikipedia.org/wiki/Adler-32
+    Fletcher - https://ru.wikipedia.org/wiki/%D0%9A%D0%BE%D0%BD%D1%82%D1%80%D0%BE%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F_%D1%81%D1%83%D0%BC%D0%BC%D0%B0_%D0%A4%D0%BB%D0%B5%D1%82%D1%87%D0%B5%D1%80%D0%B0
+
+
 
 
 */

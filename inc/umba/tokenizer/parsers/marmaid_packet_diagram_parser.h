@@ -508,6 +508,63 @@ public:
         return pTokenInfo;
     }
 
+
+    //! Разбор обычной строки. Может возвращать ноль при ошибке, или токен LF/FIN
+    const TokenInfoType* readStringLiteral(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, std::string &str, const std::string &msg=std::string())
+    {
+        if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL}, msg))
+            return 0;
+
+        const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
+        auto stringLiteralData = std::get<typename tokenizer_type::StringLiteralDataHolder>(*pParsedData);
+        str = stringLiteralData.pData->asString();
+
+        return BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    }
+
+
+    //! Разбираем диапазон, заданный строками. Возвращается следующий токен для анализа и продолжения разбора строки или ноль при ошибке
+    const TokenInfoType* parseNameRange(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, AddressRangeLabels &addressRange, const std::string &msg=std::string())
+    {
+        // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
+        // Хотя не всегда, иногда мы ожидаем, что у нас диапазон, и переходим сюда без проверки
+
+        auto makeMsg = [&](const std::string &details)
+        {
+            return msg.empty() ? details : msg + ": " + details;
+        };
+
+        if (!checkNotNul(pTokenInfo))
+            return 0;
+
+        if (pTokenInfo->tokenType!=UMBA_TOKENIZER_TOKEN_STRING_LITERAL)
+            return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL}, makeMsg("failed reading range start name")), (const TokenInfoType*)0;
+
+
+        using umba::tokenizer::ParserWaitForTokenFlags;
+
+        pTokenInfo = readStringLiteral(tokenPos, pTokenInfo, addressRange.start, makeMsg("range start name"));
+        if (!pTokenInfo)
+            return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+        if (pTokenInfo->tokenType!=MARMAID_TOKEN_OPERATOR_RANGE)
+            return expectedReachedMsg(pTokenInfo, {MARMAID_TOKEN_OPERATOR_RANGE}, makeMsg("failed reading range end name")), (const TokenInfoType*)0;
+
+        // Читаем второе число из диапазона
+        pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+        if (!pTokenInfo)
+            return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+        if (pTokenInfo->tokenType!=UMBA_TOKENIZER_TOKEN_STRING_LITERAL)
+            return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL}, makeMsg("failed reading range end name")), (const TokenInfoType*)0;
+
+        pTokenInfo = readStringLiteral(tokenPos, pTokenInfo, addressRange.end, makeMsg("range end name"));
+
+        return pTokenInfo;
+    }
+
+
+
     //! Разбираем тип. Возвращается следующий токен для анализа и продолжения разбора строки или ноль при ошибке
     const TokenInfoType* parseType(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, PacketDiagramItemType &item)
     {
@@ -838,21 +895,7 @@ public:
     }
 
     //! Разбор обычной строки. Может возвращать ноль при ошибке, или токен LF/FIN
-    const TokenInfoType* readStringLiteral(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, std::string &str, const std::string &msg=std::string())
-    {
-        if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL}, msg))
-            return 0;
-
-        const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
-        auto stringLiteralData = std::get<typename tokenizer_type::StringLiteralDataHolder>(*pParsedData);
-        str = stringLiteralData.pData->asString();
-
-        return BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    }
-
-
-    //! Разбор обычной строки. Может возвращать ноль при ошибке, или токен LF/FIN
-    const TokenInfoType* parseRegularLine(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, PacketDiagramItemType &item, CrcOptions &crcOptions)
+    const TokenInfoType* parseRegularLine(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, PacketDiagramItemType &item, ChecksumOptions &checksumOptions)
     {
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
@@ -895,16 +938,20 @@ public:
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
         Endianness &endianness = item.endianness; // = Endianness::unknown;
-        bool hasCrc   = false;
-        bool hasSeed  = false;
-        bool hasPoly  = false;
+        bool hasChecksum   = false; // было ли ключевое слово checksum
+        // bool hasCsKind     = false; // определим по значению поля kind
+        //bool hasCrc        = false; // потом заменим 
+        bool hasSeed       = false;
+        bool hasPoly       = false;
 
-        crcOptions.crcConfig.seed = 0;
+        checksumOptions.crcConfig.seed = 0;
         endianness = Endianness::undefined;
 
         auto returnCheckUpdateOptions = [&]() -> const TokenInfoType*
         {
-            if (hasCrc)
+            auto tfs = item.getTypeFieldSize();
+
+            if (checksumOptions.kind==ChecksumKind::crc)
             {
                 // seed по умолчанию 0
                 // if (!hasSeed)
@@ -912,7 +959,6 @@ public:
                 if (!hasPoly)
                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'crc' option taken, but no 'poly' option taken" ), (const TokenInfoType*)0;
 
-                auto tfs = item.getTypeFieldSize();
                 if (tfs!=1 && tfs!=2 && tfs!=4)
                 {
                     BaseClass::logMessage( item.pTokenInfo, "r-definition", "record definition: 'crc' option taken, but size of field is invalid ($(SizeOfField)). Size of field can be only 1, 2 or 4"
@@ -920,12 +966,34 @@ public:
                                          );
                     return 0;
                 }
+            }
 
-                item.crcIndex = 0; // сигналим, что CRC опции валидны. Это поле потом следует установить в реальный индекс CRC опций.
+            if (umba::TheValue(checksumOptions.kind).oneOf(ChecksumKind::simpleSum, ChecksumKind::simpleSumComplement, ChecksumKind::simpleSumInvert, ChecksumKind::simpleXor, ChecksumKind::simpleXorComplement, ChecksumKind::simpleXorInvert))
+            {
+                if (tfs!=1)
+                {
+                    BaseClass::logMessage( item.pTokenInfo, "r-definition", "record definition: 'simple-*' checksum option taken, but size of field is invalid ($(SizeOfField)). Size of field can be only 1"
+                                         , umba::FormatMessage<std::string>().arg("SizeOfField", tfs).values()
+                                         );
+                    return 0;
+                }
+
+                // item.crcIndex = 0; // сигналим, что CRC опции валидны. Это поле потом следует установить в реальный индекс CRC опций.
             }
 
             return pTokenInfo;
         };
+
+// crc, 
+// struct ChecksumOptions
+// {
+//     ChecksumKind    kind = ChecksumKind::undefined;
+//     // std::size_t          cellIndex  = std::size_t(-1); // Индекс в массиве data, по которому расположена информация о ячейке
+//     CrcConfig       crcConfig; // Размер crc (size) высчитывается от размера элемента, в который помещается, если размер не 1/2/4 - это ошибка
+//     AddressRange    addressRange  ; // Индексы начального и конечного байт данных, сам CRC не должен туда входить
+//  
+// }; // struct ChecksumOptions
+
 
 
         // %%#! le be middle-endian le-me be-me crc 0-10 seed 10 poly 0x1234
@@ -946,6 +1014,9 @@ public:
                            , MARMAID_TOKEN_ATTR_ME, MARMAID_TOKEN_ATTR_LE_ME, MARMAID_TOKEN_ATTR_BE_ME
                            , UMBA_TOKENIZER_TOKEN_LINEFEED
                            , MARMAID_TOKEN_ATTR_CRC, MARMAID_TOKEN_ATTR_SEED, MARMAID_TOKEN_ATTR_POLY
+                           , MARMAID_TOKEN_ATTR_CHECKSUM
+                           , MARMAID_TOKEN_ATTR_SIMPLE_SUM, MARMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT, MARMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT
+                           , MARMAID_TOKEN_ATTR_SIMPLE_XOR, MARMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT, MARMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT
                            )
                )
             {
@@ -998,12 +1069,45 @@ public:
                 pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
             }
 
-            else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_CRC)
+            else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_CHECKSUM)
             {
-                if (hasCrc)
-                    return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'crc' option already taken" ), (const TokenInfoType*)0;
+                if (hasChecksum)
+                    return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: `checksum` option already taken" ), (const TokenInfoType*)0;
 
-                hasCrc = true;
+                hasChecksum = true;
+                pTokenInfo  = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+            }
+
+            // Все опции типа контрольной суммы могут не предваряться ключевым словом checksum, но лучше его использовать
+            // для повышения читаемости
+
+            // else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_CRC)
+            else if (umba::TheValue(pTokenInfo->tokenType).oneOf( MARMAID_TOKEN_ATTR_SIMPLE_SUM, MARMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT, MARMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT
+                                                                , MARMAID_TOKEN_ATTR_SIMPLE_XOR, MARMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT, MARMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT
+                                                                , MARMAID_TOKEN_ATTR_CRC
+                                                                )
+                    )
+            {
+                // или можно не надо?
+                // if (!hasChecksum)
+                //     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'crc' option: check sum kind already taken" ), (const TokenInfoType*)0;
+
+                if (checksumOptions.kind!=ChecksumKind::undefined)
+                    return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: check sum kind already taken" ), (const TokenInfoType*)0;
+
+                switch(pTokenInfo->tokenType)
+                {
+                    case MARMAID_TOKEN_ATTR_SIMPLE_SUM           : checksumOptions.kind = ChecksumKind::simpleSum          ; break;
+                    case MARMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT: checksumOptions.kind = ChecksumKind::simpleSumComplement; break;
+                    case MARMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT    : checksumOptions.kind = ChecksumKind::simpleSumInvert    ; break;
+                    case MARMAID_TOKEN_ATTR_SIMPLE_XOR           : checksumOptions.kind = ChecksumKind::simpleXor          ; break;
+                    case MARMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT: checksumOptions.kind = ChecksumKind::simpleXorComplement; break;
+                    case MARMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT    : checksumOptions.kind = ChecksumKind::simpleXorInvert    ; break;
+                    case MARMAID_TOKEN_ATTR_CRC                  : checksumOptions.kind = ChecksumKind::crc                ; break;
+                }
+
+                //checksumOptions.kind = ChecksumKind::crc;
+                // hasCrc = true;
 
                 pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
                 if (!pTokenInfo)
@@ -1014,7 +1118,18 @@ public:
                 // Пока только числовой делаем
 
                 EPacketDiagramItemType itemType = EPacketDiagramItemType::invalid;
-                pTokenInfo = parseRange(tokenPos, pTokenInfo, crcOptions.addressRange, itemType, "record definition 'crc' option");
+                checksumOptions.addressRangeKind = AddressRangeKind::undefined;
+                if (isAnyNumber(pTokenInfo->tokenType))
+                {
+                    pTokenInfo = parseRange(tokenPos, pTokenInfo, checksumOptions.addressRange, itemType, "record definition 'checksum' option");
+                    checksumOptions.addressRangeKind = AddressRangeKind::localIndexes;
+                }
+                else
+                {
+                    pTokenInfo = parseNameRange(tokenPos, pTokenInfo, checksumOptions.addressRangeLabels, "record definition 'checksum' option");
+                    checksumOptions.addressRangeKind = AddressRangeKind::globalLabels;
+                }
+
                 if (!pTokenInfo)
                     return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
@@ -1037,7 +1152,7 @@ public:
                 if (!pTokenInfo)
                     return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
-                pTokenInfo = parseNumber(tokenPos, pTokenInfo, crcOptions.crcConfig.seed, "record definition 'seed' option");
+                pTokenInfo = parseNumber(tokenPos, pTokenInfo, checksumOptions.crcConfig.seed, "record definition 'seed' option");
                 if (!pTokenInfo)
                     return 0; // Сообщение уже выведено, просто возвращаем ошибку
             }
@@ -1053,7 +1168,7 @@ public:
                 if (!pTokenInfo)
                     return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
-                pTokenInfo = parseNumber(tokenPos, pTokenInfo, crcOptions.crcConfig.poly, "record definition 'poly' option");
+                pTokenInfo = parseNumber(tokenPos, pTokenInfo, checksumOptions.crcConfig.poly, "record definition 'poly' option");
                 if (!pTokenInfo)
                     return 0; // Сообщение уже выведено, просто возвращаем ошибку
             }
@@ -1088,17 +1203,16 @@ public:
             if (isAnyNumber(pTokenInfo->tokenType) || isAnyType(pTokenInfo->tokenType))
             {
                 PacketDiagramItemType item;
-                CrcOptions crcOptions;
+                ChecksumOptions checksumOptions;
                 item.pTokenInfo = pTokenInfo; // На всякий случай инфу сохраняем
-                pTokenInfo = parseRegularLine(tokenPos, pTokenInfo, item, crcOptions);
+                pTokenInfo = parseRegularLine(tokenPos, pTokenInfo, item, checksumOptions);
                 if (!pTokenInfo)
                     return false;
 
-                if (item.crcIndex==0)
+                if (checksumOptions.kind!=ChecksumKind::undefined)
                 {
-                    // Есть CRC опции
-                    item.crcIndex = diagram.crcList.size();
-                    diagram.crcList.emplace_back(crcOptions);
+                    item.checksumIndex = diagram.checksumList.size();
+                    diagram.checksumList.emplace_back(checksumOptions);
                 }
 
                 if (!addDiagramItem(item))
