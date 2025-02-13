@@ -981,6 +981,12 @@ public:
                 // item.crcIndex = 0; // сигналим, что CRC опции валидны. Это поле потом следует установить в реальный индекс CRC опций.
             }
 
+            if (item.isAsciiZet())
+            {
+                if (item.getTypeSize()!=1)
+
+            }
+
             return pTokenInfo;
         };
 
@@ -1013,6 +1019,7 @@ public:
                      .oneOf( MARMAID_TOKEN_ATTR_LE, MARMAID_TOKEN_ATTR_BE
                            , MARMAID_TOKEN_ATTR_ME, MARMAID_TOKEN_ATTR_LE_ME, MARMAID_TOKEN_ATTR_BE_ME
                            , UMBA_TOKENIZER_TOKEN_LINEFEED
+                           , MARMAID_TOKEN_ATTR_ASCII_Z
                            , MARMAID_TOKEN_ATTR_CRC, MARMAID_TOKEN_ATTR_SEED, MARMAID_TOKEN_ATTR_POLY
                            , MARMAID_TOKEN_ATTR_CHECKSUM
                            , MARMAID_TOKEN_ATTR_SIMPLE_SUM, MARMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT, MARMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT
@@ -1027,6 +1034,13 @@ public:
             if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_LINEFEED)
             {
                 return returnCheckUpdateOptions();
+            }
+
+            if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_ASCII_Z)
+            {
+                item.asciiZet = true;
+                // Берем следующий токен и пилим по циклу дальше
+                pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
             }
 
             if ( umba::TheValue(pTokenInfo->tokenType)

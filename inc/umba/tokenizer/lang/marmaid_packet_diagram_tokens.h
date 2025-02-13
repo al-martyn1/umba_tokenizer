@@ -83,6 +83,7 @@
 #define MARMAID_TOKEN_ATTR_ME                             (MARMAID_TOKEN_SET_ATTRS_FIRST+0x008u)  /* middle-endian */
 #define MARMAID_TOKEN_ATTR_LE_ME                          (MARMAID_TOKEN_SET_ATTRS_FIRST+0x009u)  /* little-endian-middle-endian */
 #define MARMAID_TOKEN_ATTR_BE_ME                          (MARMAID_TOKEN_SET_ATTRS_FIRST+0x00Au)  /* big-endian-middle-endian */
+#define MARMAID_TOKEN_ATTR_ASCII_Z                        (MARMAID_TOKEN_SET_ATTRS_FIRST+0x00Bu)  /* ascii-z */
 
 
 #define MARMAID_TOKEN_ATTR_CHECKSUM                       (MARMAID_TOKEN_SET_ATTRS_FIRST+0x010u)  /*  */

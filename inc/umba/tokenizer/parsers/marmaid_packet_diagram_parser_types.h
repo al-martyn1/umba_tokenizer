@@ -28,6 +28,7 @@
 #include <unordered_map>
 #include <climits>
 #include <algorithm>
+#include <utility>
 
 //----------------------------------------------------------------------------
 // umba::tokenizer::marmaid::
@@ -193,10 +194,11 @@ struct PacketDiagramItem
     EOrgType                        orgType  = EOrgType::undefined;
     umba::tokenizer::payload_type   explicitTypeTokenId;
     std::string                     text;
-    bool                            fillEntry = false;
+    bool                            fillEntry     = false;
     std::string                     reusedOrg;
-    bool                            emptyOrg = false; // no data records after this
-    bool                            textGenerated = false; // no data records after this
+    bool                            emptyOrg      = false; // no data records after this
+    bool                            textGenerated = false; // text is auto-generated
+    bool                            asciiZet      = false; // can be used only with ranges or byte/char arrays
 
     Endianness                      endianness   = Endianness::undefined; // use project endianness or override endianness for this entry
     AddressRange                    addressRange; // Если указан тип - вычисляем при добавлении, 
@@ -216,49 +218,55 @@ struct PacketDiagramItem
     // Только размер типа
     std::uint64_t getTypeSize() const
     {
-        UMBA_ASSERT(itemType==EPacketDiagramItemType::explicitType);
-        return std::size_t(explicitTypeTokenId&0x0F);
-    }
-
-    // Размер типа * кол-во элеметов
-    std::uint64_t getTypeFieldSize() const
-    {
-        if (arraySize==std::uint64_t(-1))
-            return getTypeSize();
-        return arraySize*getTypeSize();
+        if (itemType==EPacketDiagramItemType::explicitType)
+            return std::size_t(explicitTypeTokenId&0x0F);
+        else if (itemType==EPacketDiagramItemType::singleValue || itemType==EPacketDiagramItemType::range)
+            return 1;
+        UMBA_ASSERT_FAIL();
+        return 0;
     }
 
     bool isArray() const
     {
         if (itemType==EPacketDiagramItemType::explicitType)
-        {
-            if (arraySize==std::uint64_t(-1))
-                return false;
-            else
-                return true;
-        }
+            return (arraySize==std::uint64_t(-1)) ? false : true;
 
-        if (itemType==EPacketDiagramItemType::singleValue)
+        else if (itemType==EPacketDiagramItemType::singleValue)
             return false;
 
-        return true;
+        else if (itemType==EPacketDiagramItemType::range)
+            return true;
+
+        UMBA_ASSERT_FAIL();
+        return false;
+    }
+
+    bool isAsciiZet() const
+    {
+        return asciiZet;
     }
 
     std::uint64_t getArraySize() const
     {
         if (itemType==EPacketDiagramItemType::explicitType)
-        {
-            if (arraySize==std::uint64_t(-1))
-                return 0;
-            else
-                return arraySize;
-        }
+            return (arraySize==std::uint64_t(-1)) ? std::uint64_t(1) : arraySize;
 
-        if (itemType==EPacketDiagramItemType::singleValue)
-            return 0;
+        else if (itemType==EPacketDiagramItemType::singleValue)
+            return 1;
 
-        return addressRange.end - addressRange.start+1;
+        else if (itemType==EPacketDiagramItemType::range)
+            return addressRange.end - addressRange.start+1;
+
+        UMBA_ASSERT_FAIL();
+        return 0;
     }
+
+    // Размер типа * кол-во элеметов
+    std::uint64_t getTypeFieldSize() const
+    {
+        return getArraySize()*getTypeSize();
+    }
+
 
     std::string getPlainTypeName() const // For plain C
     {
@@ -593,6 +601,124 @@ std::uint64_t makeByteSizeMask(std::size_t n)
     }
 }
 
+/*
+CHAR_BIT       = 8 (0x0000000000000008)
+MB_LEN_MAX     = 5 (0x0000000000000005)
+
+CHAR_MIN       = -128 (0xFFFFFFFFFFFFFF80)
+CHAR_MAX       = 127 (0x000000000000007F)
+
+SCHAR_MIN      = -128 (0xFFFFFFFFFFFFFF80)
+SHRT_MIN       = -32768 (0xFFFFFFFFFFFF8000)
+INT_MIN        = -2147483648 (0xFFFFFFFF80000000)
+LONG_MIN       = -2147483648 (0xFFFFFFFF80000000)
+LLONG_MIN      = -9223372036854775808 (0x8000000000000000)
+SCHAR_MAX      = 127 (0x000000000000007F)
+SHRT_MAX       = 32767 (0x0000000000007FFF)
+INT_MAX        = 2147483647 (0x000000007FFFFFFF)
+LONG_MAX       = 2147483647 (0x000000007FFFFFFF)
+LLONG_MAX      = 9223372036854775807 (0x7FFFFFFFFFFFFFFF)
+
+UCHAR_MAX      = 255 (0x00000000000000FF)
+USHRT_MAX      = 65535 (0x000000000000FFFF)
+UINT_MAX       = 4294967295 (0x00000000FFFFFFFF)
+ULONG_MAX      = 4294967295 (0x00000000FFFFFFFF)
+ULLONG_MAX     = 18446744073709551615 (0xFFFFFFFFFFFFFFFF)
+PTRDIFF_MIN    = -9223372036854775808 (0x8000000000000000)
+PTRDIFF_MAX    = 9223372036854775807 (0x7FFFFFFFFFFFFFFF)
+SIZE_MAX       = 18446744073709551615 (0xFFFFFFFFFFFFFFFF)
+SIG_ATOMIC_MIN = -2147483648 (0xFFFFFFFF80000000)
+SIG_ATOMIC_MAX = 2147483647 (0x000000007FFFFFFF)
+WCHAR_MIN      = 0 (0x0000000000000000)
+WCHAR_MAX      = 65535 (0x000000000000FFFF)
+WINT_MIN       = 0 (0x0000000000000000)
+WINT_MAX       = 65535 (0x000000000000FFFF)
+*/    
+
+
+//----------------------------------------------------------------------------
+inline
+std::pair<std::int64_t, std::int64_t> getMinMaxValuesSigned(std::uint64_t size)
+{
+    using namespace std;
+
+    switch(size)
+    {
+        case 1 : return make_pair(int64_t(numeric_limits<int8_t >::min()), int64_t(numeric_limits<int8_t >::max()));
+
+        case 2 : return make_pair(int64_t(numeric_limits<int16_t>::min()), int64_t(numeric_limits<int16_t>::max()));
+
+        case 3 : 
+               {
+                   auto mmp = getMinMaxValuesSigned(2);
+                   return make_pair(int64_t(mmp.first<<8), int64_t((mmp.second<<8)|0xFF));
+               }
+                 
+        case 4 : return make_pair(int64_t(numeric_limits<int32_t>::min()), int64_t(numeric_limits<int32_t>::max()));
+
+        case 5 :
+               {
+                   auto mmp = getMinMaxValuesSigned(4);
+                   return make_pair(int64_t(mmp.first<<8), int64_t((mmp.second<<8)|0xFF));
+               }
+                 
+        case 6 :
+               {
+                   auto mmp = getMinMaxValuesSigned(4);
+                   return make_pair(int64_t(mmp.first<<16), int64_t((mmp.second<<16)|0xFFFF));
+               }
+
+        case 7 :
+               {
+                   auto mmp = getMinMaxValuesSigned(4);
+                   return make_pair(int64_t(mmp.first<<24), int64_t((mmp.second<<24)|0xFFFFFF));
+               }
+
+        default: return make_pair(int64_t(numeric_limits<int64_t>::min()), int64_t(numeric_limits<int64_t>::max()));
+    }
+}
+
+//----------------------------------------------------------------------------
+inline
+std::pair<std::uint64_t, std::uint64_t> getMinMaxValuesUnsigned(std::uint64_t size)
+{
+    using namespace std;
+
+    switch(size)
+    {
+        case 1 : return make_pair(uint64_t(numeric_limits<uint8_t >::min()), uint64_t(numeric_limits<uint8_t >::max()));
+
+        case 2 : return make_pair(uint64_t(numeric_limits<uint16_t>::min()), uint64_t(numeric_limits<uint16_t>::max()));
+
+        case 3 : 
+               {
+                   auto mmp = getMinMaxValuesUnsigned(2);
+                   return make_pair(uint64_t(mmp.first<<8), uint64_t((mmp.second<<8)|0xFF));
+               }
+                 
+        case 4 : return make_pair(uint64_t(numeric_limits<uint32_t>::min()), uint64_t(numeric_limits<uint32_t>::max()));
+
+        case 5 :
+               {
+                   auto mmp = getMinMaxValuesUnsigned(4);
+                   return make_pair(uint64_t(mmp.first<<8), uint64_t((mmp.second<<8)|0xFF));
+               }
+                 
+        case 6 :
+               {
+                   auto mmp = getMinMaxValuesUnsigned(4);
+                   return make_pair(uint64_t(mmp.first<<16), uint64_t((mmp.second<<16)|0xFFFF));
+               }
+
+        case 7 :
+               {
+                   auto mmp = getMinMaxValuesUnsigned(4);
+                   return make_pair(uint64_t(mmp.first<<24), uint64_t((mmp.second<<24)|0xFFFFFF));
+               }
+
+        default: return make_pair(uint64_t(numeric_limits<uint64_t>::min()), uint64_t(numeric_limits<uint64_t>::max()));
+    }
+}
 
 //----------------------------------------------------------------------------
 inline
@@ -675,10 +801,6 @@ byte_vector_t makeByteVector(std::uint64_t val, std::uint64_t size, Endianness e
 }
 
 //----------------------------------------------------------------------------
-
-
-
-//----------------------------------------------------------------------------
 inline
 char digitToChar(int d, bool bLower=false)
 {
@@ -730,6 +852,99 @@ std::string makeHexString(std::uint64_t val, std::uint64_t size)
 
 //----------------------------------------------------------------------------
 inline
+void checkThrowValueFit(std::int64_t val, std::uint64_t size)
+{
+    auto minMax = getMinMaxValuesSigned(size);
+    if (!(val>=minMax.first && val<=minMax.second))
+        throw std::out_of_range("value can't fit into " + std::to_string(size) + " bytes: " + std::to_string(val) + " (0x" + makeHexString(std::uint64_t(val), 8) + ")");
+}
+
+inline
+void checkThrowValueFit(std::uint64_t val, std::uint64_t size)
+{
+    auto minMax = getMinMaxValuesUnsigned(size);
+    if (!(val>=minMax.first && val<=minMax.second))
+        throw std::out_of_range("value can't fit into " + std::to_string(size) + " bytes: " + std::to_string(val) + " (0x" + makeHexString(std::uint64_t(val), 8) + ")");
+}
+
+//----------------------------------------------------------------------------
+//! Строка val - число, разбирается как знаковое или беззнаковое, потом проверяется, влезает ли число в диапазон, задаваемый size
+inline
+byte_vector_t makeByteVectorFromIntStr(const std::string &valStr, std::uint64_t size, Endianness endianness, bool bSigned, std::uint64_t *pParsedVal=0)
+{
+    std::uint64_t uval = 0;
+ 
+    if (bSigned)
+    {
+        std::int64_t ival = stoll(valStr); // кидает std::invalid_argument или std::out_of_range
+        checkThrowValueFit(ival, size);
+        // auto minMax = getMinMaxValuesSigned(size);
+        // if (!(ival>=minMax.first && ival<=minMax.second))
+        //     throw std::out_of_range("value can't fit into " + std::to_string(size) + " bytes: " + std::to_string(ival) + " (0x" + makeHexString(std::uint64_t(ival), 8) + ")");
+        uval = std::uint64_t(ival);
+    }
+    else
+    {
+        uval = stoull(valStr); // кидает std::invalid_argument или std::out_of_range
+        checkThrowValueFit(uval, size);
+        // auto minMax = getMinMaxValuesUnsigned(size);
+        // if (!(uval>=minMax.first && uval<=minMax.second))
+        //     throw std::out_of_range("value can't fit into " + std::to_string(size) + " bytes: " + std::to_string(uval) + " (0x" + makeHexString(std::uint64_t(uval), 8) + ")");
+    }
+
+    if (pParsedVal)
+        *pParsedVal = uval;
+
+    return makeByteVector(uval, size, endianness);
+}
+
+//----------------------------------------------------------------------------
+//! Строка val - последовательность символов ASCII, первые символы попадают в старшие разряды, потом проверяется, влезает ли число в диапазон, задаваемый size
+inline
+byte_vector_t makeByteVectorFromCharLiteral(const std::string &valStr, std::uint64_t size, Endianness endianness, std::uint64_t *pParsedVal=0)
+{
+    std::uint64_t val = 0;
+    for(auto ch: valStr)
+    {
+        val <<= 8;
+        val |= std::uint64_t(std::uint8_t(ch));
+    }
+ 
+    checkThrowValueFit(val, size);
+    // auto minMax = getMinMaxValuesUnsigned(size);
+    // if (!(val>=minMax.first && val<=minMax.second))
+    //     throw std::out_of_range("value can't fit into " + std::to_string(size) + " bytes: " + std::to_string(val) + " (0x" + makeHexString(std::uint64_t(val), 8) + ")");
+
+    if (pParsedVal)
+        *pParsedVal = val;
+
+    return makeByteVector(val, size, endianness);
+}
+
+//----------------------------------------------------------------------------
+//! Строка val - последовательность символов ASCII как строка, переводится в байты один в один, дополняется нулями до нужной длины, кидает std::out_of_range, если строка длиннее заданного количества байт
+inline
+byte_vector_t makeByteVectorFromStringLiteral(const std::string &valStr, std::uint64_t size, bool asciiZ=false)
+{
+    auto requiredSize = valStr.size(); // Сколько места требуется под строку
+    if (asciiZ)
+        ++requiredSize;
+
+    if (requiredSize>size)
+        throw std::out_of_range("string can't fit into " + std::to_string(size) + " bytes: required lenght is " + std::to_string(requiredSize));
+
+    byte_vector_t resVec; resVec.reserve(size);
+    for(auto ch : valStr)
+        resVec.push_back(std::uint8_t(ch));
+
+    while(resVec.size()<size)
+        resVec.push_back(0);
+
+    return resVec;
+}
+
+//----------------------------------------------------------------------------
+inline
 std::string endiannessToString(Endianness endianness)
 {
     switch(endianness)
@@ -747,24 +962,14 @@ std::string endiannessToString(Endianness endianness)
 
 //----------------------------------------------------------------------------
 
-/*
 
-При установке значений надо знать, знаковое или беззнаковое у нас
 
-https://en.cppreference.com/w/cpp/string/basic_string/stoul
-https://en.cppreference.com/w/cpp/string/basic_string/stol
-
-При этом, надо проверять, не выходит ли значение за диапазон, который задаётся типом записи (размером 1-2-4-8).
-
-Числом можно задавать только типизированные константы и отдельные байты.
-char - беззнаковый
-При указании имени поля в скобках надо задавать индекс, если поле с индексом (или диапазон длиной больше 1)
-
-Вместо чисел можно использовать символьные литералы
+//----------------------------------------------------------------------------
 
 
 
-*/
+// using unordered_memory_t = std::unordered_map<std::uint64_t, std::uint8_t>;
+// using byte_vector_t = std::vector<std::uint8_t>;
 
 
 

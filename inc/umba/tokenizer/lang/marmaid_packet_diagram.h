@@ -123,6 +123,7 @@ struct PacketDiagramTokenizerConfigurator
                                                                                     , {"memory-layout"              , MARMAID_TOKEN_ATTR_MEMORY_DIA            }
                                                                                     , {"memory"                     , MARMAID_TOKEN_ATTR_MEMORY_DIA            }
 
+                                                                                    , {"ascii-z"                    , MARMAID_TOKEN_ATTR_ASCII_Z               }
                                                                                     , {"byte"                       , MARMAID_TOKEN_ATTR_BYTE                  }
                                                                                     , {"bytes"                      , MARMAID_TOKEN_ATTR_BYTE                  }
                                                                                     , {"bit"                        , MARMAID_TOKEN_ATTR_BIT                   }
