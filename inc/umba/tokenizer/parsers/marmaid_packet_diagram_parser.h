@@ -983,9 +983,17 @@ public:
 
             if (item.isAsciiZet())
             {
-                if (item.getTypeSize()!=1)
-
+                if (item.getTypeSize()!=1 || !item.isArray()) // 
+                    return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'ascii-z' option can be set only for char/int8/uint8 arrays/ranges" ), (const TokenInfoType*)0;
             }
+
+            if (item.endianness!=Endianness::undefined)
+            {
+                if (item.getTypeSize()==1)
+                    return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: endianness option can't be set for char/int8/uint8 values/arrays/ranges" ), (const TokenInfoType*)0;
+            }
+
+            // item.endianness = Endianness::littleEndian
 
             return pTokenInfo;
         };
@@ -1013,6 +1021,8 @@ public:
             {
                 return returnCheckUpdateOptions();
             }
+
+            item.pTokenInfo = pTokenInfo;
 
             if ( !isAnyNumber(pTokenInfo->tokenType)
               && !umba::TheValue(pTokenInfo->tokenType)
@@ -1218,7 +1228,9 @@ public:
             {
                 PacketDiagramItemType item;
                 ChecksumOptions checksumOptions;
+
                 item.pTokenInfo = pTokenInfo; // На всякий случай инфу сохраняем
+                
                 pTokenInfo = parseRegularLine(tokenPos, pTokenInfo, item, checksumOptions);
                 if (!pTokenInfo)
                     return false;
