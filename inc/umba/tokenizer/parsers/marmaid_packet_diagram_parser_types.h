@@ -20,6 +20,7 @@
 //
 #include "umba/enum_helpers.h"
 #include "umba/flag_helpers.h"
+#include "umba/rule_of_five.h"
 
 //
 #include <string>
@@ -214,6 +215,15 @@ struct PacketDiagramItem
                                                                 // реальный индекс.
 
     const TokenCollectionItemType   *pTokenInfo = 0; // стартовый токен, можно получить номер строки
+
+
+    bool isDataEntry() const
+    {
+        return itemType==EPacketDiagramItemType::explicitType
+            || itemType==EPacketDiagramItemType::singleValue
+            || itemType==EPacketDiagramItemType::range
+             ;
+    }
 
     // Только размер типа
     std::uint64_t getTypeSize() const
@@ -812,6 +822,22 @@ char digitToChar(int d, bool bLower=false)
 
 //----------------------------------------------------------------------------
 inline
+int charToDigit(char ch)
+{
+    if (ch>='0' && ch<='9')
+        return ch-'0';
+
+    if (ch>='A' && ch<='F')
+        return ch-'A'+10;
+
+    if (ch>='a' && ch<='f')
+        return ch-'a'+10;
+
+    return -1;
+}
+
+//----------------------------------------------------------------------------
+inline
 std::string makeByteVectorDump(const byte_vector_t &v)
 {
     std::string resStr; resStr.reserve(v.size()*3);
@@ -834,6 +860,8 @@ std::string makeHexString(std::uint64_t val, std::uint64_t size)
     std::string resStr; resStr.reserve(16);
     if (size>8)
         size = 8;
+    if (size<1)
+        size = 1;
 
     for(auto i=0; i!=16; ++i, val>>=4)
     {
@@ -848,6 +876,38 @@ std::string makeHexString(std::uint64_t val, std::uint64_t size)
 
     return resStr;
 
+}
+
+//----------------------------------------------------------------------------
+//! returns 0 if ok, -1 if wrong char detected and 1 if number of hex digits is wrong
+inline
+int isStringDumpString(const std::string &str, byte_vector_t *pResVec=0)
+{
+    std::uint8_t curByte = 0;
+    std::size_t nDigitsProcessed = 0;
+
+    for(auto ch: str)
+    {
+        if (ch==' ')
+            continue; // Пробелы игнорируем
+
+        int d = charToDigit(ch);
+        if (d<0)
+            return -1;
+
+        curByte <<= 4;
+        curByte |= std::uint8_t(d);
+
+        ++nDigitsProcessed;
+        if ((nDigitsProcessed&1)==0)
+        {
+            if (pResVec)
+                pResVec->push_back(curByte);
+            curByte = 0;
+        }
+    }
+
+    return ((nDigitsProcessed&1)==0) ? 0 : 1; // если нечетное количество цифр - дамп некорректный
 }
 
 //----------------------------------------------------------------------------
@@ -923,6 +983,7 @@ byte_vector_t makeByteVectorFromCharLiteral(const std::string &valStr, std::uint
 
 //----------------------------------------------------------------------------
 //! Строка val - последовательность символов ASCII как строка, переводится в байты один в один, дополняется нулями до нужной длины, кидает std::out_of_range, если строка длиннее заданного количества байт
+//! Может использоваться только для байтовых массивов или диапазонов
 inline
 byte_vector_t makeByteVectorFromStringLiteral(const std::string &valStr, std::uint64_t size, bool asciiZ=false)
 {
@@ -931,7 +992,7 @@ byte_vector_t makeByteVectorFromStringLiteral(const std::string &valStr, std::ui
         ++requiredSize;
 
     if (requiredSize>size)
-        throw std::out_of_range("string can't fit into " + std::to_string(size) + " bytes: required lenght is " + std::to_string(requiredSize));
+        throw std::out_of_range("string can't fit into " + std::to_string(size) + " bytes: required length is " + std::to_string(requiredSize));
 
     byte_vector_t resVec; resVec.reserve(size);
     for(auto ch : valStr)
@@ -941,6 +1002,42 @@ byte_vector_t makeByteVectorFromStringLiteral(const std::string &valStr, std::ui
         resVec.push_back(0);
 
     return resVec;
+}
+
+//----------------------------------------------------------------------------
+//! Строка val - строка дампа, каждый байт представлен парой HEX-цифр, пробелы допустимы произвольно, не обязательно попарно
+//! Может использоваться только для байтовых массивов или диапазонов
+inline
+byte_vector_t makeByteVectorFromDumpString(const std::string &strDump, std::uint64_t size, bool asciiZ=false)
+{
+    byte_vector_t bytes;
+    int res = isStringDumpString(strDump, &bytes);
+
+    if (res<0)
+        throw std::invalid_argument("invalid char found in dump");
+    else if (res<0)
+        throw std::invalid_argument("wrong number of digits in dump");
+
+    while(bytes.size()<size)
+        bytes.push_back(0);
+
+    // should end in zero.
+    // must end in zero.
+    // should ends in zero.
+    // must ends in zero.
+    // should end with zero.
+    // must end with zero.
+    // should ends with zero.
+    // must ends with zero.
+
+
+    if (asciiZ && bytes.back()!=0)
+        throw std::invalid_argument("dump for Ascii-Z fields should ends with zero");
+
+    if (bytes.size()>size)
+        throw std::invalid_argument("dump too long: field size is " + std::to_string(size) + ", but taken dump size is " + std::to_string(bytes.size()));
+
+    return bytes;
 }
 
 //----------------------------------------------------------------------------
@@ -959,12 +1056,151 @@ std::string endiannessToString(Endianness endianness)
     }
 }
 
+//----------------------------------------------------------------------------
+//! Отделяет индекс от имени поля. Простая реализация, без использования парсера. 0 - ошибка, 1 - есть индекс, -1 - индекса нет
+inline
+int simpleSplitNameAndIndex(const std::string &fullName, std::string *pName, std::uint64_t *pIndex)
+{
+    auto startPos = fullName.find('[');
+    if (startPos==fullName.npos)
+    {
+        auto endPos = fullName.find(']');
+        if (endPos!=fullName.npos)
+            return 0; // ошибка
+
+        if (pName)
+           *pName = umba::string::trim_copy(fullName);
+
+        return -1; // нет индекса
+    }
+
+    if (startPos==0)
+        return 0; // ошибка
+
+    auto endPos = fullName.find(']', startPos+1);
+    if (endPos==fullName.npos)
+        return 0; // ошибка
+
+    std::uint64_t idx = 0;
+    std::string strIdx = umba::string::trim_copy(std::string(fullName, startPos+1, endPos-startPos-1));
+    if (strIdx.empty() || strIdx.front()=='-') // пустая строка и отрицательные числа недопустимы
+        return 0; // ошибка
+
+    try
+    {
+        idx = stoull(strIdx);
+    }
+    catch(...)
+    {
+        return 0; // ошибка
+    }
+
+    if (pName)
+       *pName = umba::string::trim_copy(std::string(fullName, 0, startPos));
+
+    if (pIndex)
+       *pIndex = idx;
+
+    return 1;
+}
+
+
 
 //----------------------------------------------------------------------------
 
 
 
 //----------------------------------------------------------------------------
+//! Итератор по несортированной памяти. Кидает исключение при попытке чтения неинициализированной ранее ячейки.
+class UnorderedMemoryIterator
+{
+    unordered_memory_t    *m_pMemory = 0;
+    std::uint64_t          m_address = 0;
+
+    struct Proxy
+    {
+        unordered_memory_t    *pMemory = 0;
+        std::uint64_t          address = 0;
+
+        UMBA_RULE_OF_FIVE_DEFAULT(Proxy);
+
+        explicit Proxy(unordered_memory_t *pm, std::uint64_t addr) : pMemory(pm), address(addr) {}
+
+        Proxy& operator=(std::uint8_t b)
+        {
+            (*pMemory)[address] = b;
+            return *this;
+        }
+
+        operator std::uint8_t() const
+        {
+            unordered_memory_t::const_iterator it = pMemory->find(address);
+            if (it!=pMemory->end())
+                return it->second;
+            throw std::out_of_range("memory not assigned at address: 0x" + makeHexString(address, 8)); // range_error
+        }
+
+    }; // struct Proxy
+
+
+public:
+
+    UMBA_RULE_OF_FIVE_DEFAULT(UnorderedMemoryIterator);
+
+    explicit UnorderedMemoryIterator(unordered_memory_t &m , std::uint64_t addr) : m_pMemory(&m), m_address(addr) {}
+    explicit UnorderedMemoryIterator(unordered_memory_t *pm, std::uint64_t addr) : m_pMemory(pm), m_address(addr) {}
+
+    bool operator==(const UnorderedMemoryIterator &other) const
+    {
+        return m_pMemory==other.m_pMemory && m_address==other.m_address;
+    }
+
+    bool operator!=(const UnorderedMemoryIterator &other) const
+    {
+        return m_pMemory!=other.m_pMemory || m_address!=other.m_address;
+    }
+
+    operator std::uint64_t() const
+    {
+        return m_address;
+    }
+
+    UnorderedMemoryIterator& operator++() // pre
+    {
+        ++m_address;
+        return *this;
+    }
+
+    UnorderedMemoryIterator operator++(int) // post
+    {
+        auto cp = *this;
+        ++m_address;
+        return cp;
+    }
+
+    Proxy operator*()
+    {
+        return Proxy(m_pMemory, m_address);
+    }
+
+    // UartOutputIterator& operator=(std::uint8_t b)
+    // {
+    //     // ignoring result
+    //     pUart->Write((const uint8_t*)&b, 1); // std::size_t *pBytesWritten=0
+    //     return *this;
+    // }
+    //  
+    // UartOutputIterator& operator=(char ch)
+    // {
+    //     // ignoring result
+    //     // Result_t Write(const uint8_t* buffer, std::size_t dataSize, std::size_t *pBytesWritten=0)
+    //     pUart->Write((const uint8_t*)&ch, 1); // std::size_t *pBytesWritten=0
+    //     return *this;
+    // }
+
+}; // class UnorderedMemoryIterator
+
+
 
 
 
@@ -972,78 +1208,6 @@ std::string endiannessToString(Endianness endianness)
 // using byte_vector_t = std::vector<std::uint8_t>;
 
 
-/*
-    Массивы байт задаются либо строкой, либо дампом.
-    Если при заполнении массива байт указан атрибут ascii-z, то требуется обязательный завершающий 0.
-        если не влезает - ошибка.
-    Если массив байт заполняется дампом, то в дампе должно быть ровно столько байт, сколько в массиве.
-
-    Надо уметь детектить дамп. Дамп - это последовательность шестнадцатеричных 8ми-битных чисел.
-    Числа могут быть разделены пробелами, или могут быть без пробелов. Количество hex-цифр должно быть кратно двум.
-    Пробелы допустимы только после вторых символов (hex-цифры идут парами).
-
-    Детектим дамп: строка не содержит ничего, кроме пробелов и hex-цифр. Нужна функция isDumpString.
-
-    ---
-
-    Нужно уметь отделять имя параметра от индекса, если есть. Ищем открывающую скобку, потом закрывающую.
-    Если ни одной из них нет - значит, это просто неиндексированный параметр.
-    Если обе - индексированный.
-    Если только одна - ошибка.
-
-    ---
-
-    Итерация по несортированной памяти.
-    Нужно уметь итерироваться по несортированной памяти, и:
-    1) падать, если элемента нет в последовательности (исключение) -
-       сделаем итератор - это для подсчета checksum.
-    2) формировать дамп, в котором пустые (пропущенные) адреса заменяются на XX
-       makeByteVectorDump - не катит, сделаем отдельную функцию
-
-    ---
-
-    Отображение структуры в виде текста
-
-    Каждый бит в байте (слове int64) мы хотим как минимум пронумеровать. Или нет?
-
-    Отдельный byte/word/dword/qword представляем как 8/16/32/64 пробела, первый и последний символы -
-    '[' и ']' соответственно.
-
-    word/dword/qword разделяем на байты символом '|' на каждой седьмой позиции.
-
-    Имя поля накладываем поверх, выравнивая по центру. При этом разделители байтов в словах могут быть перезатёрты.
-    Имя поля, если не влезает - обрезаем.
-
-    Если есть перенос слова на новую строку, и в первом символе пробел - ставим '|'. Также при переносе, если в 
-    последнем символе первой строки пробел - тоже ставим '|'.
-
-    Над каждым началом и концом byte/word/dword/qword печатаем его индекс (отдельная строка).
-    Но сначала надо научится выводить нормально без доп инфы.
-
-    Как быть с массивами?
-    Если массив байт - печатаем, как слово произвольной длины, с тем же разделением на байты, и тем же способом вывода метки.
-    Если массив элементов с битовым размером больше 8ми - определяем размерность, сколько символов надо для вывода номера 
-    индекса (dec формат), в каждом слове выводим имя поля + индекс, обрезку имени делаем до добавления индекса.
-
-    А если имя уже содержит цифры в конце? Выводим через подчеркивание? На байтовое поле итак 6 символов в компакт варианте
-
-    ---
-
-    Варианты - compact - один бит - один пробел, и normal - один бит - два пробела. 
-
-    В normal варианте влезет в два раза меньше полей по ширине, но зато имена полей будут обрезаться меньше.
-    Для печатного документа 64 символа на строку - это макс. Соответственно, в normal режиме в строку будет влезать
-    только 4 байта. Но оригинальная marmaid packet diagram тоже рисует по 32 бита на строку, так что вроде норм.
-
-    В compact варианте влезет 64 бита в строку, и его можно использовать, если для байтовых полей использовать короткие имена.
-
-    Варианты отображения - имя поля впечатывается прямо в строку "формата" поля, и тогда оно перекрывает внутреннюю структуру 
-    многобайтных полей.
-
-    Если же у нас отображение многострочное, то имя можно выводить сверху
-
-
-*/
 
 
 //----------------------------------------------------------------------------

@@ -1051,6 +1051,8 @@ public:
                 item.asciiZet = true;
                 // Берем следующий токен и пилим по циклу дальше
                 pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+
+                continue;
             }
 
             if ( umba::TheValue(pTokenInfo->tokenType)
@@ -1091,22 +1093,26 @@ public:
 
                 // Берем следующий токен и пилим по циклу дальше
                 pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+
+                continue;
             }
 
-            else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_CHECKSUM)
+            if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_CHECKSUM)
             {
                 if (hasChecksum)
                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: `checksum` option already taken" ), (const TokenInfoType*)0;
 
                 hasChecksum = true;
                 pTokenInfo  = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+
+                continue;
             }
 
             // Все опции типа контрольной суммы могут не предваряться ключевым словом checksum, но лучше его использовать
             // для повышения читаемости
 
             // else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_CRC)
-            else if (umba::TheValue(pTokenInfo->tokenType).oneOf( MARMAID_TOKEN_ATTR_SIMPLE_SUM, MARMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT, MARMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT
+            if (umba::TheValue(pTokenInfo->tokenType).oneOf( MARMAID_TOKEN_ATTR_SIMPLE_SUM, MARMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT, MARMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT
                                                                 , MARMAID_TOKEN_ATTR_SIMPLE_XOR, MARMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT, MARMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT
                                                                 , MARMAID_TOKEN_ATTR_CRC
                                                                 )
@@ -1163,9 +1169,11 @@ public:
                     // !!! Надо разобраться, почему диагностика не туда пырит
                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: expected adress range, but got a single value or something else" ), (const TokenInfoType*)0;
                 }
+
+                continue;
             }
 
-            else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_SEED)
+            if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_SEED)
             {
                 if (hasSeed)
                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'seed' option already taken" ), (const TokenInfoType*)0;
@@ -1179,9 +1187,11 @@ public:
                 pTokenInfo = parseNumber(tokenPos, pTokenInfo, checksumOptions.crcConfig.seed, "record definition 'seed' option");
                 if (!pTokenInfo)
                     return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+                continue;
             }
 
-            else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_POLY)
+            if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_POLY)
             {
                 if (hasPoly)
                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'poly' option already taken" ), (const TokenInfoType*)0;
@@ -1195,11 +1205,13 @@ public:
                 pTokenInfo = parseNumber(tokenPos, pTokenInfo, checksumOptions.crcConfig.poly, "record definition 'poly' option");
                 if (!pTokenInfo)
                     return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+                continue;
             }
 
-            else
+            // else
             {
-                BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: something goes wrong" );
+                BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: something goes wrong - unexpected token" );
                 return 0;
             }
 
