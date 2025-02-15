@@ -232,7 +232,7 @@ struct PacketDiagramItem
             return std::size_t(explicitTypeTokenId&0x0F);
         else if (itemType==EPacketDiagramItemType::singleValue || itemType==EPacketDiagramItemType::range)
             return 1;
-        UMBA_ASSERT_FAIL();
+        UMBA_ASSERT_FAIL_MSG("Not a data entry");
         return 0;
     }
 
@@ -247,7 +247,7 @@ struct PacketDiagramItem
         else if (itemType==EPacketDiagramItemType::range)
             return true;
 
-        UMBA_ASSERT_FAIL();
+        UMBA_ASSERT_FAIL_MSG("Not a data entry");
         return false;
     }
 
@@ -267,7 +267,7 @@ struct PacketDiagramItem
         else if (itemType==EPacketDiagramItemType::range)
             return addressRange.end - addressRange.start+1;
 
-        UMBA_ASSERT_FAIL();
+        UMBA_ASSERT_FAIL_MSG("Not a data entry");
         return 0;
     }
 
