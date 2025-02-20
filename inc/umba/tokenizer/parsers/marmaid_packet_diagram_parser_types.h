@@ -581,8 +581,6 @@ namespace utils {
 
 
 //----------------------------------------------------------------------------
-using unordered_memory_t = std::unordered_map<std::uint64_t, std::uint8_t>;
-
 
 #if defined(DEBUG) || defined(_DEBUG)
 
@@ -1005,18 +1003,27 @@ byte_vector_t makeByteVectorFromStringLiteral(const std::string &valStr, std::ui
 }
 
 //----------------------------------------------------------------------------
-//! Строка val - строка дампа, каждый байт представлен парой HEX-цифр, пробелы допустимы произвольно, не обязательно попарно
-//! Может использоваться только для байтовых массивов или диапазонов
 inline
-byte_vector_t makeByteVectorFromDumpString(const std::string &strDump, std::uint64_t size, bool asciiZ=false)
+byte_vector_t makeByteVectorFromDumpString(const std::string &strDump)
 {
     byte_vector_t bytes;
     int res = isStringDumpString(strDump, &bytes);
 
     if (res<0)
         throw std::invalid_argument("invalid char found in dump");
-    else if (res<0)
+    else if (res>0)
         throw std::invalid_argument("wrong number of digits in dump");
+
+    return bytes;
+}
+//----------------------------------------------------------------------------
+
+//! Строка val - строка дампа, каждый байт представлен парой HEX-цифр, пробелы допустимы произвольно, не обязательно попарно
+//! Может использоваться только для байтовых массивов или диапазонов
+inline
+byte_vector_t makeByteVectorFromDumpString(const std::string &strDump, std::uint64_t size, bool asciiZ=false)
+{
+    byte_vector_t bytes = makeByteVectorFromDumpString(strDump);
 
     while(bytes.size()<size)
         bytes.push_back(0);
