@@ -217,7 +217,7 @@ public:
                 case EOrgType::orgAuto:
                 {
                      // item.orgAddress = baseAddress + calculatedStart;
-                     baseIt += calculatedStart;
+                     baseIt += std::int64_t(calculatedStart);
                      auto addressInfo = baseIt.getAddressInfo();
                      item.orgAddress = addressInfo.base;
                      item.orgOffset  = addressInfo.offset;
@@ -231,7 +231,7 @@ public:
                 case EOrgType::orgRel :
                 {
                      //item.orgAddress += baseAddress; // прибавили базовый адрес, который высчитан по предыдущим org директивам
-                     baseIt += item.orgAddress;
+                     baseIt += std::int64_t(item.orgAddress);
                      auto addressInfo = baseIt.getAddressInfo();
                      item.orgAddress = addressInfo.base;
                      item.orgOffset  = addressInfo.offset;
@@ -294,6 +294,10 @@ public:
 
         if (item.itemType==EPacketDiagramItemType::explicitType)
         {
+            auto baseIt = diagram.getBaseAddressIterator();
+            baseIt += std::int64_t(calculatedStart);
+            baseIt += std::int64_t(item.getTypeFieldSize()-1);
+
             item.addressRange.start = calculatedStart;
             item.addressRange.end   = item.addressRange.start + item.getTypeFieldSize()-1;
         }
