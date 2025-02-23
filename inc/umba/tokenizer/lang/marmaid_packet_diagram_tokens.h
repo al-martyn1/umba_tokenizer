@@ -73,30 +73,36 @@
 // #define MARMAID_TOKEN_DIRECTIVE_                          (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x000u)  /*  */
 
 //----------------------------------------------------------------------------
-#define MARMAID_TOKEN_ATTR_BYTE_DIA                       (MARMAID_TOKEN_SET_ATTRS_FIRST+0x001u)  /* byte-diagram */
-#define MARMAID_TOKEN_ATTR_BIT_DIA                        (MARMAID_TOKEN_SET_ATTRS_FIRST+0x002u)  /* bit-diagram */
-#define MARMAID_TOKEN_ATTR_MEMORY_DIA                     (MARMAID_TOKEN_SET_ATTRS_FIRST+0x003u)  /* memory-diagram memory-layout memory */
-#define MARMAID_TOKEN_ATTR_BYTE                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x004u)  /* byte */
-#define MARMAID_TOKEN_ATTR_BIT                            (MARMAID_TOKEN_SET_ATTRS_FIRST+0x005u)  /* bit */
-#define MARMAID_TOKEN_ATTR_LE                             (MARMAID_TOKEN_SET_ATTRS_FIRST+0x006u)  /* little-endian */
-#define MARMAID_TOKEN_ATTR_BE                             (MARMAID_TOKEN_SET_ATTRS_FIRST+0x007u)  /* big-endian */
-#define MARMAID_TOKEN_ATTR_ME                             (MARMAID_TOKEN_SET_ATTRS_FIRST+0x008u)  /* middle-endian */
-#define MARMAID_TOKEN_ATTR_LE_ME                          (MARMAID_TOKEN_SET_ATTRS_FIRST+0x009u)  /* little-endian-middle-endian */
-#define MARMAID_TOKEN_ATTR_BE_ME                          (MARMAID_TOKEN_SET_ATTRS_FIRST+0x00Au)  /* big-endian-middle-endian */
-#define MARMAID_TOKEN_ATTR_ASCII_Z                        (MARMAID_TOKEN_SET_ATTRS_FIRST+0x00Bu)  /* ascii-z */
+#define MARMAID_TOKEN_ATTR_CHECKSUM                       (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0000u)  /*  */
+#define MARMAID_TOKEN_ATTR_SIMPLE_SUM                     (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0001u)  /*  */
+#define MARMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT          (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0002u)  /*  */
+#define MARMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT              (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0003u)  /*  */
+#define MARMAID_TOKEN_ATTR_SIMPLE_XOR                     (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0004u)  /*  */
+#define MARMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT          (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0005u)  /*  */
+#define MARMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT              (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0006u)  /*  */
+#define MARMAID_TOKEN_ATTR_CRC                            (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0007u)  /* crc */
+#define MARMAID_TOKEN_ATTR_SEED                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0008u)  /* seed */
+#define MARMAID_TOKEN_ATTR_POLY                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0009u)  /* poly */
 
 
-#define MARMAID_TOKEN_ATTR_CHECKSUM                       (MARMAID_TOKEN_SET_ATTRS_FIRST+0x010u)  /*  */
-#define MARMAID_TOKEN_ATTR_SIMPLE_SUM                     (MARMAID_TOKEN_SET_ATTRS_FIRST+0x011u)  /*  */
-#define MARMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT          (MARMAID_TOKEN_SET_ATTRS_FIRST+0x012u)  /*  */
-#define MARMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT              (MARMAID_TOKEN_SET_ATTRS_FIRST+0x013u)  /*  */
-#define MARMAID_TOKEN_ATTR_SIMPLE_XOR                     (MARMAID_TOKEN_SET_ATTRS_FIRST+0x014u)  /*  */
-#define MARMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT          (MARMAID_TOKEN_SET_ATTRS_FIRST+0x015u)  /*  */
-#define MARMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT              (MARMAID_TOKEN_SET_ATTRS_FIRST+0x016u)  /*  */
-#define MARMAID_TOKEN_ATTR_CRC                            (MARMAID_TOKEN_SET_ATTRS_FIRST+0x017u)  /* crc */
-#define MARMAID_TOKEN_ATTR_SEED                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x018u)  /* seed */
-#define MARMAID_TOKEN_ATTR_POLY                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x019u)  /* poly */
-#define MARMAID_TOKEN_ATTR_AUTO                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x01Au)  /* auto */
+
+
+#define MARMAID_TOKEN_ATTR_AUTO                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0100u)  /* auto */
+#define MARMAID_TOKEN_ATTR_BYTE_DIA                       (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0101u)  /* byte-diagram */
+#define MARMAID_TOKEN_ATTR_BIT_DIA                        (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0102u)  /* bit-diagram */
+#define MARMAID_TOKEN_ATTR_MEMORY_DIA                     (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0103u)  /* memory-diagram memory-layout memory */
+#define MARMAID_TOKEN_ATTR_BYTE                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0104u)  /* byte */
+#define MARMAID_TOKEN_ATTR_BIT                            (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0105u)  /* bit */
+#define MARMAID_TOKEN_ATTR_LE                             (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0106u)  /* little-endian */
+#define MARMAID_TOKEN_ATTR_BE                             (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0107u)  /* big-endian */
+#define MARMAID_TOKEN_ATTR_ME                             (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0108u)  /* middle-endian */
+#define MARMAID_TOKEN_ATTR_LE_ME                          (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0109u)  /* little-endian-middle-endian */
+#define MARMAID_TOKEN_ATTR_BE_ME                          (MARMAID_TOKEN_SET_ATTRS_FIRST+0x010Au)  /* big-endian-middle-endian */
+#define MARMAID_TOKEN_ATTR_ASCII_Z                        (MARMAID_TOKEN_SET_ATTRS_FIRST+0x010Bu)  /* ascii-z */
+#define MARMAID_TOKEN_ATTR_SEGMENT                        (MARMAID_TOKEN_SET_ATTRS_FIRST+0x010Cu)  /* segment */
+#define MARMAID_TOKEN_ATTR_SEGMENT_SHIFT                  (MARMAID_TOKEN_SET_ATTRS_FIRST+0x010Du)  /* segment-shift */
+#define MARMAID_TOKEN_ATTR_OFFSET                         (MARMAID_TOKEN_SET_ATTRS_FIRST+0x010Eu)  /* offset */
+#define MARMAID_TOKEN_ATTR_DATA                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x010Fu)  /* data */
 
 
 
@@ -120,6 +126,11 @@
     packet-beta %%#! byte-diagram, byte, bit-diagram, bit. Может, ещё register? Тогда описание у нас от младших к старшим, 
 
     %%#! native le 32 bits bit byte bytes - для байтовой диаграммы задаём размер и endianness по умолчанию
+
+    data 32 bit address 32 bit
+    Если у нас сегментная модель, то надо задать размер сегмента, смещение сегмента и размер офсета.
+    Если у нас линейная модель, то нам не важна разрядность памяти.
+    native le data 32 bit segment 16 bit segment-shift 1 byte offset 16 bit
 
     segmented-memory - атрибут архитектуры (native) - как назвать одним словом? segmented? Хотя, можно и двумя - segmented-memory тоже норм.
     Пока не реализовано.

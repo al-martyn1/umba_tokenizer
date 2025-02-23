@@ -198,6 +198,7 @@ public:
             std::uint64_t baseAddress = diagram.calcBaseAddress();
 
 
+            // TODO: !!!
             switch(item.orgType)
             {
                 case EOrgType::orgAuto:
@@ -289,14 +290,17 @@ public:
             orgItem.addressRange.start = 0;
             orgItem.addressRange.end   = 0;
             orgItem.orgAddress         = 0;
+            orgItem.orgOffset          = 0;
 
             diagram.data.emplace_back(orgItem);
             diagram.orgAddress = 0;
+            diagram.orgOffset = 0;
         }
 
         if (item.itemType==EPacketDiagramItemType::org && diagram.orgAddress==std::uint64_t(-1))
         {
             diagram.orgAddress = item.orgAddress;
+            diagram.orgOffset  = item.orgOffset ;
         }
 
 
@@ -690,6 +694,23 @@ public:
         {
             pTokenInfo = parseNumber(tokenPos, pTokenInfo, item.orgAddress, "'org' directive");
             item.orgType = hasPlus ? EOrgType::orgRel : EOrgType::orgAbs;
+            if (item.orgType==EOrgType::orgAbs && diagram.memoryModel==EMemoryModel::segmented)
+            {
+                pTokenInfo = BaseClass::getToken(&tokenPos);
+                if (!pTokenInfo)
+                    return 0; // Сообщение уже выведено, просто возвращаем ошибку
+                if (pTokenInfo->tokenType!=MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER)
+                    return BaseClass::logSimpleMessage(pTokenInfo, "unexpected-token", "'org' directive: unexpected token while reading segment address"), (const TokenInfoType*)0;
+
+                pTokenInfo = BaseClass::getToken(&tokenPos);
+                if (!pTokenInfo)
+                    return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+                if (!isAnyNumber(pTokenInfo->tokenType))
+                    return BaseClass::logSimpleMessage(pTokenInfo, "unexpected-token", "'org' directive: unexpected token while reading segment address"), (const TokenInfoType*)0;
+
+                pTokenInfo = parseNumber(tokenPos, pTokenInfo, item.orgOffset, "'org' directive");
+            }
         }
         else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_AUTO)
         {
@@ -748,17 +769,63 @@ public:
         return BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     }
 
+    const TokenInfoType* parseBitSize(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, std::uint64_t &bitSize, const std::string &msg=std::string())
+    {
+        if (!pTokenInfo)
+            return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+        pTokenInfo = parseNumber(tokenPos, pTokenInfo, bitSize, msg);
+        if (!pTokenInfo)
+            return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+        if (!umba::TheValue(pTokenInfo->tokenType).oneOf(MARMAID_TOKEN_ATTR_BYTE, MARMAID_TOKEN_ATTR_BIT))
+        {
+            BaseClass::logUnexpected( pTokenInfo, {MARMAID_TOKEN_ATTR_BYTE, MARMAID_TOKEN_ATTR_BIT}, msg
+                                    , [&](umba::tokenizer::payload_type tk)
+                                      {   
+                                          if (tk==MARMAID_TOKEN_ATTR_BYTE)
+                                              return std::string("bytes");
+                                          else if (tk==MARMAID_TOKEN_ATTR_BIT)
+                                              return std::string("bits");
+                                          else 
+                                              return getTokenIdStr(tk);
+                                      }
+                                    );
+            return 0;
+        }
+
+        auto savedBitSize = bitSize;
+        if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_BYTE)
+            bitSize *= 8;
+        if (savedBitSize>bitSize)
+            return BaseClass::logSimpleMessage(pTokenInfo, "integer-overflow", msg.empty() ? "integer overflow" : msg + ": integer overflow"), (const TokenInfoType*)0;
+
+        return BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    }
+
+
+    // , {"segment"                    , MARMAID_TOKEN_ATTR_SEGMENT               }
+    // , {"segment-shift"              , MARMAID_TOKEN_ATTR_SEGMENT_SHIFT         }
+    // , {"offset"                     , MARMAID_TOKEN_ATTR_OFFSET                }
+    // , {"data"                       , MARMAID_TOKEN_ATTR_DATA                  }
+
     // native le 32 bits bit byte bytes
     //! Разбор директивы native. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
     const TokenInfoType* parseNativeDirective(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo)
     {
-        bool endiannessTaken = false;
-        //bool sizeTaken       = false;
-        const TokenInfoType* pTokenInfoBitSize = 0;
+        //bool endiannessTaken    = false;
+        bool dataSizeTaken      = false;
+        bool segmentSizeTaken   = false;
+        bool offsetSizeTaken    = false;
+        bool segmentShiftTaken  = false;
 
-        std::uint64_t       bitSize = 0;
-        Endianness          endianness = Endianness::littleEndian;
-        EPacketDiagramType  bitSizeSizeType = EPacketDiagramType::unknown; // Используем не по назначению, а для хринения типа биты или байты в числе (bitDiagram, byteDiagram)
+        //bool sizeTaken       = false;
+        //const TokenInfoType* pTokenInfoBitSize = 0;
+        const TokenInfoType* pTokenInfoLastSegmentOption = 0;
+
+        // std::uint64_t       bitSize = 0;
+        Endianness          endianness = Endianness::undefined; // littleEndian;
+        // EPacketDiagramType  bitSizeSizeType = EPacketDiagramType::unknown; // Используем не по назначению, а для хринения типа биты или байты в числе (bitDiagram, byteDiagram)
 
         pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
 
@@ -770,6 +837,13 @@ public:
             if (optionsCounter<1)
                 return BaseClass::logMessage(pTokenInfo, "native-options", "there is no options taken in the 'native' directive"), (const TokenInfoType*)0;
 
+            if (pTokenInfoLastSegmentOption)
+            {
+                if (!segmentSizeTaken || segmentShiftTaken || offsetSizeTaken)
+                    return BaseClass::logMessage(pTokenInfo, "native-options", "not all segmented mode definitions taken ('segment', 'segment-shift', 'offset')"), (const TokenInfoType*)0;
+            }
+
+            #if 0
             if (pTokenInfoBitSize)
             {
                 if (bitSizeSizeType==EPacketDiagramType::unknown)
@@ -804,10 +878,10 @@ public:
                 {
                     diagram.bitSize = bitSize;
                 }
-
             }
+            #endif
 
-            if (endiannessTaken)
+            if (endianness!=Endianness::undefined)
             {
                 if ((diagram.parsingOptions&DiagramParsingOptions::allowOverrideEndianness)!=0u)
                 {
@@ -821,15 +895,11 @@ public:
         //------------------------------
         auto updateEndianness = [&](Endianness e)
         {
-            if (endiannessTaken)
+            if (endianness!=Endianness::undefined)
                 return BaseClass::logMessage(pTokenInfo, "native-options", "endianness already taken"), false;
-
             endianness = e;
-            endiannessTaken = true;
-
             return true;
         };
-
 
         //------------------------------
         while(true)
@@ -844,7 +914,15 @@ public:
                 return returnCheckUpdateOptions();
             }
 
-            if (!isAnyNumber(pTokenInfo->tokenType) && !umba::TheValue(pTokenInfo->tokenType).oneOf(MARMAID_TOKEN_ATTR_LE,MARMAID_TOKEN_ATTR_BE, UMBA_TOKENIZER_TOKEN_LINEFEED))
+            if (!umba::TheValue(pTokenInfo->tokenType).oneOf( MARMAID_TOKEN_ATTR_LE
+                                                            , MARMAID_TOKEN_ATTR_BE
+                                                            , MARMAID_TOKEN_ATTR_DATA
+                                                            , MARMAID_TOKEN_ATTR_SEGMENT
+                                                            , MARMAID_TOKEN_ATTR_SEGMENT_SHIFT
+                                                            , MARMAID_TOKEN_ATTR_OFFSET
+                                                            , UMBA_TOKENIZER_TOKEN_LINEFEED
+                                                            )
+               )
             {
                 expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, MARMAID_TOKEN_ATTR_LE /* , MARMAID_TOKEN_ATTR_BE */  | UMBA_TOKENIZER_TOKEN_LINEFEED }, "invalid 'native' directive options" );
                 return 0;
@@ -869,7 +947,47 @@ public:
                 pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
             }
 
-            else // Остались толькор числа
+            else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_DATA)
+            {
+                if (dataSizeTaken)
+                    return BaseClass::logMessage(pTokenInfo, "native-options", "data size ('data' option) already taken"), (const TokenInfoType*)0;
+                dataSizeTaken = true;
+                pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+                pTokenInfo = parseBitSize(tokenPos, pTokenInfo, diagram.dataBitSize, "'native' directive 'data' option");
+            }
+
+            else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_SEGMENT)
+            {
+                if (segmentSizeTaken)
+                    return BaseClass::logMessage(pTokenInfo, "native-options", "segment size ('segment' option) already taken"), (const TokenInfoType*)0;
+                segmentSizeTaken = true;
+                pTokenInfoLastSegmentOption = pTokenInfo;
+                pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+                pTokenInfo = parseBitSize(tokenPos, pTokenInfo, diagram.segmentBitSize, "'native' directive 'segment' option");
+            }
+
+            else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_SEGMENT_SHIFT)
+            {
+                if (segmentShiftTaken)
+                    return BaseClass::logMessage(pTokenInfo, "native-options", "segment shift ('segment-shift' option) already taken"), (const TokenInfoType*)0;
+                segmentShiftTaken = true;
+                pTokenInfoLastSegmentOption = pTokenInfo;
+                pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+                pTokenInfo = parseBitSize(tokenPos, pTokenInfo, diagram.segmentShift, "'native' directive 'segment-shift' option");
+            }
+
+            else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_OFFSET)
+            {
+                if (offsetSizeTaken)
+                    return BaseClass::logMessage(pTokenInfo, "native-options", "offset size ('offset' option) already taken"), (const TokenInfoType*)0;
+                offsetSizeTaken = true;
+                pTokenInfoLastSegmentOption = pTokenInfo;
+                pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+                pTokenInfo = parseBitSize(tokenPos, pTokenInfo, diagram.offsetBitSize, "'native' directive 'offset' option");
+            }
+
+            #if 0
+            else // Остались только числа
             {
                 if (pTokenInfoBitSize)
                     return BaseClass::logMessage(pTokenInfo, "native-options", "bit size already taken"), (const TokenInfoType*)0;
@@ -890,6 +1008,7 @@ public:
                     pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
                 }
             }
+            #endif
         }
 
     }

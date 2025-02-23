@@ -225,6 +225,11 @@ public: // methods
         logSimpleMessage(pTokenInfo, msgId, msg);
     }
 
+    const TokenInfoType* getToken(TokenPosType *pTokenPos /* =0 */ )
+    {
+        return m_pTokens->getToken(pTokenPos);
+    }
+
     const TokenInfoType* waitForSignificantToken(TokenPosType *pTokenPos=0, ParserWaitForTokenFlags waitFlags=ParserWaitForTokenFlags::stopOnAny)
     {
         const TokenInfoType* pTokenInfo = m_pTokens->getToken(pTokenPos);

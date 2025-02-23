@@ -149,7 +149,10 @@ struct PacketDiagramTokenizerConfigurator
                                                                                     , {"seed"                       , MARMAID_TOKEN_ATTR_SEED                  }
                                                                                     , {"poly"                       , MARMAID_TOKEN_ATTR_POLY                  }
                                                                                     , {"auto"                       , MARMAID_TOKEN_ATTR_AUTO                  }
-
+                                                                                    , {"segment"                    , MARMAID_TOKEN_ATTR_SEGMENT               }
+                                                                                    , {"segment-shift"              , MARMAID_TOKEN_ATTR_SEGMENT_SHIFT         }
+                                                                                    , {"offset"                     , MARMAID_TOKEN_ATTR_OFFSET                }
+                                                                                    , {"data"                       , MARMAID_TOKEN_ATTR_DATA                  }
 
                                                                                     //, {""           ,              }
                                                                                     //, {""           ,              }

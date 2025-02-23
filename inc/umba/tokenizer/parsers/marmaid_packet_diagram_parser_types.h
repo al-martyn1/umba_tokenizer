@@ -65,6 +65,12 @@ enum class EPacketDiagramType
     bitDiagram, byteDiagram, memDiagram     // Memory diagram/layout
 };
 
+enum class EMemoryModel
+{
+    unknown, invalid = unknown, undefined = unknown,
+    linear, flat=linear, segmented
+};
+
 //----------------------------------------------------------------------------
 enum class EPacketDiagramItemType
 {
@@ -203,7 +209,8 @@ struct PacketDiagramItem
 
     Endianness                      endianness   = Endianness::undefined; // use project endianness or override endianness for this entry
     AddressRange                    addressRange; // Если указан тип - вычисляем при добавлении, 
-    std::uint64_t                   orgAddress   = 0;
+    std::uint64_t                   orgAddress   = 0; // В сегментном режиме - сегмент
+    std::uint64_t                   orgOffset    = 0; // Только для сегментного режима
     std::uint64_t                   arraySize    = std::uint64_t(-1); // работает только для явно заданного типа
 
     std::string                     realTypeName; // For C++ output, full qualified
@@ -357,13 +364,20 @@ struct PacketDiagram
     std::vector<PacketDiagramItemType>     data   ;
     std::vector<ChecksumOptions>           checksumList;
     
-    DiagramParsingOptions                  parsingOptions = DiagramParsingOptions::all;
+    DiagramParsingOptions                  parsingOptions  = DiagramParsingOptions::all;
 
-    Endianness                             endianness   = Endianness::unknown;
-    std::uint64_t                          bitSize      = 32;
-    std::uint64_t                          displayWidth = 32;
-    std::uint64_t                          lastOrg      = 0 ;
-    std::uint64_t                          orgAddress   = std::uint64_t(-1);
+    Endianness                             endianness      = Endianness::unknown;
+    EMemoryModel                           memoryModel     = EMemoryModel::flat;
+
+    std::uint64_t                          dataBitSize     = 32; // 
+    std::uint64_t                          segmentBitSize  = 16; // 
+    std::uint64_t                          segmentShift    =  4; // 
+    std::uint64_t                          offsetBitSize   = 16; // 
+
+    std::uint64_t                          displayWidth    = 32;
+    std::uint64_t                          lastOrg         = 0 ;
+    std::uint64_t                          orgAddress      = std::uint64_t(-1);
+    std::uint64_t                          orgOffset       = std::uint64_t(-1);
 
 
     std::unordered_map<std::string, std::size_t>     entryNames;  // храним индекс в векторе data
