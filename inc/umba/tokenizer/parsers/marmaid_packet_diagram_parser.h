@@ -93,6 +93,18 @@ public:
 
     bool addDiagramItem(PacketDiagramItemType item)
     {
+        try
+        {
+            return addDiagramItemImpl(item);
+        }
+        catch(const marty::mem::address_wrap &)
+        {
+            return BaseClass::logMessage( item.pTokenInfo, "address-wrap", "address wrapping detected. Check your 'org' directives" ), false;
+        }
+    }
+
+    bool addDiagramItemImpl(PacketDiagramItemType item)
+    {
         if (item.text.empty() && item.itemType!=EPacketDiagramItemType::org) // Для org директив имя/текст необязателен
         {
             BaseClass::logMessage(item.pTokenInfo, "diagram", "data entry name is empty");
@@ -195,22 +207,36 @@ public:
         if (item.itemType==EPacketDiagramItemType::org)
         {
             // Вычислить новый org
-            std::uint64_t baseAddress = diagram.calcBaseAddress();
+            // std::uint64_t baseAddress = diagram.calcBaseAddress();
+            auto baseIt = diagram.getBaseAddressIterator();
 
 
             // TODO: !!!
             switch(item.orgType)
             {
                 case EOrgType::orgAuto:
-                     item.orgAddress = baseAddress + calculatedStart;
+                {
+                     // item.orgAddress = baseAddress + calculatedStart;
+                     baseIt += calculatedStart;
+                     auto addressInfo = baseIt.getAddressInfo();
+                     item.orgAddress = addressInfo.base;
+                     item.orgOffset  = addressInfo.offset;
                      break;
+                }
 
                 case EOrgType::orgAbs : // Ничего не делаем, задан абсолютный адрес
+                     baseIt = diagram.createConstMemoryIterator(item);
                      break;
 
                 case EOrgType::orgRel :
-                     item.orgAddress += baseAddress; // прибавили базовый адрес, который высчитан по предыдущим org директивам
+                {
+                     //item.orgAddress += baseAddress; // прибавили базовый адрес, который высчитан по предыдущим org директивам
+                     baseIt += item.orgAddress;
+                     auto addressInfo = baseIt.getAddressInfo();
+                     item.orgAddress = addressInfo.base;
+                     item.orgOffset  = addressInfo.offset;
                      break;
+                }
 
                 case EOrgType::invalid  : [[fallthrough]];
 
@@ -219,9 +245,12 @@ public:
 
             }
 
-            auto calculatedFinalAddress = baseAddress+calculatedStart;
-            // Проверить, не налез ли он на уже размеченную память
-            if (item.orgAddress<calculatedFinalAddress)
+            auto itemAddrIt = diagram.createConstMemoryIterator(item);
+            auto calculatedFinalAddressIt = diagram.getBaseAddressIterator() + std::int64_t(calculatedStart);
+            // auto calculatedFinalAddress = baseAddress+calculatedStart;
+            // // Проверить, не налез ли он на уже размеченную память
+            // if (item.orgAddress<calculatedFinalAddress)
+            if (std::uint64_t(itemAddrIt) < std::uint64_t(calculatedFinalAddressIt))
             {
                 // попадает в уже размеченную память - falls into already mapped memory
                 // попадает в уже неразмеченную память - ends up in already unallocated memory
@@ -231,9 +260,9 @@ public:
             }
 
             // Если новый org создаёт gap - добавить fill
-            if (item.orgAddress>calculatedFinalAddress && !diagram.data.empty()) // а данные не пусты, значит, надо заполнить место
+            if (std::uint64_t(itemAddrIt)>std::uint64_t(calculatedFinalAddressIt) && !diagram.data.empty()) // а данные не пусты, значит, надо заполнить место
             {
-                std::size_t gapSize = item.orgAddress - calculatedFinalAddress;
+                std::size_t gapSize = std::uint64_t(itemAddrIt) - std::uint64_t(calculatedFinalAddressIt);
 
                 auto gapItem = PacketDiagramItemType();
 
@@ -255,8 +284,8 @@ public:
 
             // Установить lastOrg. Задаём абсолютное значение
 
-            diagram.lastOrg = item.orgAddress;
-        
+            diagram.lastOrg       = item.orgAddress;
+            diagram.lastOrgOffset = item.orgOffset ;
         }
 
         // Вроде всё проверили
@@ -293,8 +322,10 @@ public:
             orgItem.orgOffset          = 0;
 
             diagram.data.emplace_back(orgItem);
-            diagram.orgAddress = 0;
-            diagram.orgOffset = 0;
+            diagram.orgAddress    = 0;
+            diagram.orgOffset     = 0;
+            diagram.lastOrg       = 0;
+            diagram.lastOrgOffset = 0;
         }
 
         if (item.itemType==EPacketDiagramItemType::org && diagram.orgAddress==std::uint64_t(-1))
@@ -696,20 +727,27 @@ public:
             item.orgType = hasPlus ? EOrgType::orgRel : EOrgType::orgAbs;
             if (item.orgType==EOrgType::orgAbs && diagram.memoryModel==EMemoryModel::segmented)
             {
-                pTokenInfo = BaseClass::getToken(&tokenPos);
+                //pTokenInfo = BaseClass::getToken(&tokenPos);
                 if (!pTokenInfo)
                     return 0; // Сообщение уже выведено, просто возвращаем ошибку
                 if (pTokenInfo->tokenType!=MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER)
-                    return BaseClass::logSimpleMessage(pTokenInfo, "unexpected-token", "'org' directive: unexpected token while reading segment address"), (const TokenInfoType*)0;
+                    return expectedReachedMsg(pTokenInfo, {MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER}, "'org' directive: reading segment address"), (const TokenInfoType*)0;
+                    //return BaseClass::logSimpleMessage(pTokenInfo, "unexpected-token", "'org' directive: unexpected token while reading segment address"), (const TokenInfoType*)0;
 
                 pTokenInfo = BaseClass::getToken(&tokenPos);
                 if (!pTokenInfo)
                     return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
                 if (!isAnyNumber(pTokenInfo->tokenType))
-                    return BaseClass::logSimpleMessage(pTokenInfo, "unexpected-token", "'org' directive: unexpected token while reading segment address"), (const TokenInfoType*)0;
+                    return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, "'org' directive: reading segment address"), (const TokenInfoType*)0;
+                    //return BaseClass::logSimpleMessage(pTokenInfo, "unexpected-token", "'org' directive: unexpected token while reading segment address"), (const TokenInfoType*)0;
 
                 pTokenInfo = parseNumber(tokenPos, pTokenInfo, item.orgOffset, "'org' directive");
+
+    // bool expectedReachedMsg(const TokenInfoType *pTokenInfo, std::initializer_list<umba::tokenizer::payload_type> payloadExpectedList, const std::string &msg=std::string()) const
+    // {
+    //     BaseClass::logUnexpected( pTokenInfo, payloadExpectedList, msg, [&](umba::tokenizer::payload_type tk) { return getTokenIdStr(tk); } );
+
             }
         }
         else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_AUTO)
@@ -839,8 +877,10 @@ public:
 
             if (pTokenInfoLastSegmentOption)
             {
-                if (!segmentSizeTaken || segmentShiftTaken || offsetSizeTaken)
+                if (!segmentSizeTaken || !segmentShiftTaken || !offsetSizeTaken)
                     return BaseClass::logMessage(pTokenInfo, "native-options", "not all segmented mode definitions taken ('segment', 'segment-shift', 'offset')"), (const TokenInfoType*)0;
+
+                diagram.memoryModel = EMemoryModel::segmented;
             }
 
             #if 0
@@ -1362,7 +1402,15 @@ public:
 
                 item.pTokenInfo = pTokenInfo; // На всякий случай инфу сохраняем
                 
-                pTokenInfo = parseRegularLine(tokenPos, pTokenInfo, item, checksumOptions);
+                try
+                {
+                    pTokenInfo = parseRegularLine(tokenPos, pTokenInfo, item, checksumOptions);
+                }
+                catch(const marty::mem::address_wrap &)
+                {
+                    return BaseClass::logMessage( pTokenInfo, "address-wrap", "address wrapping detected. Check your 'org' directives" ), false;
+                }
+                
                 if (!pTokenInfo)
                     return false;
 
@@ -1432,7 +1480,16 @@ public:
                 {
                     PacketDiagramItemType item;
                     item.pTokenInfo = pTokenInfo; // На всякий случай инфу сохраняем
-                    pTokenInfo = parseOrgDirective(tokenPos, pTokenInfo, item);
+                    // pTokenInfo = parseOrgDirective(tokenPos, pTokenInfo, item);
+                    try
+                    {
+                        pTokenInfo = parseOrgDirective(tokenPos, pTokenInfo, item);
+                    }
+                    catch(const marty::mem::address_wrap &)
+                    {
+                        return BaseClass::logMessage( pTokenInfo, "address-wrap", "address wrapping detected. Check your 'org' directives" ), false;
+                    }
+
                     if (!pTokenInfo)
                         return false;
                     if (!addDiagramItem(item))

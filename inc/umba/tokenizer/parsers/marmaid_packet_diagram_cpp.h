@@ -116,10 +116,12 @@ void simplePrintCppPacketDiagram( StreamType &oss
                                                                     ,  /* item.isArray() ? item.getArraySize() : */  std::uint64_t(-1)
                                                                     , itemIndent, typeFieldWidth, nameFieldWidth
                                                                     );
-                std::ostringstream strss;
-                strss << std::uppercase << std::hex << item.orgAddress;
+                // std::ostringstream strss;
+                // strss << std::uppercase << std::hex << item.orgAddress;
+                // ConstMemoryIteratorType createConstMemoryIterator(const PacketDiagramItemType &item, marty::mem::Memory *pMem = 0) const
+                auto iter = diagram.createConstMemoryIterator(item);
 
-                oss << std::string(nameExtraSpace, ' ') << " // ORG " << "0x" << strss.str() << "\n";
+                oss << std::string(nameExtraSpace, ' ') << " // ORG " << std::string(iter) << "\n"; // << "0x" << strss.str() << "\n";
             }
             else
             {

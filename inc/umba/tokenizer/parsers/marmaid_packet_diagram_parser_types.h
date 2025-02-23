@@ -21,6 +21,9 @@
 #include "umba/enum_helpers.h"
 #include "umba/flag_helpers.h"
 #include "umba/rule_of_five.h"
+//
+#include "marty_mem/marty_mem.h"
+#include "marty_mem/virtual_address_memory_iterator.h"
 
 //
 #include <string>
@@ -345,6 +348,33 @@ struct PacketDiagramItem
         return makeFieldId(text);
     }
 
+    using MemoryIteratorType      = marty::mem::VirtualAddressMemoryIterator<std::uint8_t>;
+    using ConstMemoryIteratorType = marty::mem::ConstVirtualAddressMemoryIterator<std::uint8_t>;
+
+    MemoryIteratorType createMemoryIterator(const marty::mem::SegmentedAddressTraits &traits, marty::mem::Memory *pMem = 0) const
+    {
+        using namespace marty::mem;
+        return makeSegmentedVirtualAddressMemoryIterator<std::uint8_t>(pMem, orgAddress, orgOffset, MemoryOptionFlags::errorOnAddressWrap, traits);
+    }
+
+    ConstMemoryIteratorType createConstMemoryIterator(const marty::mem::SegmentedAddressTraits &traits, const marty::mem::Memory *pMem = 0) const
+    {
+        using namespace marty::mem;
+        return makeSegmentedConstVirtualAddressMemoryIterator<std::uint8_t>(pMem, orgAddress, orgOffset, MemoryOptionFlags::errorOnAddressWrap, traits);
+    }
+
+    MemoryIteratorType createMemoryIterator(const marty::mem::LinearAddressTraits &traits, marty::mem::Memory *pMem = 0) const
+    {
+        using namespace marty::mem;
+        return makeLinearVirtualAddressMemoryIterator<std::uint8_t>(pMem, orgAddress, MemoryOptionFlags::errorOnAddressWrap, traits);
+    }
+
+    ConstMemoryIteratorType createConstMemoryIterator(const marty::mem::LinearAddressTraits &traits, const marty::mem::Memory *pMem = 0) const
+    {
+        using namespace marty::mem;
+        return makeLinearConstVirtualAddressMemoryIterator<std::uint8_t>(pMem, orgAddress, MemoryOptionFlags::errorOnAddressWrap, traits);
+    }
+
 
 
 }; // struct PacketDiagramItem
@@ -357,7 +387,10 @@ struct PacketDiagramItem
 template<typename TokenCollectionItemType>
 struct PacketDiagram
 {
-    using PacketDiagramItemType = PacketDiagramItem<TokenCollectionItemType>;
+    using PacketDiagramItemType   = PacketDiagramItem<TokenCollectionItemType>;
+    using MemoryIteratorType      = typename PacketDiagramItemType::MemoryIteratorType     ;
+    using ConstMemoryIteratorType = typename PacketDiagramItemType::ConstMemoryIteratorType;
+
 
     EPacketDiagramType                     diagramType = EPacketDiagramType::unknown;
     std::string                            title  ;
@@ -376,6 +409,7 @@ struct PacketDiagram
 
     std::uint64_t                          displayWidth    = 32;
     std::uint64_t                          lastOrg         = 0 ;
+    std::uint64_t                          lastOrgOffset   = 0 ;
     std::uint64_t                          orgAddress      = std::uint64_t(-1);
     std::uint64_t                          orgOffset       = std::uint64_t(-1);
 
@@ -383,6 +417,63 @@ struct PacketDiagram
     std::unordered_map<std::string, std::size_t>     entryNames;  // храним индекс в векторе data
     std::unordered_map<std::string, std::size_t>     orgNames  ;  // храним индекс в векторе data
     std::size_t                                      fillEntryCounter = 0;
+
+
+    MemoryIteratorType createMemoryIterator(const PacketDiagramItemType &item, marty::mem::Memory *pMem = 0) const
+    {
+        if (memoryModel==EMemoryModel::flat)
+            return item.createMemoryIterator(marty::mem::LinearAddressTraits(), pMem);
+
+        marty::mem::SegmentedAddressTraits traits;
+        traits.segmentBitSize = segmentBitSize;
+        traits.offsetBitSize  = offsetBitSize ;
+        traits.paragraphSize  = segmentShift  ;
+
+        return item.createMemoryIterator(traits, pMem);
+    }
+
+    ConstMemoryIteratorType createConstMemoryIterator(const PacketDiagramItemType &item, marty::mem::Memory *pMem = 0) const
+    {
+        if (memoryModel==EMemoryModel::flat)
+            return item.createConstMemoryIterator(marty::mem::LinearAddressTraits(), pMem);
+
+        marty::mem::SegmentedAddressTraits traits;
+        traits.segmentBitSize = segmentBitSize;
+        traits.offsetBitSize  = offsetBitSize ;
+        traits.paragraphSize  = segmentShift  ;
+
+        return item.createConstMemoryIterator(traits, pMem);
+    }
+
+    MemoryIteratorType createZeroBaseMemoryIterator(marty::mem::Memory *pMem = 0) const
+    {
+        using namespace marty::mem;
+
+        if (memoryModel==EMemoryModel::flat)
+            return makeLinearVirtualAddressMemoryIterator<std::uint8_t>(pMem, 0 /* orgAddress */ , MemoryOptionFlags::errorOnAddressWrap, LinearAddressTraits());
+
+        marty::mem::SegmentedAddressTraits traits;
+        traits.segmentBitSize = segmentBitSize;
+        traits.offsetBitSize  = offsetBitSize ;
+        traits.paragraphSize  = segmentShift  ;
+
+        return makeSegmentedVirtualAddressMemoryIterator<std::uint8_t>(pMem, 0 /* orgAddress */ , 0 /* orgOffset */ , MemoryOptionFlags::errorOnAddressWrap, traits);
+    }
+
+    ConstMemoryIteratorType createZeroBaseConstMemoryIterator(marty::mem::Memory *pMem = 0) const
+    {
+        using namespace marty::mem;
+
+        if (memoryModel==EMemoryModel::flat)
+            return makeLinearConstVirtualAddressMemoryIterator<std::uint8_t>(pMem, 0 /* orgAddress */ , MemoryOptionFlags::errorOnAddressWrap, LinearAddressTraits());
+
+        marty::mem::SegmentedAddressTraits traits;
+        traits.segmentBitSize = segmentBitSize;
+        traits.offsetBitSize  = offsetBitSize ;
+        traits.paragraphSize  = segmentShift  ;
+
+        return makeSegmentedConstVirtualAddressMemoryIterator<std::uint8_t>(pMem, 0 /* orgAddress */ , 0 /* orgOffset */ , MemoryOptionFlags::errorOnAddressWrap, traits);
+    }
 
 
     static std::string makeFieldId(const std::string &t)
@@ -407,22 +498,28 @@ struct PacketDiagram
     }
 
     // Вычисляет базовый адрес для записи с индексом entryIdx
-    std::uint64_t calcBaseAddress(std::size_t entryIdx=std::size_t(-1)) const
+    ConstMemoryIteratorType getBaseAddressIterator(std::size_t entryIdx=std::size_t(-1), marty::mem::Memory *pMem=0) const
     {
         if (entryIdx>data.size())
             entryIdx = data.size();
 
-        std::uint64_t addr = 0;
+        //std::uint64_t addr = 0;
+        std::size_t lastOrgIdx = std::size_t(-1);
 
         for(std::size_t i=0; i!=entryIdx; ++i)
         {
             if (data[i].itemType!=EPacketDiagramItemType::org)
                 continue;
 
-            addr = data[i].orgAddress; // item.addressRange.start; // адрес в записи типа org всегда абсолютный, auto и rel обсчитываем при добавлении
+            lastOrgIdx = i;
         }
 
-        return addr;
+        if (lastOrgIdx==std::size_t(-1))
+            return createZeroBaseConstMemoryIterator(pMem);
+
+        return createConstMemoryIterator(data[lastOrgIdx], pMem);
+        // return addr;
+        // ConstMemoryIteratorType createConstMemoryIterator(const PacketDiagramItemType &item, marty::mem::Memory *pMem = 0) const
     }
 
     std::string generateOrgName(std::size_t &orgCounter) const
