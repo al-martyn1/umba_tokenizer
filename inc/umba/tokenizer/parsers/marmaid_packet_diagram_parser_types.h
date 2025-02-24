@@ -313,6 +313,27 @@ struct PacketDiagramItem
 
     }
 
+    bool isSigned() const
+    {
+        if (itemType!=EPacketDiagramItemType::explicitType)
+            return false; // bytes are unsigned
+
+        switch(explicitTypeTokenId)
+        {
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR  : return true ;
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8  : return true ;
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT16 : return true ;
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT32 : return true ;
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT64 : return true ;
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8 : return false;
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT16: return false;
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT32: return false;
+            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64: return false;
+
+            default: return true;
+        }
+    }
+
     std::string getCppTypeName() const // For C++
     {
         std::string name = getPlainTypeName();
@@ -351,28 +372,28 @@ struct PacketDiagramItem
     using MemoryIteratorType      = marty::mem::VirtualAddressMemoryIterator<std::uint8_t>;
     using ConstMemoryIteratorType = marty::mem::ConstVirtualAddressMemoryIterator<std::uint8_t>;
 
-    MemoryIteratorType createMemoryIterator(const marty::mem::SegmentedAddressTraits &traits, marty::mem::Memory *pMem = 0) const
+    MemoryIteratorType createMemoryIterator(const marty::mem::SegmentedAddressTraits &traits, marty::mem::Memory *pMem=0, bool errorOnWrappedAccess=false) const
     {
         using namespace marty::mem;
-        return makeSegmentedVirtualAddressMemoryIterator<std::uint8_t>(pMem, orgAddress, orgOffset, MemoryOptionFlags::errorOnAddressWrap, traits);
+        return makeSegmentedVirtualAddressMemoryIterator<std::uint8_t>(pMem, orgAddress, orgOffset, errorOnWrappedAccess ? MemoryOptionFlags::errorOnWrapedAddressAccess : MemoryOptionFlags::errorOnAddressWrap, traits);
     }
 
-    ConstMemoryIteratorType createConstMemoryIterator(const marty::mem::SegmentedAddressTraits &traits, const marty::mem::Memory *pMem = 0) const
+    ConstMemoryIteratorType createConstMemoryIterator(const marty::mem::SegmentedAddressTraits &traits, const marty::mem::Memory *pMem=0, bool errorOnWrappedAccess=false) const
     {
         using namespace marty::mem;
-        return makeSegmentedConstVirtualAddressMemoryIterator<std::uint8_t>(pMem, orgAddress, orgOffset, MemoryOptionFlags::errorOnAddressWrap, traits);
+        return makeSegmentedConstVirtualAddressMemoryIterator<std::uint8_t>(pMem, orgAddress, orgOffset, errorOnWrappedAccess ? MemoryOptionFlags::errorOnWrapedAddressAccess : MemoryOptionFlags::errorOnAddressWrap, traits);
     }
 
-    MemoryIteratorType createMemoryIterator(const marty::mem::LinearAddressTraits &traits, marty::mem::Memory *pMem = 0) const
+    MemoryIteratorType createMemoryIterator(const marty::mem::LinearAddressTraits &traits, marty::mem::Memory *pMem=0, bool errorOnWrappedAccess=false) const
     {
         using namespace marty::mem;
-        return makeLinearVirtualAddressMemoryIterator<std::uint8_t>(pMem, orgAddress, MemoryOptionFlags::errorOnAddressWrap, traits);
+        return makeLinearVirtualAddressMemoryIterator<std::uint8_t>(pMem, orgAddress, errorOnWrappedAccess ? MemoryOptionFlags::errorOnWrapedAddressAccess : MemoryOptionFlags::errorOnAddressWrap, traits);
     }
 
-    ConstMemoryIteratorType createConstMemoryIterator(const marty::mem::LinearAddressTraits &traits, const marty::mem::Memory *pMem = 0) const
+    ConstMemoryIteratorType createConstMemoryIterator(const marty::mem::LinearAddressTraits &traits, const marty::mem::Memory *pMem=0, bool errorOnWrappedAccess=false) const
     {
         using namespace marty::mem;
-        return makeLinearConstVirtualAddressMemoryIterator<std::uint8_t>(pMem, orgAddress, MemoryOptionFlags::errorOnAddressWrap, traits);
+        return makeLinearConstVirtualAddressMemoryIterator<std::uint8_t>(pMem, orgAddress, errorOnWrappedAccess ? MemoryOptionFlags::errorOnWrapedAddressAccess : MemoryOptionFlags::errorOnAddressWrap, traits);
     }
 
 
@@ -418,67 +439,88 @@ struct PacketDiagram
     std::unordered_map<std::string, std::size_t>     orgNames  ;  // храним индекс в векторе data
     std::size_t                                      fillEntryCounter = 0;
 
+    
+    
+    Endianness getItemEndianness(const PacketDiagramItemType &item) const
+    {
+        auto e = item.endianness;
+        if (e==Endianness::unknown)
+            e = endianness;
+        if (e==Endianness::unknown)
+            e = Endianness::littleEndian;
 
-    MemoryIteratorType createMemoryIterator(const PacketDiagramItemType &item, marty::mem::Memory *pMem = 0) const
+        return e;
+    }
+
+    MemoryIteratorType createMemoryIterator(const PacketDiagramItemType &item, marty::mem::Memory *pMem=0, bool errorOnWrappedAccess=false) const
     {
         if (memoryModel==EMemoryModel::flat)
-            return item.createMemoryIterator(marty::mem::LinearAddressTraits(), pMem);
+            return item.createMemoryIterator(marty::mem::LinearAddressTraits(), pMem, errorOnWrappedAccess);
 
         marty::mem::SegmentedAddressTraits traits;
         traits.segmentBitSize = segmentBitSize;
         traits.offsetBitSize  = offsetBitSize ;
         traits.paragraphSize  = segmentShift  ;
 
-        return item.createMemoryIterator(traits, pMem);
+        return item.createMemoryIterator(traits, pMem, errorOnWrappedAccess);
     }
 
-    ConstMemoryIteratorType createConstMemoryIterator(const PacketDiagramItemType &item, marty::mem::Memory *pMem = 0) const
+    ConstMemoryIteratorType createConstMemoryIterator(const PacketDiagramItemType &item, marty::mem::Memory *pMem=0, bool errorOnWrappedAccess=false) const
     {
         if (memoryModel==EMemoryModel::flat)
-            return item.createConstMemoryIterator(marty::mem::LinearAddressTraits(), pMem);
+            return item.createConstMemoryIterator(marty::mem::LinearAddressTraits(), pMem, errorOnWrappedAccess);
 
         marty::mem::SegmentedAddressTraits traits;
         traits.segmentBitSize = segmentBitSize;
         traits.offsetBitSize  = offsetBitSize ;
         traits.paragraphSize  = segmentShift  ;
 
-        return item.createConstMemoryIterator(traits, pMem);
+        return item.createConstMemoryIterator(traits, pMem, errorOnWrappedAccess);
     }
 
-    MemoryIteratorType createZeroBaseMemoryIterator(marty::mem::Memory *pMem = 0) const
+    MemoryIteratorType createZeroBaseMemoryIterator(marty::mem::Memory *pMem=0, bool errorOnWrappedAccess=false) const
     {
         using namespace marty::mem;
 
         if (memoryModel==EMemoryModel::flat)
-            return makeLinearVirtualAddressMemoryIterator<std::uint8_t>(pMem, 0 /* orgAddress */ , MemoryOptionFlags::errorOnAddressWrap, LinearAddressTraits());
+            return makeLinearVirtualAddressMemoryIterator<std::uint8_t>(pMem, 0 /* orgAddress */ , errorOnWrappedAccess ? MemoryOptionFlags::errorOnWrapedAddressAccess : MemoryOptionFlags::errorOnAddressWrap, LinearAddressTraits());
 
         marty::mem::SegmentedAddressTraits traits;
         traits.segmentBitSize = segmentBitSize;
         traits.offsetBitSize  = offsetBitSize ;
         traits.paragraphSize  = segmentShift  ;
 
-        return makeSegmentedVirtualAddressMemoryIterator<std::uint8_t>(pMem, 0 /* orgAddress */ , 0 /* orgOffset */ , MemoryOptionFlags::errorOnAddressWrap, traits);
+        return makeSegmentedVirtualAddressMemoryIterator<std::uint8_t>(pMem, 0 /* orgAddress */ , 0 /* orgOffset */ , errorOnWrappedAccess ? MemoryOptionFlags::errorOnWrapedAddressAccess : MemoryOptionFlags::errorOnAddressWrap, traits);
     }
 
-    ConstMemoryIteratorType createZeroBaseConstMemoryIterator(marty::mem::Memory *pMem = 0) const
+    ConstMemoryIteratorType createZeroBaseConstMemoryIterator(marty::mem::Memory *pMem=0, bool errorOnWrappedAccess=false) const
     {
         using namespace marty::mem;
 
         if (memoryModel==EMemoryModel::flat)
-            return makeLinearConstVirtualAddressMemoryIterator<std::uint8_t>(pMem, 0 /* orgAddress */ , MemoryOptionFlags::errorOnAddressWrap, LinearAddressTraits());
+            return makeLinearConstVirtualAddressMemoryIterator<std::uint8_t>(pMem, 0 /* orgAddress */ , errorOnWrappedAccess ? MemoryOptionFlags::errorOnWrapedAddressAccess : MemoryOptionFlags::errorOnAddressWrap, LinearAddressTraits());
 
         marty::mem::SegmentedAddressTraits traits;
         traits.segmentBitSize = segmentBitSize;
         traits.offsetBitSize  = offsetBitSize ;
         traits.paragraphSize  = segmentShift  ;
 
-        return makeSegmentedConstVirtualAddressMemoryIterator<std::uint8_t>(pMem, 0 /* orgAddress */ , 0 /* orgOffset */ , MemoryOptionFlags::errorOnAddressWrap, traits);
+        return makeSegmentedConstVirtualAddressMemoryIterator<std::uint8_t>(pMem, 0 /* orgAddress */ , 0 /* orgOffset */ , errorOnWrappedAccess ? MemoryOptionFlags::errorOnWrapedAddressAccess : MemoryOptionFlags::errorOnAddressWrap, traits);
     }
 
 
     static std::string makeFieldId(const std::string &t)
     {
         return makeIdFromText(t);
+    }
+
+    std::size_t findEntryByName(const std::string &name) const
+    {
+        auto id = makeFieldId(name);
+        std::unordered_map<std::string, std::size_t>::const_iterator it = entryNames.find(id);
+        if (it==entryNames.end())
+            return std::size_t(-1);
+        return it->second;
     }
 
     std::string getCppOrCTitle(bool bCpp) const
@@ -1094,7 +1136,7 @@ byte_vector_t makeByteVectorFromCharLiteral(const std::string &valStr, std::uint
 //! Строка val - последовательность символов ASCII как строка, переводится в байты один в один, дополняется нулями до нужной длины, кидает std::out_of_range, если строка длиннее заданного количества байт
 //! Может использоваться только для байтовых массивов или диапазонов
 inline
-byte_vector_t makeByteVectorFromStringLiteral(const std::string &valStr, std::uint64_t size, bool asciiZ=false)
+byte_vector_t makeByteVectorStringFromStringLiteral(const std::string &valStr, std::uint64_t size, bool asciiZ=false)
 {
     auto requiredSize = valStr.size(); // Сколько места требуется под строку
     if (asciiZ)
@@ -1127,12 +1169,28 @@ byte_vector_t makeByteVectorFromDumpString(const std::string &strDump)
 
     return bytes;
 }
+
+//----------------------------------------------------------------------------
+inline
+byte_vector_t makeByteVectorFromDumpString(const std::string &strDump, std::uint64_t size, bool exactFit=false)
+{
+    byte_vector_t bytes = makeByteVectorFromDumpString(strDump);
+
+    if (bytes.size()>size)
+        throw std::out_of_range("hex dump can't fit into " + std::to_string(size) + " bytes: required length is " + std::to_string(bytes.size()));
+
+    if (exactFit && bytes.size()!=size)
+        throw std::out_of_range("hex dump can't fit into " + std::to_string(size) + " bytes: required length is " + std::to_string(bytes.size()));
+
+    return bytes;
+}
+
 //----------------------------------------------------------------------------
 
 //! Строка val - строка дампа, каждый байт представлен парой HEX-цифр, пробелы допустимы произвольно, не обязательно попарно
 //! Может использоваться только для байтовых массивов или диапазонов
 inline
-byte_vector_t makeByteVectorFromDumpString(const std::string &strDump, std::uint64_t size, bool asciiZ=false)
+byte_vector_t makeByteVectorStringFromDumpString(const std::string &strDump, std::uint64_t size, bool asciiZ=false)
 {
     byte_vector_t bytes = makeByteVectorFromDumpString(strDump);
 
