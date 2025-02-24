@@ -216,32 +216,32 @@ public:
             {
                 case EOrgType::orgAuto:
                 {
-                     // item.orgAddress = baseAddress + calculatedStart;
-                     baseIt += std::int64_t(calculatedStart);
-                     auto addressInfo = baseIt.getAddressInfo();
-                     item.orgAddress = addressInfo.base;
-                     item.orgOffset  = addressInfo.offset;
-                     break;
+                    // item.orgAddress = baseAddress + calculatedStart;
+                    baseIt += std::int64_t(calculatedStart);
+                    auto addressInfo = baseIt.getAddressInfo();
+                    item.orgAddress = addressInfo.base;
+                    item.orgOffset  = addressInfo.offset;
+                    break;
                 }
 
                 case EOrgType::orgAbs : // Ничего не делаем, задан абсолютный адрес
-                     baseIt = diagram.createConstMemoryIterator(item);
-                     break;
+                    baseIt = diagram.createConstMemoryIterator(item);
+                    break;
 
                 case EOrgType::orgRel :
                 {
-                     //item.orgAddress += baseAddress; // прибавили базовый адрес, который высчитан по предыдущим org директивам
-                     baseIt += std::int64_t(item.orgAddress);
-                     auto addressInfo = baseIt.getAddressInfo();
-                     item.orgAddress = addressInfo.base;
-                     item.orgOffset  = addressInfo.offset;
-                     break;
+                    //item.orgAddress += baseAddress; // прибавили базовый адрес, который высчитан по предыдущим org директивам
+                    baseIt += std::int64_t(item.orgAddress);
+                    auto addressInfo = baseIt.getAddressInfo();
+                    item.orgAddress = addressInfo.base;
+                    item.orgOffset  = addressInfo.offset;
+                    break;
                 }
 
                 case EOrgType::invalid  : [[fallthrough]];
 
                 default:
-                     return BaseClass::logMessage(item.pTokenInfo, "diagram", "'org': invalid 'org' type"), false;
+                    return BaseClass::logMessage(item.pTokenInfo, "diagram", "'org': invalid 'org' type"), false;
 
             }
 
@@ -296,7 +296,11 @@ public:
         {
             auto baseIt = diagram.getBaseAddressIterator();
             baseIt += std::int64_t(calculatedStart);
-            baseIt += std::int64_t(item.getTypeFieldSize()-1);
+            //baseIt += std::int64_t(item.getTypeFieldSize()-1);
+
+            auto addressInfo = baseIt.getAddressInfo();
+            item.orgAddress  = addressInfo.base;
+            item.orgOffset   = addressInfo.offset;
 
             item.addressRange.start = calculatedStart;
             item.addressRange.end   = item.addressRange.start + item.getTypeFieldSize()-1;
@@ -304,7 +308,26 @@ public:
 
         else if (item.itemType==EPacketDiagramItemType::singleValue)
         {
+            auto baseIt = diagram.getBaseAddressIterator();
+            baseIt += std::int64_t(calculatedStart);
+
+            auto addressInfo = baseIt.getAddressInfo();
+            item.orgAddress  = addressInfo.base;
+            item.orgOffset   = addressInfo.offset;
+
             item.addressRange.end = item.addressRange.start;
+        }
+
+        else if (item.itemType==EPacketDiagramItemType::range)
+        {
+            // auto rangeSize = item.addressRange.end - item.addressRange.start + 1;
+        
+            auto baseIt = diagram.getBaseAddressIterator();
+            baseIt += std::int64_t(calculatedStart);
+
+            auto addressInfo = baseIt.getAddressInfo();
+            item.orgAddress  = addressInfo.base;
+            item.orgOffset   = addressInfo.offset;
         }
 
         else if (item.itemType==EPacketDiagramItemType::org)

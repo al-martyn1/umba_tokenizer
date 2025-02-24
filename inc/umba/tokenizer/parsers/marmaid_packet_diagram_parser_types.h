@@ -227,6 +227,16 @@ struct PacketDiagramItem
     const TokenCollectionItemType   *pTokenInfo = 0; // стартовый токен, можно получить номер строки
 
 
+    bool isOrgEntry() const
+    {
+        return itemType==EPacketDiagramItemType::org;
+    }
+
+    bool isFillEntry() const
+    {
+        return fillEntry;
+    }
+
     bool isDataEntry() const
     {
         return itemType==EPacketDiagramItemType::explicitType
@@ -539,13 +549,11 @@ struct PacketDiagram
         return false;
     }
 
-    // Вычисляет базовый адрес для записи с индексом entryIdx
-    ConstMemoryIteratorType getBaseAddressIterator(std::size_t entryIdx=std::size_t(-1), marty::mem::Memory *pMem=0) const
+    std::size_t findLastOrgIdxBefore(std::size_t entryIdx=std::size_t(-1)) const
     {
         if (entryIdx>data.size())
             entryIdx = data.size();
 
-        //std::uint64_t addr = 0;
         std::size_t lastOrgIdx = std::size_t(-1);
 
         for(std::size_t i=0; i!=entryIdx; ++i)
@@ -555,6 +563,48 @@ struct PacketDiagram
 
             lastOrgIdx = i;
         }
+
+        return lastOrgIdx;
+    }
+
+    std::size_t findOrgFrom(std::size_t entryIdx=0) const
+    {
+        if (entryIdx>data.size())
+            entryIdx = data.size();
+
+        while(entryIdx<data.size())
+        {
+            if (data[entryIdx].isOrgEntry())
+                return entryIdx;
+            ++entryIdx;
+        }
+
+        return entryIdx;
+    }
+
+    std::size_t findNextOrgOrFillEntry(std::size_t curOrgIdx=std::size_t(-1)) const
+    {
+        std::size_t idx = curOrgIdx;
+
+        if (idx>data.size())
+            idx = 0;
+
+        ++idx; // переходим на следующий индекс
+
+        while(idx<data.size())
+        {
+            if (data[idx].isOrgEntry() || data[idx].isFillEntry())
+                return idx;
+            ++idx;
+        }
+
+        return idx;
+    }
+
+    // Вычисляет базовый адрес для записи с индексом entryIdx. Нужно научить выдавать итератор для entry, которая могла бы следовать за последней
+    ConstMemoryIteratorType getBaseAddressIterator(std::size_t entryIdx=std::size_t(-1), marty::mem::Memory *pMem=0) const
+    {
+        std::size_t lastOrgIdx = findLastOrgIdxBefore(entryIdx);
 
         if (lastOrgIdx==std::size_t(-1))
             return createZeroBaseConstMemoryIterator(pMem);
