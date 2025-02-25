@@ -36,6 +36,12 @@
 #include <climits>
 #include <algorithm>
 #include <utility>
+#include <string_view>
+#include <vector>
+
+//----------------------------------------------------------------------------
+
+
 
 //----------------------------------------------------------------------------
 // umba::tokenizer::marmaid::
@@ -1537,8 +1543,54 @@ void memorySetVariable(const PacketDiagram<TokenCollectionItemType> &diagram, ma
 
 
 //----------------------------------------------------------------------------
+// Делаем вектор string_view из строки текста. Строка разделяется только символами LF ('\n')
+// Символ перевода строки также входит в string_view
+inline
+std::vector<std::string_view> makeTextStringViewsHelper(const std::string &text)
+{
+    std::vector<std::string_view> resVec; resVec.reserve(text.size()/64);
 
+    std::size_t idxStart = 0;
+    std::size_t idx      = 0;
 
+    for(; idx!=text.size(); ++idx)
+    {
+        if (text[idx]=='\n')
+        {
+            std::size_t idxNext = idx+1;
+            std::size_t size    = idxNext - idxStart;
+            resVec.emplace_back(text.data()+idxStart, size);
+            idxStart = idxNext;
+        }
+    }
+
+    if (idxStart!=idx)
+    {
+        resVec.emplace_back(text.data()+idxStart, idx-idxStart);
+    }
+
+    return resVec;
+}
+
+//----------------------------------------------------------------------------
+// Обрезаем переводы строки из вектора string_view
+inline
+std::vector<std::string_view> stripLinefeedsFromStringViewsVector(const std::vector<std::string_view> &svVec)
+{
+    std::vector<std::string_view> svRes = svVec;
+    for(auto &sv : svRes)
+    {
+        while(!sv.empty())
+        {
+            if (sv.back()=='\r' || sv.back()=='\n')
+                sv.remove_suffix(1);
+            else
+                break;
+        }
+    }
+
+    return svRes;
+}
 
 
 // using unordered_memory_t = std::unordered_map<std::uint64_t, std::uint8_t>;
