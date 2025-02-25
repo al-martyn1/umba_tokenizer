@@ -243,8 +243,8 @@ public:
 
             }
 
-            auto itemAddrIt = diagram.createConstMemoryIterator(item);
-            auto calculatedFinalAddressIt = diagram.getBaseAddressIterator() + std::int64_t(calculatedStart);
+            auto itemAddrIt = diagram.createConstMemoryIterator(item); // итератор для вновь добавляемого элемента - итератор ORG'а
+            auto calculatedFinalAddressIt = diagram.getBaseAddressIterator() + std::int64_t(calculatedStart); // итератор подсчитанного адреса для вновь добавляемого элемента
             // auto calculatedFinalAddress = baseAddress+calculatedStart;
             // // Проверить, не налез ли он на уже размеченную память
             // if (item.orgAddress<calculatedFinalAddress)
@@ -260,12 +260,16 @@ public:
             // Если новый org создаёт gap - добавить fill
             if (std::uint64_t(itemAddrIt)>std::uint64_t(calculatedFinalAddressIt) && !diagram.data.empty()) // а данные не пусты, значит, надо заполнить место
             {
-                std::size_t gapSize = std::uint64_t(itemAddrIt) - std::uint64_t(calculatedFinalAddressIt);
+                std::size_t gapSize = std::uint64_t(itemAddrIt) - std::uint64_t(calculatedFinalAddressIt); // от итератора ORG отнимаем итератор подсчитанного адреса для вновь добавляемого элемента
 
                 auto gapItem = PacketDiagramItemType();
 
-                gapItem.itemType  = EPacketDiagramItemType::range;
-                gapItem.fillEntry = true; // поле для заполнения
+                auto addressInfo   = calculatedFinalAddressIt.getAddressInfo();
+                gapItem.orgAddress = addressInfo.base;
+                gapItem.orgOffset  = addressInfo.offset;
+
+                gapItem.itemType   = EPacketDiagramItemType::range;
+                gapItem.fillEntry  = true; // поле для заполнения
 
                 gapItem.addressRange.start = calculatedStart;
                 gapItem.addressRange.end   = gapItem.addressRange.start + gapSize - 1;
