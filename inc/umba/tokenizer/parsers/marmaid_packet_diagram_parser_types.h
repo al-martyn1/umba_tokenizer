@@ -16,6 +16,8 @@
 //
 #include "parser_base.h"
 #include "umba/tokenizer/lang/marmaid_packet_diagram.h"
+#include "umba/string.h"
+
 
 //
 #include "umba/enum_helpers.h"
@@ -24,6 +26,7 @@
 //
 #include "marty_mem/marty_mem.h"
 #include "marty_mem/virtual_address_memory_iterator.h"
+#include "marty_mem/exceptions.h"
 
 //
 #include <string>
@@ -470,7 +473,7 @@ struct PacketDiagram
         marty::mem::SegmentedAddressTraits traits;
         traits.segmentBitSize = segmentBitSize;
         traits.offsetBitSize  = offsetBitSize ;
-        traits.paragraphSize  = segmentShift  ;
+        traits.paragraphSize  = 1<<segmentShift  ;
 
         return item.createMemoryIterator(traits, pMem, errorOnWrappedAccess);
     }
@@ -483,7 +486,7 @@ struct PacketDiagram
         marty::mem::SegmentedAddressTraits traits;
         traits.segmentBitSize = segmentBitSize;
         traits.offsetBitSize  = offsetBitSize ;
-        traits.paragraphSize  = segmentShift  ;
+        traits.paragraphSize  = 1<<segmentShift  ;
 
         return item.createConstMemoryIterator(traits, pMem, errorOnWrappedAccess);
     }
@@ -498,7 +501,7 @@ struct PacketDiagram
         marty::mem::SegmentedAddressTraits traits;
         traits.segmentBitSize = segmentBitSize;
         traits.offsetBitSize  = offsetBitSize ;
-        traits.paragraphSize  = segmentShift  ;
+        traits.paragraphSize  = 1<<segmentShift  ;
 
         return makeSegmentedVirtualAddressMemoryIterator<std::uint8_t>(pMem, 0 /* orgAddress */ , 0 /* orgOffset */ , errorOnWrappedAccess ? MemoryOptionFlags::errorOnWrapedAddressAccess : MemoryOptionFlags::errorOnAddressWrap, traits);
     }
@@ -513,9 +516,37 @@ struct PacketDiagram
         marty::mem::SegmentedAddressTraits traits;
         traits.segmentBitSize = segmentBitSize;
         traits.offsetBitSize  = offsetBitSize ;
-        traits.paragraphSize  = segmentShift  ;
+        traits.paragraphSize  = 1<<segmentShift  ;
 
         return makeSegmentedConstVirtualAddressMemoryIterator<std::uint8_t>(pMem, 0 /* orgAddress */ , 0 /* orgOffset */ , errorOnWrappedAccess ? MemoryOptionFlags::errorOnWrapedAddressAccess : MemoryOptionFlags::errorOnAddressWrap, traits);
+    }
+
+    MemoryIteratorType createMemoryIterator(std::size_t idx, marty::mem::Memory *pMem=0, bool errorOnWrappedAccess=false) const
+    {
+        if (data.empty())
+            return createZeroBaseMemoryIterator(pMem, errorOnWrappedAccess);
+
+        if (idx<data.size())
+            return createMemoryIterator(data[idx], pMem, errorOnWrappedAccess);
+
+        auto it = createMemoryIterator(data.back(), pMem, errorOnWrappedAccess);
+        it += data.back().getTypeFieldSize();
+
+        return it;
+    }
+
+    ConstMemoryIteratorType createConstMemoryIterator(std::size_t idx, marty::mem::Memory *pMem=0, bool errorOnWrappedAccess=false) const
+    {
+        if (data.empty())
+            return createZeroBaseConstMemoryIterator(pMem, errorOnWrappedAccess);
+
+        if (idx<data.size())
+            return createConstMemoryIterator(data[idx], pMem, errorOnWrappedAccess);
+
+        auto it = createConstMemoryIterator(data.back(), pMem, errorOnWrappedAccess);
+        it += data.back().getTypeFieldSize();
+
+        return it;
     }
 
 
@@ -569,8 +600,8 @@ struct PacketDiagram
 
     std::size_t findOrgFrom(std::size_t entryIdx=0) const
     {
-        if (entryIdx>data.size())
-            entryIdx = data.size();
+        // if (entryIdx>data.size())
+        //     entryIdx = data.size();
 
         while(entryIdx<data.size())
         {
@@ -582,23 +613,52 @@ struct PacketDiagram
         return entryIdx;
     }
 
-    std::size_t findNextOrgOrFillEntry(std::size_t curOrgIdx=std::size_t(-1)) const
+    std::size_t findNextOrgOrFillEntry(std::size_t curOrgIdx=0, bool stopOnFill=false) const
     {
         std::size_t idx = curOrgIdx;
 
-        if (idx>data.size())
-            idx = 0;
+        // if (idx>data.size())
+        //     idx = 0;
 
         ++idx; // переходим на следующий индекс
 
         while(idx<data.size())
         {
-            if (data[idx].isOrgEntry() || data[idx].isFillEntry())
+            if (data[idx].isOrgEntry())
+                return idx;
+            if (data[idx].isFillEntry() && stopOnFill)
                 return idx;
             ++idx;
         }
 
         return idx;
+    }
+
+    // fullSections - including filling
+    std::vector< std::pair<std::size_t, std::size_t> > findAllSections(bool fullSections=true) const
+    {
+        std::size_t idxStart = findOrgFrom(0);
+        if (idxStart>=data.size())
+            return std::vector< std::pair<std::size_t, std::size_t> >(1, std::make_pair(std::size_t(0), findNextOrgOrFillEntry(0, !fullSections)));
+
+        std::vector< std::pair<std::size_t, std::size_t> > resVec;
+
+        std::size_t nextOrgIdx = idxStart;
+        std::size_t idxEnd     = 0;
+
+        do
+        {
+            idxStart   = nextOrgIdx;
+            nextOrgIdx = findNextOrgOrFillEntry(idxStart);
+            idxEnd     = nextOrgIdx;
+            if (!fullSections)
+                 idxEnd = findNextOrgOrFillEntry(idxStart, true); // либо тот же ORG найдёт, либо остановится на fill элементе
+
+            resVec.emplace_back(std::make_pair(idxStart, idxEnd));
+
+        } while(idxEnd<data.size());
+
+        return resVec;
     }
 
     // Вычисляет базовый адрес для записи с индексом entryIdx. Нужно научить выдавать итератор для entry, которая могла бы следовать за последней
@@ -1330,7 +1390,147 @@ int simpleSplitNameAndIndex(const std::string &fullName, std::string *pName, std
     return 1;
 }
 
+//----------------------------------------------------------------------------
 
+
+
+//----------------------------------------------------------------------------
+template<typename TokenCollectionItemType, typename LogMessageHandler>
+void memorySetVariable(const PacketDiagram<TokenCollectionItemType> &diagram, marty::mem::Memory &mem, std::string varFullName, std::string value, LogMessageHandler logMsgHandler)
+{
+    // using DiagramType = decltype(diagram);
+    using MemoryIteratorType = typename PacketDiagram<TokenCollectionItemType> :: MemoryIteratorType;
+    
+
+    varFullName = umba::string::trim_copy(varFullName);
+    value = umba::string::trim_copy(value);
+
+    std::string varName;
+    std::uint64_t varArrayIndex = 0;
+    bool doSetArrayItem = false;
+
+    umba::string::unquote(varFullName);
+
+    int parseVarNameRes = umba::tokenizer::marmaid::utils::simpleSplitNameAndIndex(varFullName , &varName, &varArrayIndex);
+    if (parseVarNameRes==0)
+    {
+        marty::mem::throwMemoryAccessError(marty::mem::MemoryAccessResultCode::memoryFillError, "error in entry name: '" + varFullName + "'");
+    }
+
+    if (parseVarNameRes>0)
+        doSetArrayItem = true;
+
+    std::size_t entryIdx = diagram.findEntryByName(varName);
+    if (entryIdx==std::size_t(-1))
+    {
+        marty::mem::throwMemoryAccessError(marty::mem::MemoryAccessResultCode::memoryFillError, "entry not found: '" + varFullName + "'");
+    }
+
+    const auto &entryItem = diagram.data[entryIdx];
+    if (!entryItem.isDataEntry())
+    {
+        marty::mem::throwMemoryAccessError(marty::mem::MemoryAccessResultCode::memoryFillError, "entry not a data entry: '" + varFullName + "'");
+    }
+
+    // Endianness
+    auto entryEndianness = diagram.getItemEndianness(entryItem);
+    std::uint64_t entryTypeSize = entryItem.getTypeSize();
+
+    auto valueQuotType = umba::string::unquote(value);
+
+    byte_vector_t bv;
+    MemoryIteratorType fieldMemoryIt;
+
+    if (doSetArrayItem)
+    {
+        if (!entryItem.isArray())
+        {
+            marty::mem::throwMemoryAccessError(marty::mem::MemoryAccessResultCode::memoryFillError, "try to set indexed variable, but data entry is not an array: '" + varFullName + "'");
+        }
+
+        if (varArrayIndex>=entryItem.getArraySize())
+        {
+            marty::mem::throwMemoryAccessError(marty::mem::MemoryAccessResultCode::memoryFillError, "taken index is out of range: '" + varFullName + "'");
+        }
+
+        if (valueQuotType==umba::string::SimpleQuotesType::notQuoted)
+        {
+            bv = makeByteVectorFromIntStr(value, entryTypeSize, entryEndianness, entryItem.isSigned() /* , std::uint64_t *pParsedVal=0 */ );
+        }
+        else if (valueQuotType==umba::string::SimpleQuotesType::aposQuoted)
+        {
+            bv = makeByteVectorFromCharLiteral(value, entryTypeSize, entryEndianness /* , std::uint64_t *pParsedVal=0 */ );
+        }
+        else // valueQuotType==umba::string::SimpleQuotesType::dblQuoted
+        {
+            marty::mem::throwMemoryAccessError(marty::mem::MemoryAccessResultCode::memoryFillError, "can't assign string to an array item: '" + varFullName + "'");
+        }
+
+        // MemoryIteratorType createMemoryIterator(const PacketDiagramItemType &item, marty::mem::Memory *pMem = 0) const
+        fieldMemoryIt  = diagram.createMemoryIterator(entryItem, &mem, true /* errorOnWrappedAccess */ );
+        fieldMemoryIt += std::int64_t(entryTypeSize*varArrayIndex);
+        
+    }
+    else // задаём поле, индекс массива не указан. Если размер типа - 1, и у нас задана строка или дамп - то нормас
+    {
+        if (entryItem.isArray()) // поле объявлено как массив
+        {
+            if (entryTypeSize!=1)
+            {
+                marty::mem::throwMemoryAccessError(marty::mem::MemoryAccessResultCode::memoryFillError, "Can't assign arrays of elements with size greater than 1: '" + varFullName + "'");
+            }
+           
+            if (valueQuotType==umba::string::SimpleQuotesType::dblQuoted)
+            {
+                bv = makeByteVectorStringFromStringLiteral(value, entryItem.getArraySize(), entryItem.isAsciiZet());
+            }
+            else if (valueQuotType==umba::string::SimpleQuotesType::notQuoted)
+            {
+                bv = makeByteVectorStringFromDumpString(value, entryItem.getArraySize(), entryItem.isAsciiZet());
+            }
+            else
+            {
+                marty::mem::throwMemoryAccessError(marty::mem::MemoryAccessResultCode::memoryFillError, "can't assign char literal to an string/array: '" + varFullName + "'");
+            }
+
+        }
+        else // обычное поле
+        {
+            if (valueQuotType==umba::string::SimpleQuotesType::notQuoted)
+            {
+                bv = makeByteVectorFromIntStr(value, entryTypeSize, entryEndianness, entryItem.isSigned() /* , std::uint64_t *pParsedVal=0 */ );
+            }
+            else if (valueQuotType==umba::string::SimpleQuotesType::aposQuoted)
+            {
+                bv = makeByteVectorFromCharLiteral(value, entryTypeSize, entryEndianness /* , std::uint64_t *pParsedVal=0 */ );
+            }
+            else // valueQuotType==umba::string::SimpleQuotesType::dblQuoted
+            {
+                marty::mem::throwMemoryAccessError(marty::mem::MemoryAccessResultCode::memoryFillError, "Can't assign string to simple field: '" + varFullName + "'");
+            }
+        }
+
+        fieldMemoryIt  = diagram.createMemoryIterator(entryItem, &mem, true /* errorOnWrappedAccess */ );
+    }
+
+    // assign bv to memory here
+
+    //LOG_MSG << "---\n";
+    logMsgHandler("Set '" + varFullName + "' to " + value);
+    //LOG_MSG << "Set '" << varFullName << "' to " << value << "\n";
+
+    for(auto b : bv)
+    {
+        auto byte = b; // std::uint8_t(*fieldMemoryIt); // b; // std::uint8_t(*it);
+        auto byteStr = marty::mem::utils::makeHexString(byte, 1);
+
+        //LOG_MSG << std::string(fieldMemoryIt) << ": " << byteStr << "\n";
+        logMsgHandler(std::string(fieldMemoryIt) + ": " + byteStr);
+
+        *fieldMemoryIt++ = b;
+    }
+
+}
 
 //----------------------------------------------------------------------------
 

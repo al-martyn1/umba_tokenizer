@@ -210,8 +210,6 @@ public:
             // std::uint64_t baseAddress = diagram.calcBaseAddress();
             auto baseIt = diagram.getBaseAddressIterator();
 
-
-            // TODO: !!!
             switch(item.orgType)
             {
                 case EOrgType::orgAuto:
@@ -219,8 +217,8 @@ public:
                     // item.orgAddress = baseAddress + calculatedStart;
                     baseIt += std::int64_t(calculatedStart);
                     auto addressInfo = baseIt.getAddressInfo();
-                    item.orgAddress = addressInfo.base;
-                    item.orgOffset  = addressInfo.offset;
+                    item.orgAddress  = addressInfo.base;
+                    item.orgOffset   = addressInfo.offset;
                     break;
                 }
 
@@ -233,8 +231,8 @@ public:
                     //item.orgAddress += baseAddress; // прибавили базовый адрес, который высчитан по предыдущим org директивам
                     baseIt += std::int64_t(item.orgAddress);
                     auto addressInfo = baseIt.getAddressInfo();
-                    item.orgAddress = addressInfo.base;
-                    item.orgOffset  = addressInfo.offset;
+                    item.orgAddress  = addressInfo.base;
+                    item.orgOffset   = addressInfo.offset;
                     break;
                 }
 
