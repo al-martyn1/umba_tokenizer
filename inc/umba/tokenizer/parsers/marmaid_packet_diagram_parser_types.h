@@ -473,7 +473,7 @@ struct PacketDiagram
         marty::mem::SegmentedAddressTraits traits;
         traits.segmentBitSize = segmentBitSize;
         traits.offsetBitSize  = offsetBitSize ;
-        traits.paragraphSize  = 1<<segmentShift  ;
+        traits.paragraphSize  = 1ull<<segmentShift  ;
 
         return item.createMemoryIterator(traits, pMem, errorOnWrappedAccess);
     }
@@ -486,7 +486,7 @@ struct PacketDiagram
         marty::mem::SegmentedAddressTraits traits;
         traits.segmentBitSize = segmentBitSize;
         traits.offsetBitSize  = offsetBitSize ;
-        traits.paragraphSize  = 1<<segmentShift  ;
+        traits.paragraphSize  = 1ull<<segmentShift  ;
 
         return item.createConstMemoryIterator(traits, pMem, errorOnWrappedAccess);
     }
@@ -516,7 +516,7 @@ struct PacketDiagram
         marty::mem::SegmentedAddressTraits traits;
         traits.segmentBitSize = segmentBitSize;
         traits.offsetBitSize  = offsetBitSize ;
-        traits.paragraphSize  = 1<<segmentShift  ;
+        traits.paragraphSize  = 1ull<<segmentShift  ;
 
         return makeSegmentedConstVirtualAddressMemoryIterator<std::uint8_t>(pMem, 0 /* orgAddress */ , 0 /* orgOffset */ , errorOnWrappedAccess ? MemoryOptionFlags::errorOnWrapedAddressAccess : MemoryOptionFlags::errorOnAddressWrap, traits);
     }
@@ -544,7 +544,7 @@ struct PacketDiagram
             return createConstMemoryIterator(data[idx], pMem, errorOnWrappedAccess);
 
         auto it = createConstMemoryIterator(data.back(), pMem, errorOnWrappedAccess);
-        it += data.back().getTypeFieldSize();
+        it += marty::mem::ptrdiff_t(data.back().getTypeFieldSize());
 
         return it;
     }
