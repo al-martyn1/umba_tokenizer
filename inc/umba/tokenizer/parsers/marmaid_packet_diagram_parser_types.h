@@ -1592,10 +1592,283 @@ std::vector<std::string_view> stripLinefeedsFromStringViewsVector(const std::vec
     return svRes;
 }
 
+//----------------------------------------------------------------------------
 
-// using unordered_memory_t = std::unordered_map<std::uint64_t, std::uint8_t>;
-// using byte_vector_t = std::vector<std::uint8_t>;
 
+
+//----------------------------------------------------------------------------
+inline
+void ltrim(std::string_view &sv)
+{
+    std::size_t idx = 0;
+    for(; idx!=sv.size(); ++idx)
+    {
+        if (!(sv[idx]==' ' || sv[idx]=='\t' || sv[idx]=='\r' || sv[idx]=='\n'))
+            break;
+    }
+    sv.remove_prefix(idx);
+}
+
+//----------------------------------------------------------------------------
+inline
+std::string_view ltrim_copy(std::string_view sv)
+{
+    ltrim(sv);
+    return sv;
+}
+
+//----------------------------------------------------------------------------
+inline
+void rtrim(std::string_view &sv)
+{
+    std::size_t idx = sv.size();
+    while(idx-->0)
+    {
+        if (!(sv[idx]==' ' || sv[idx]=='\t' || sv[idx]=='\r' || sv[idx]=='\n'))
+            break;
+    }
+
+    std::size_t rmSize = sv.size()-idx-1;
+    sv.remove_suffix(rmSize);
+}
+
+//----------------------------------------------------------------------------
+inline
+std::string_view rtrim_copy(std::string_view sv)
+{
+    rtrim(sv);
+    return sv;
+}
+
+//----------------------------------------------------------------------------
+inline
+void trim(std::string_view &sv)
+{
+    ltrim(sv);
+    rtrim(sv);
+}
+
+//----------------------------------------------------------------------------
+inline
+std::string_view trim_copy(std::string_view sv)
+{
+    return ltrim_copy(rtrim_copy(sv));
+}
+
+//----------------------------------------------------------------------------
+inline
+void rtrim(std::vector<std::string_view> &svVec)
+{
+    for(auto &sv : svVec)
+        trim(sv);
+}
+
+//----------------------------------------------------------------------------
+inline
+std::vector<std::string_view> rtrim_copy(std::vector<std::string_view> svVec)
+{
+    rtrim(svVec);
+    return svVec;
+}
+
+//----------------------------------------------------------------------------
+inline
+char tosame(char ch)
+{
+    return ch;
+}
+
+//----------------------------------------------------------------------------
+inline
+char tolower(char ch)
+{
+    if (ch>='A' && ch<='Z')
+        ch = ch - 'A' + 'a';
+    return ch;
+}
+
+//----------------------------------------------------------------------------
+inline
+std::string tolower_copy(std::string s)
+{
+    for(auto &ch : s)
+    {
+        ch = tolower(ch);
+    }
+
+    return s;
+}
+
+//----------------------------------------------------------------------------
+inline
+bool is_equal_chars(char ch1, char ch2, bool ci)
+{
+    return ci ? tolower(ch1)==tolower(ch2) : ch1==ch2;
+}
+
+//----------------------------------------------------------------------------
+inline
+bool is_equal(std::string_view sv1, std::string_view sv2)
+{
+    if (sv1.size()!=sv2.size())
+        return false;
+
+    return sv1==sv2;
+}
+
+//----------------------------------------------------------------------------
+inline
+bool is_equal(std::string_view sv, const std::string &str)
+{
+    return is_equal(sv, std::string_view(str.data(), str.size()));
+}
+
+//----------------------------------------------------------------------------
+inline
+bool is_equal(const std::string &str, std::string_view sv)
+{
+    return is_equal(sv, std::string_view(str.data(), str.size()));
+}
+
+//----------------------------------------------------------------------------
+template<typename CharEqual>
+bool is_equal(std::string_view sv1, std::string_view sv2, CharEqual charEqual)
+{
+    if (sv1.size()!=sv2.size())
+        return false;
+
+    auto it1 = sv1.begin();
+    auto it2 = sv2.begin();
+
+    for(; it1!=sv1.end(); ++it1, ++it2)
+    {
+        if (!charEqual(*it1, *it2))
+            return false;
+    }
+
+    return true;
+}
+
+//----------------------------------------------------------------------------
+template<typename CharEqual>
+bool is_equal(std::string_view sv, const std::string &str, CharEqual charEqual)
+{
+    return is_equal(sv, std::string_view(str.data(), str.size()), charEqual);
+}
+
+//----------------------------------------------------------------------------
+template<typename CharEqual>
+bool is_equal(const std::string &str, std::string_view sv, CharEqual charEqual)
+{
+    return is_equal_ci(sv, std::string_view(str.data(), str.size()), charEqual);
+}
+
+//----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
+// Модифицирует содержимое вьюхи, забивая все непробельные символы
+// Так издеваться можно только над вьюхами, которые сделаны из неконстантных массивов/строк
+// Вполне можно использовать, если часть строк в тексте, которые представлены вьюхами, надо забить пробелами
+inline
+void make_string_view_space_only(std::string_view &sv)
+{
+    auto ptr = const_cast<char*>(sv.data());
+    for(std::size_t i=0u; i!=sv.size(); ++i)
+    {
+        ptr[i] = ' ';
+    }
+}
+
+//----------------------------------------------------------------------------
+
+
+
+
+//----------------------------------------------------------------------------
+// Про YAML - https://habr.com/ru/articles/710414/
+// JSON - https://www.json.org/json-en.html
+// The Jekyll static site generator popularized YAML front matter which is deliminated by YAML section markers.
+inline
+bool extractYamlFrontMatter(std::vector<std::string_view> &svVec, std::vector<std::string> *pfm=0)
+{
+    if (svVec.empty())
+        return false;
+
+    const std::string_view hiphenus = "---";
+    if (svVec[0]!=hiphenus)
+        return false;
+
+    std::size_t idx = 1;
+    for(; idx!=svVec.size(); ++idx)
+    {
+        if (svVec[idx]==hiphenus)
+        {
+            if (pfm)
+                *pfm = std::vector<std::string>(svVec.begin()+std::ptrdiff_t(1), svVec.begin()+std::ptrdiff_t(idx));
+            std::size_t size = idx+1;
+            for(idx=0; idx!=size; ++idx)
+            {
+                make_string_view_space_only(svVec[idx]);
+                //svVec[idx] = std::string_view();
+            }
+            return true;
+        }
+    }
+
+    return false;
+}
+
+//----------------------------------------------------------------------------
+// Строки должны быть rtrimmed
+inline
+bool extractMarkeredPart(std::vector<std::string_view> &svVec, const std::string &startMarker, const std::string &endMarker, bool ci, std::vector<std::string> *pMarkered=0)
+{
+    auto isEqual = [&](auto s1, auto s2)
+    {
+        return is_equal( s1, s2, [&](char ch1, char ch2) { return is_equal_chars(ch1, ch2, ci); });
+    };
+
+
+    std::size_t idx = 0;
+    for(; idx!=svVec.size(); ++idx)
+    {
+        if (isEqual(svVec[idx], startMarker)) 
+           break;
+    }
+
+    if (idx==svVec.size())
+        return false;
+
+    std::size_t idxStart = idx;
+
+    for(++idx; idx!=svVec.size(); ++idx)
+    {
+        if (isEqual(svVec[idx], endMarker)) 
+           break;
+
+    }
+
+    if (idx==svVec.size())
+        return false;
+
+    std::size_t idxEnd = idx+1;
+
+    if (pMarkered)
+    {
+        *pMarkered = std::vector<std::string>(svVec.begin()+std::ptrdiff_t(idxStart), svVec.begin()+std::ptrdiff_t(idxEnd));
+    }
+
+    for(idx=idxStart; idx!=idxEnd; ++idx)
+    {
+        make_string_view_space_only(svVec[idx]);
+    }
+
+    return true;
+}
+
+//----------------------------------------------------------------------------
 
 
 
