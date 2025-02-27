@@ -1597,16 +1597,68 @@ std::vector<std::string_view> stripLinefeedsFromStringViewsVector(const std::vec
 
 
 //----------------------------------------------------------------------------
+inline std::string_view removePrefix(std::string_view &sv, std::size_t n) { sv.remove_prefix(n); return sv; }
+inline std::string_view removeSuffix(std::string_view &sv, std::size_t n) { sv.remove_suffix(n); return sv; }
+
+inline std::string removePrefix(std::string &str, std::size_t n)
+{
+    // basic_string& erase( size_type index = 0, size_type count = npos );
+    // https://en.cppreference.com/w/cpp/string/basic_string/erase
+
+    if (n>str.size())
+        n = str.size(); // Для строк - не задаём вопросов
+
+    str.erase(0, n);
+
+    return str;
+}
+
+inline std::string removeSuffix(std::string &str, std::size_t n)
+{
+    // basic_string& erase( size_type index = 0, size_type count = npos );
+    // https://en.cppreference.com/w/cpp/string/basic_string/erase
+
+    if (n>str.size())
+        n = str.size(); // Для строк - не задаём вопросов
+
+    str.erase(str.size()-n /* , n */ ); // Удаляем до конца
+
+    return str;
+}
+
+
+
+
+//----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
+template<typename IteratorType>
+std::size_t ltrim_distance(IteratorType b, IteratorType e)
+{
+    std::size_t idx = 0;
+    for(; b!=e; ++b, ++idx)
+    {
+        if (!(*b==' ' || *b=='\t' || *b=='\r' || *b=='\n'))
+            break;
+    }
+    return idx;
+}
+
+//----------------------------------------------------------------------------
+template<typename SomethingStringLike>
+std::size_t ltrim_distance(const SomethingStringLike &str)
+{
+    return ltrim_distance(str.begin(), str.end());
+}
+
+//----------------------------------------------------------------------------
 inline
 void ltrim(std::string_view &sv)
 {
-    std::size_t idx = 0;
-    for(; idx!=sv.size(); ++idx)
-    {
-        if (!(sv[idx]==' ' || sv[idx]=='\t' || sv[idx]=='\r' || sv[idx]=='\n'))
-            break;
-    }
-    sv.remove_prefix(idx);
+    //sv.remove_prefix(ltrim_distance(sv.begin(), sv.end()));
+    removePrefix(sv, ltrim_distance(sv.begin(), sv.end()));
 }
 
 //----------------------------------------------------------------------------
@@ -1618,18 +1670,46 @@ std::string_view ltrim_copy(std::string_view sv)
 }
 
 //----------------------------------------------------------------------------
+template<typename IteratorType>
+std::size_t rtrim_distance(IteratorType b, IteratorType e)
+{
+    IteratorType bcp = b;
+    std::size_t idx = 0;
+    //for(; e!=b; --e, ++idx)
+    //for(; e--!=b; ++idx)
+    for(; e!=b; ++idx)
+    {
+        e--;
+        if (!(*e==' ' || *e=='\t' || *e=='\r' || *e=='\n'))
+            return idx;
+    }
+    //return std::distance(bcp, e);
+    return idx;
+}
+
+//----------------------------------------------------------------------------
+template<typename SomethingStringLike>
+std::size_t rtrim_distance(const SomethingStringLike &str)
+{
+    return rtrim_distance(str.begin(), str.end());
+}
+
+//----------------------------------------------------------------------------
 inline
 void rtrim(std::string_view &sv)
 {
-    std::size_t idx = sv.size();
-    while(idx-->0)
-    {
-        if (!(sv[idx]==' ' || sv[idx]=='\t' || sv[idx]=='\r' || sv[idx]=='\n'))
-            break;
-    }
+    // std::size_t idx = sv.size();
+    // while(idx-->0)
+    // {
+    //     if (!(sv[idx]==' ' || sv[idx]=='\t' || sv[idx]=='\r' || sv[idx]=='\n'))
+    //         break;
+    // }
+    //  
+    // std::size_t rmSize = sv.size()-idx-1;
+    // sv.remove_suffix(rmSize);
+    // sv.remove_suffix(rtrim_distance(sv.begin(), sv.end()));
 
-    std::size_t rmSize = sv.size()-idx-1;
-    sv.remove_suffix(rmSize);
+    removeSuffix(sv, rtrim_distance(sv.begin(), sv.end()));
 }
 
 //----------------------------------------------------------------------------
@@ -1785,7 +1865,6 @@ void make_string_view_space_only(std::string_view &sv)
 
 
 
-
 //----------------------------------------------------------------------------
 // Про YAML - https://habr.com/ru/articles/710414/
 // JSON - https://www.json.org/json-en.html
@@ -1797,13 +1876,13 @@ bool extractYamlFrontMatter(std::vector<std::string_view> &svVec, std::vector<st
         return false;
 
     const std::string_view hiphenus = "---";
-    if (svVec[0]!=hiphenus)
+    if (rtrim_copy(svVec[0])!=hiphenus)
         return false;
 
     std::size_t idx = 1;
     for(; idx!=svVec.size(); ++idx)
     {
-        if (svVec[idx]==hiphenus)
+        if (rtrim_copy(svVec[idx])==hiphenus)
         {
             if (pfm)
                 *pfm = std::vector<std::string>(svVec.begin()+std::ptrdiff_t(1), svVec.begin()+std::ptrdiff_t(idx));
@@ -1834,7 +1913,7 @@ bool extractMarkeredPart(std::vector<std::string_view> &svVec, const std::string
     std::size_t idx = 0;
     for(; idx!=svVec.size(); ++idx)
     {
-        if (isEqual(svVec[idx], startMarker)) 
+        if (isEqual(rtrim_copy(svVec[idx]), startMarker))
            break;
     }
 
@@ -1845,9 +1924,8 @@ bool extractMarkeredPart(std::vector<std::string_view> &svVec, const std::string
 
     for(++idx; idx!=svVec.size(); ++idx)
     {
-        if (isEqual(svVec[idx], endMarker)) 
+        if (isEqual(rtrim_copy(svVec[idx]), endMarker))
            break;
-
     }
 
     if (idx==svVec.size())
@@ -1870,6 +1948,80 @@ bool extractMarkeredPart(std::vector<std::string_view> &svVec, const std::string
 
 //----------------------------------------------------------------------------
 
+
+
+//----------------------------------------------------------------------------
+
+// inline std::string_view removePrefix(std::string_view &sv, std::size_t n) { sv.remove_prefix(n); return sv; }
+// inline std::string_view removeSuffix(std::string_view &sv, std::size_t n) { sv.remove_suffix(n); return sv; }
+//  
+// inline std::string removePrefix(std::string &str, std::size_t n)
+
+
+
+
+// rtrim_distance
+// template<typename StringType>
+// void stringSpaceConcatHelper(StringType &concatTo, const StringType &str)
+// {
+//  
+// }
+
+//----------------------------------------------------------------------------
+// Разбирает ямловский заголовок, считая, что один параметр - ровно одна строка. Значения тэгов приводятся к нижнему регистру и кладутся в мапу
+// Возвращает true, если был найден хоть один тэг
+// inline
+bool simpleParseYamlFrontMatter(const std::vector<std::string> &lines, std::unordered_map<std::string, std::string> &tags)
+{
+    UMBA_USED(lines);
+    UMBA_USED(tags);
+
+    if (lines.empty())
+        return false;
+
+    std::size_t baseIndent = 0;
+
+    std::size_t lineIdx = 0;
+
+    // Ищем базовый отступ
+    for(; lineIdx!=lines.size(); ++lineIdx)
+    {
+        auto ltrDistance = ltrim_distance(lines[lineIdx]);
+        if (ltrDistance>=lines[lineIdx].size()) // строка пустая
+            continue;
+        if (ltrDistance>baseIndent)
+        {
+            baseIndent = ltrDistance;
+            break;
+        }
+    }
+
+    std::string lastKey;
+
+    // Базовый отступ есть, если строка имеет другой отступ, она конкатенируется к предыдущей
+    for(; lineIdx!=lines.size(); ++lineIdx)
+    {
+        auto ltrDistance = ltrim_distance(lines[lineIdx]);
+        if (ltrDistance!=baseIndent)
+        {
+            // Присобачиваем к предыдущему в хвост, в любом случае
+        }
+
+    }
+    
+
+// std::size_t rtrim_distance(const SomethingStringLike &str)
+
+    // for(const auto &l : lines)
+    // {
+    //     auto colonPos = l.find(':');
+    //     if (colonPos==l.npos)
+    //  
+    //  
+    // }
+ 
+    return false; // tags.size();
+}
 
 
 //----------------------------------------------------------------------------
