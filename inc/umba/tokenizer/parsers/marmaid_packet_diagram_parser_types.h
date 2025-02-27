@@ -1648,32 +1648,18 @@ std::size_t ltrim_distance(IteratorType b, IteratorType e)
 
 //----------------------------------------------------------------------------
 template<typename SomethingStringLike>
-std::size_t ltrim_distance(const SomethingStringLike &str)
-{
-    return ltrim_distance(str.begin(), str.end());
-}
+std::size_t ltrim_distance(const SomethingStringLike &str) { return ltrim_distance(str.begin(), str.end()); }
 
-//----------------------------------------------------------------------------
-inline
-void ltrim(std::string_view &sv)
-{
-    //sv.remove_prefix(ltrim_distance(sv.begin(), sv.end()));
-    removePrefix(sv, ltrim_distance(sv.begin(), sv.end()));
-}
-
-//----------------------------------------------------------------------------
-inline
-std::string_view ltrim_copy(std::string_view sv)
-{
-    ltrim(sv);
-    return sv;
-}
+inline void             ltrim     (std::string_view &sv)   { removePrefix(sv, ltrim_distance(sv.begin(), sv.end())); }
+inline std::string_view ltrim_copy(std::string_view  sv)   { ltrim(sv); return sv; }
+inline void             ltrim     (std::string      &sv)   { removePrefix(sv, ltrim_distance(sv.begin(), sv.end())); }
+inline std::string      ltrim_copy(std::string       sv)   { ltrim(sv); return sv; }
 
 //----------------------------------------------------------------------------
 template<typename IteratorType>
 std::size_t rtrim_distance(IteratorType b, IteratorType e)
 {
-    IteratorType bcp = b;
+    // IteratorType bcp = b;
     std::size_t idx = 0;
     //for(; e!=b; --e, ++idx)
     //for(; e--!=b; ++idx)
@@ -1687,17 +1673,6 @@ std::size_t rtrim_distance(IteratorType b, IteratorType e)
     return idx;
 }
 
-//----------------------------------------------------------------------------
-template<typename SomethingStringLike>
-std::size_t rtrim_distance(const SomethingStringLike &str)
-{
-    return rtrim_distance(str.begin(), str.end());
-}
-
-//----------------------------------------------------------------------------
-inline
-void rtrim(std::string_view &sv)
-{
     // std::size_t idx = sv.size();
     // while(idx-->0)
     // {
@@ -1709,38 +1684,28 @@ void rtrim(std::string_view &sv)
     // sv.remove_suffix(rmSize);
     // sv.remove_suffix(rtrim_distance(sv.begin(), sv.end()));
 
-    removeSuffix(sv, rtrim_distance(sv.begin(), sv.end()));
-}
 
 //----------------------------------------------------------------------------
-inline
-std::string_view rtrim_copy(std::string_view sv)
-{
-    rtrim(sv);
-    return sv;
-}
+template<typename SomethingStringLike>
+std::size_t rtrim_distance(const SomethingStringLike &str) { return rtrim_distance(str.begin(), str.end()); }
+
+inline void             rtrim     (std::string_view &sv)   { removeSuffix(sv, rtrim_distance(sv.begin(), sv.end())); }
+inline std::string_view rtrim_copy(std::string_view  sv)   { rtrim(sv); return sv; }
+inline void             rtrim     (std::string      &sv)   { removeSuffix(sv, rtrim_distance(sv.begin(), sv.end())); }
+inline std::string      rtrim_copy(std::string       sv)   { rtrim(sv); return sv; }
 
 //----------------------------------------------------------------------------
-inline
-void trim(std::string_view &sv)
-{
-    ltrim(sv);
-    rtrim(sv);
-}
-
-//----------------------------------------------------------------------------
-inline
-std::string_view trim_copy(std::string_view sv)
-{
-    return ltrim_copy(rtrim_copy(sv));
-}
+inline void             trim      (std::string_view &sv)   { ltrim(sv); rtrim(sv); }
+inline std::string_view trim_copy (std::string_view  sv)   { return ltrim_copy(rtrim_copy(sv)); }
+inline void             trim      (std::string      &sv)   { ltrim(sv); rtrim(sv); }
+inline std::string      trim_copy (std::string       sv)   { return ltrim_copy(rtrim_copy(sv)); }
 
 //----------------------------------------------------------------------------
 inline
 void rtrim(std::vector<std::string_view> &svVec)
 {
     for(auto &sv : svVec)
-        trim(sv);
+        rtrim(sv);
 }
 
 //----------------------------------------------------------------------------
@@ -1951,21 +1916,17 @@ bool extractMarkeredPart(std::vector<std::string_view> &svVec, const std::string
 
 
 //----------------------------------------------------------------------------
+template<typename StringType>
+StringType concat_copy(const StringType &s1, const StringType &s2, const StringType &sep)
+{
+    return rtrim_copy(s1) + sep + ltrim_copy(s2);
+}
 
-// inline std::string_view removePrefix(std::string_view &sv, std::size_t n) { sv.remove_prefix(n); return sv; }
-// inline std::string_view removeSuffix(std::string_view &sv, std::size_t n) { sv.remove_suffix(n); return sv; }
-//  
-// inline std::string removePrefix(std::string &str, std::size_t n)
-
-
-
-
-// rtrim_distance
-// template<typename StringType>
-// void stringSpaceConcatHelper(StringType &concatTo, const StringType &str)
-// {
-//  
-// }
+template<typename StringType>
+void concat(StringType &concatTo, const StringType &str, const StringType &sep)
+{
+    concatTo = concat_copy(concatTo, str, sep);
+}
 
 //----------------------------------------------------------------------------
 // Разбирает ямловский заголовок, считая, что один параметр - ровно одна строка. Значения тэгов приводятся к нижнему регистру и кладутся в мапу
@@ -1990,38 +1951,61 @@ bool simpleParseYamlFrontMatter(const std::vector<std::string> &lines, std::unor
         if (ltrDistance>=lines[lineIdx].size()) // строка пустая
             continue;
         if (ltrDistance>baseIndent)
-        {
             baseIndent = ltrDistance;
-            break;
-        }
+        break;
     }
 
     std::string lastKey;
 
     // Базовый отступ есть, если строка имеет другой отступ, она конкатенируется к предыдущей
-    for(; lineIdx!=lines.size(); ++lineIdx)
+    for(lineIdx=0; lineIdx!=lines.size(); ++lineIdx)
     {
-        auto ltrDistance = ltrim_distance(lines[lineIdx]);
+        const auto &line = lines[lineIdx];
+        auto ltrDistance = ltrim_distance(line);
         if (ltrDistance!=baseIndent)
         {
-            // Присобачиваем к предыдущему в хвост, в любом случае
+            concat(tags[lastKey], trim_copy(line), std::string(" "));
         }
-
+        else
+        {
+            auto colonPos = line.find(':');
+            if (colonPos==line.npos)
+            {
+                lastKey = tolower_copy(trim_copy(line));
+            }
+            else
+            {
+                lastKey       = tolower_copy(trim_copy(std::string(line, 0, colonPos)));
+                tags[lastKey] = trim_copy(std::string(line, colonPos+1, line.npos));
+            }
+        }
     }
     
-
-// std::size_t rtrim_distance(const SomethingStringLike &str)
-
-    // for(const auto &l : lines)
-    // {
-    //     auto colonPos = l.find(':');
-    //     if (colonPos==l.npos)
-    //  
-    //  
-    // }
- 
-    return false; // tags.size();
+    return tags.size();
 }
+
+//----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
+// text must be LF only
+inline
+void prepareTextForDiagramParsing(const std::string &text, std::vector<std::string> *pStyle, std::unordered_map<std::string, std::string> *pFmTags)
+{
+    auto viewsVec = rtrim_copy(makeTextStringViewsHelper(text));
+
+    std::vector<std::string> fmLines;
+    if (extractYamlFrontMatter(viewsVec, &fmLines) && pFmTags)
+    {
+        simpleParseYamlFrontMatter(fmLines, *pFmTags);
+    }
+
+    extractMarkeredPart(viewsVec, "<style>", "</style>", true, pStyle);
+}
+
+//----------------------------------------------------------------------------
+
 
 
 //----------------------------------------------------------------------------
