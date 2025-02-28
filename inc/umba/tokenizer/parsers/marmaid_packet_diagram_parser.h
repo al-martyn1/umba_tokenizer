@@ -83,6 +83,11 @@ public:
     {
     }
 
+    void setDiagramTitle(const std::string &t)
+    {
+         diagram.title = t;
+    }
+
     PacketDiagramType getDiagram() const
     {
         auto diagramCopy = diagram;
