@@ -1931,7 +1931,7 @@ void concat(StringType &concatTo, const StringType &str, const StringType &sep)
 //----------------------------------------------------------------------------
 // Разбирает ямловский заголовок, считая, что один параметр - ровно одна строка. Значения тэгов приводятся к нижнему регистру и кладутся в мапу
 // Возвращает true, если был найден хоть один тэг
-// inline
+inline
 bool simpleParseYamlFrontMatter(const std::vector<std::string> &lines, std::unordered_map<std::string, std::string> &tags)
 {
     UMBA_USED(lines);
@@ -1981,7 +1981,7 @@ bool simpleParseYamlFrontMatter(const std::vector<std::string> &lines, std::unor
         }
     }
     
-    return tags.size();
+    return !tags.empty();
 }
 
 //----------------------------------------------------------------------------
