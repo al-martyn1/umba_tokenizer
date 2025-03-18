@@ -1,0 +1,14 @@
+invalid,unknown,undefined         = -1
+
+none                              =  0
+singleByteNumbers                 =  1 // Show byte numbers for single bytes
+noSingleByteNumbers                    // Don't show byte numbers for single bytes
+singleByteBlockNumbers                 // Show byte numbers in single byte blocks
+noSingleByteBlockNumbers               // Don't show byte numbers in single byte blocks
+byteNumbers                            // Show byte numbers for bytes in words
+noByteNumbers                          // Don't show byte numbers for bytes in words
+splitWordsToBytes,splitWords           // Split words to single bytes with vertical lines
+noSplitWordsToBytes,noSplitWords       // Don't split words to single bytes with vertical lines
+rangeAsChars                           // Display ranges as char sequences
+rangeAsBytes                           // Display ranges as byte/uint8 sequences
+

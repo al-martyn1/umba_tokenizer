@@ -69,7 +69,8 @@
 #define MARMAID_TOKEN_DIRECTIVE_TITLE                          (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x002u)  /* title  */
 #define MARMAID_TOKEN_DIRECTIVE_NATIVE                         (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x003u)  /* native */
 #define MARMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH                  (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x004u)  /* width  */
-#define MARMAID_TOKEN_DIRECTIVE_ORG                            (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x005u)  /* width  */
+#define MARMAID_TOKEN_DIRECTIVE_DISPLAY_OPTIONS                (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x005u)  /* display-options  */
+#define MARMAID_TOKEN_DIRECTIVE_ORG                            (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x006u)  /* width  */
 // #define MARMAID_TOKEN_DIRECTIVE_                          (MARMAID_TOKEN_SET_DIRECTIVES_FIRST+0x000u)  /*  */
 
 //----------------------------------------------------------------------------

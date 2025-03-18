@@ -115,6 +115,7 @@ struct PacketDiagramTokenizerConfigurator
                                                                                     , {"title"                      , MARMAID_TOKEN_DIRECTIVE_TITLE            }
                                                                                     , {"native"                     , MARMAID_TOKEN_DIRECTIVE_NATIVE           }
                                                                                     , {"display-width"              , MARMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH    }
+                                                                                    , {"display-options"            , MARMAID_TOKEN_DIRECTIVE_DISPLAY_OPTIONS  }
                                                                                     , {"org"                        , MARMAID_TOKEN_DIRECTIVE_ORG              }
 
                                                                                     , {"byte-diagram"               , MARMAID_TOKEN_ATTR_BYTE_DIA              }

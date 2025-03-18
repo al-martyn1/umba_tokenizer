@@ -93,10 +93,13 @@ void simplePrintCppPacketDiagram( StreamType &oss
                                 , std::size_t itemIndent=4
                                 , std::size_t typeFieldWidth=16
                                 , std::size_t nameFieldWidth=24
+                                , bool noPragmaPackComments = false
                                 )
 {
     std::string structName = marty_cpp::formatName( diagram.getCppOrCTitle(fCpp), structStyle, true /* fixStartDigit */ , true /* fixKeywords */ );
     auto indentStr = std::string(indent, ' ');
+    if (!noPragmaPackComments)
+        oss << indentStr << "/* #pragma pack(push,1) */\n";
     oss << indentStr << "struct " << structName << "\n";
     oss << indentStr << "{\n";
 
@@ -144,7 +147,10 @@ void simplePrintCppPacketDiagram( StreamType &oss
     }
 
     oss << "\n";
-    oss << indentStr << "}; // struct " << structName << "\n\n";
+    oss << indentStr << "}; // struct " << structName << "\n";
+    if (!noPragmaPackComments)
+        oss << indentStr << "/* #pragma pack(pop) */\n";
+    oss << "\n";
 
 }
 
@@ -159,6 +165,7 @@ void printCppPacketDiagram( StreamType &oss
                           , std::size_t itemIndent=4
                           , std::size_t typeFieldWidth=16
                           , std::size_t nameFieldWidth=24
+                          , bool noPragmaPackComments = false
                           )
 {
     std::vector<PacketDiagram<TokenCollectionItemType>> simpleVec = diagram.splitToSimple();
@@ -176,6 +183,7 @@ void printCppPacketDiagram( StreamType &oss
                                    , itemIndent
                                    , typeFieldWidth
                                    , nameFieldWidth
+                                   , noPragmaPackComments
                                    );
         oss << "\n";
     }
@@ -191,6 +199,7 @@ void printCppPacketDiagram( StreamType &oss
                                , itemIndent
                                , typeFieldWidth
                                , nameFieldWidth
+                               , noPragmaPackComments
                                );
 }
 

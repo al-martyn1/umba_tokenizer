@@ -283,7 +283,7 @@ public:
 
                 // Вроде всё необходимое задано для гэп записи
 
-                gapItem.text = "fill_" + std::to_string(diagram.fillEntryCounter);
+                gapItem.text = "Fill_" + std::to_string(diagram.fillEntryCounter);
                 ++diagram.fillEntryCounter;
 
                 diagram.data.emplace_back(gapItem); // Добавляем gap fill
@@ -690,7 +690,7 @@ public:
         if (!checkExactTokenType(pTokenInfo, {MARMAID_TOKEN_ATTR_BYTE_DIA, MARMAID_TOKEN_ATTR_BIT_DIA, MARMAID_TOKEN_ATTR_MEMORY_DIA, MARMAID_TOKEN_ATTR_BYTE, MARMAID_TOKEN_ATTR_BIT, UMBA_TOKENIZER_TOKEN_LINEFEED}, "invalid 'packet-beta' directive options"))
             return 0;
 
-        if ((diagram.parsingOptions&DiagramParsingOptions::allowOverrideType)!=0u)
+        if ((diagram.parsingOptions&PacketDiagramParsingOptions::allowOverrideType)!=0u)
         {
             switch(pTokenInfo->tokenType)
             {
@@ -707,7 +707,7 @@ public:
         return BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     }
 
-    //! Разбор директивы packet-beta. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
+    //! Разбор директивы display-width. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
     const TokenInfoType* parseDisplayWidthDirective(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo)
     {
         // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
@@ -724,9 +724,55 @@ public:
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
-        if ((diagram.parsingOptions&DiagramParsingOptions::allowOverrideDisplayWidth)!=0u)
+        if ((diagram.parsingOptions&PacketDiagramParsingOptions::allowOverrideDisplayWidth)!=0u)
         {
             diagram.displayWidth = displayWidth;
+        }
+
+        return pTokenInfo;
+    }
+
+    //! Разбор директивы display-options. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
+    const TokenInfoType* parseDisplayOptionsDirective(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo)
+    {
+        // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
+
+        std::size_t optCnt = 0;
+
+        pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+        while(pTokenInfo)
+        {
+            if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER, UMBA_TOKENIZER_TOKEN_LINEFEED}, "'display-options' directive: invalid option value"))
+                return 0;
+
+            if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_LINEFEED)
+            {
+                if (!optCnt)
+                    return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER}, "'display-options' directive: use 'none' for empty options list"), (const TokenInfoType*)0;
+                return pTokenInfo;
+            }
+
+            // Тут у нас только UMBA_TOKENIZER_TOKEN_IDENTIFIER
+            ++optCnt;
+
+            auto pTokenParsedData = BaseClass::getTokenParsedData(pTokenInfo);
+
+            // Тут обрабатываем данные идентификатора
+            // UMBA_USED(pTokenParsedData);
+
+            auto identifierData = std::get<typename TokenizerType::IdentifierDataHolder>(*pTokenParsedData);
+            string_type identifierStr = string_type(identifierData.pData->value);
+            // UMBA_USED(identifierData);
+            // UMBA_USED(identifierStr);
+
+            auto optVal = enum_deserialize(identifierStr, PacketDiagramDisplayOptions::invalid);
+            if (optVal==PacketDiagramDisplayOptions::invalid)
+                return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER}, "'display-options' directive: unknown option"), (const TokenInfoType*)0;
+
+            diagram.setOptionFlag(optVal);
+
+            pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+
         }
 
         return pTokenInfo;
@@ -831,7 +877,7 @@ public:
 
         //allowOverrideType
 
-        if ((diagram.parsingOptions&DiagramParsingOptions::allowOverrideTitle)!=0u)
+        if ((diagram.parsingOptions&PacketDiagramParsingOptions::allowOverrideTitle)!=0u)
         {
             const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
             auto rawData = std::get<typename tokenizer_type::RawDataHolder>(*pParsedData);
@@ -957,7 +1003,7 @@ public:
 
             if (endianness!=Endianness::undefined)
             {
-                if ((diagram.parsingOptions&DiagramParsingOptions::allowOverrideEndianness)!=0u)
+                if ((diagram.parsingOptions&PacketDiagramParsingOptions::allowOverrideEndianness)!=0u)
                 {
                     diagram.endianness = endianness;
                 }
@@ -1486,6 +1532,7 @@ public:
     
                 if (!umba::TheValue(pTokenInfo->tokenType).oneOf( MARMAID_TOKEN_DIRECTIVE_NATIVE
                                                                 , MARMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH
+                                                                , MARMAID_TOKEN_DIRECTIVE_DISPLAY_OPTIONS
                                                                 , MARMAID_TOKEN_DIRECTIVE_ORG
                                                                 )
                    )
@@ -1508,6 +1555,13 @@ public:
                     if (!diagram.isDataEmpty())
                         return BaseClass::logMessage( pTokenInfo, "unexpected-display-width", "'display-width' directive must follow before the data records definition" ), false;
                     pTokenInfo = parseDisplayWidthDirective(tokenPos, pTokenInfo);
+                }
+
+                else if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_DISPLAY_OPTIONS)
+                {
+                    if (!diagram.isDataEmpty())
+                        return BaseClass::logMessage( pTokenInfo, "unexpected-display-options", "'display-options' directive must follow before the data records definition" ), false;
+                    pTokenInfo = parseDisplayOptionsDirective(tokenPos, pTokenInfo);
                 }
 
                 else if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_ORG)

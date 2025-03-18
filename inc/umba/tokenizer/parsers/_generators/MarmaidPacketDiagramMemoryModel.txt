@@ -1,0 +1,4 @@
+invalid,unknown,undefined = -1
+
+linear,flat     = 0
+segmented

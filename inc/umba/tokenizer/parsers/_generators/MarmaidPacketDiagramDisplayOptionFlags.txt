@@ -1,0 +1,10 @@
+invalid=-1
+
+none                            = 0
+singleByteNumbers               = 1    // Show byte numbers for single bytes
+singleByteBlockNumbers                 // Show byte numbers for single byte blocks (arrays)
+byteNumbers                            // Show byte numbers for bytes in words
+splitWordsToBytes,splitWords           // Split words to single bytes with vertical lines
+rangeAsChars                           // Default type for ranges is byte/uint8, use rangeAsChars to switch display mode to chars
+
+

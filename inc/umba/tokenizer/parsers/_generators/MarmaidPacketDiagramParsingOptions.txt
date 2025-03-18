@@ -1,0 +1,12 @@
+invalid,unknown,undefined = -1
+
+none = 0
+allowOverrideTitle = 1
+allowOverrideType
+allowOverrideEndianness
+allowOverrideBitSize
+allowOverrideDisplayWidth
+allowOverrideDisplayOptionFlags
+
+all = allowOverrideTitle | allowOverrideType | allowOverrideEndianness | allowOverrideBitSize | allowOverrideDisplayWidth | allowOverrideDisplayOptionFlags
+

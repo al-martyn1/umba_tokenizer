@@ -1,0 +1,5 @@
+invalid,unknown,undefined = -1
+
+bitDiagram
+byteDiagram
+memDiagram

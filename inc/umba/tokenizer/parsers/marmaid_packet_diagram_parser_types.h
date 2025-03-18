@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include "marmaid_packet_diagram_enums.h"
+//
 #include "umba/string.h"
 //
 
@@ -54,53 +56,33 @@ namespace marmaid {
 
 
 //----------------------------------------------------------------------------
-enum class DiagramParsingOptions : std::uint32_t
-{
-    none                          = 0x00,
-    allowOverrideTitle            = 0x01,
-    allowOverrideType             = 0x02, // diagramType
-    allowOverrideEndianness       = 0x04,
-    allowOverrideBitSize          = 0x08,
-    allowOverrideDisplayWidth     = 0x10,
-    //allowMultiHex   = 0x04
+// using DiagramDisplayOptionFlags     = umba::tokenizer::MarmaidPacketDiagramDisplayOptionFlags;
+// using DiagramDisplayOptions         = umba::tokenizer::EMarmaidPacketDiagramDisplayOptions   ;
+// using DiagramParsingOptions         = umba::tokenizer::MarmaidPacketDiagramParsingOptions    ;
+// using EPacketDiagramType            = umba::tokenizer::EMarmaidPacketDiagramType             ;
+// using EMemoryModel                  = umba::tokenizer::EMarmaidPacketDiagramMemoryModel      ;
 
-    all = allowOverrideTitle | allowOverrideType | allowOverrideEndianness | allowOverrideBitSize | allowOverrideDisplayWidth
-
-}; // enum class DiagramParsingOptions : std::uint32_t
-
-UMBA_ENUM_CLASS_IMPLEMENT_FLAG_OPERATORS(DiagramParsingOptions)
-
-//----------------------------------------------------------------------------
-enum class EPacketDiagramType
-{
-    unknown, invalid = unknown, undefined = unknown,
-    bitDiagram, byteDiagram, memDiagram     // Memory diagram/layout
-};
-
-enum class EMemoryModel
-{
-    unknown, invalid = unknown, undefined = unknown,
-    linear, flat=linear, segmented
-};
+using EPacketDiagramType            = PacketDiagramType;
+using EMemoryModel                  = MemoryModel      ;
 
 //----------------------------------------------------------------------------
 enum class EPacketDiagramItemType
 {
-    unknown, invalid = unknown, undefined = unknown,
+    unknown=-1, invalid = unknown, undefined = unknown,
     singleValue, range, explicitType, org
 };
 
 //----------------------------------------------------------------------------
 enum class EOrgType
 {
-    unknown, invalid = unknown, undefined = unknown,
+    unknown=-1, invalid = unknown, undefined = unknown,
     orgAuto, orgAbs, orgRel
 };
 
 //----------------------------------------------------------------------------
 enum class Endianness
 {
-    unknown, invalid = unknown, undefined = unknown,
+    unknown=-1, invalid = unknown, undefined = unknown,
     littleEndian, bigEndian, middleEndian, leMiddleEndian, beMiddleEndian
 };
 
@@ -218,6 +200,7 @@ struct PacketDiagramItem
     bool                            emptyOrg      = false; // no data records after this
     bool                            textGenerated = false; // text is auto-generated
     bool                            asciiZet      = false; // can be used only with ranges or byte/char arrays
+    // bool                            charsRange    = false; // used only with ranges or byte/char arrays, 
 
     Endianness                      endianness   = Endianness::undefined; // use project endianness or override endianness for this entry
     AddressRange                    addressRange; // Если указан тип - вычисляем при добавлении, 
@@ -234,77 +217,6 @@ struct PacketDiagramItem
                                                                 // реальный индекс.
 
     const TokenCollectionItemType   *pTokenInfo = 0; // стартовый токен, можно получить номер строки
-
-
-    bool isOrgEntry() const
-    {
-        return itemType==EPacketDiagramItemType::org;
-    }
-
-    bool isFillEntry() const
-    {
-        return fillEntry;
-    }
-
-    bool isDataEntry() const
-    {
-        return itemType==EPacketDiagramItemType::explicitType
-            || itemType==EPacketDiagramItemType::singleValue
-            || itemType==EPacketDiagramItemType::range
-             ;
-    }
-
-    // Только размер типа
-    std::uint64_t getTypeSize() const
-    {
-        if (itemType==EPacketDiagramItemType::explicitType)
-            return std::size_t(explicitTypeTokenId&0x0F);
-        else if (itemType==EPacketDiagramItemType::singleValue || itemType==EPacketDiagramItemType::range)
-            return 1;
-        UMBA_ASSERT_FAIL_MSG("Not a data entry");
-        return 0;
-    }
-
-    bool isArray() const
-    {
-        if (itemType==EPacketDiagramItemType::explicitType)
-            return (arraySize==std::uint64_t(-1)) ? false : true;
-
-        else if (itemType==EPacketDiagramItemType::singleValue)
-            return false;
-
-        else if (itemType==EPacketDiagramItemType::range)
-            return true;
-
-        UMBA_ASSERT_FAIL_MSG("Not a data entry");
-        return false;
-    }
-
-    bool isAsciiZet() const
-    {
-        return asciiZet;
-    }
-
-    std::uint64_t getArraySize() const
-    {
-        if (itemType==EPacketDiagramItemType::explicitType)
-            return (arraySize==std::uint64_t(-1)) ? std::uint64_t(1) : arraySize;
-
-        else if (itemType==EPacketDiagramItemType::singleValue)
-            return 1;
-
-        else if (itemType==EPacketDiagramItemType::range)
-            return addressRange.end - addressRange.start+1;
-
-        UMBA_ASSERT_FAIL_MSG("Not a data entry");
-        return 0;
-    }
-
-    // Размер типа * кол-во элеметов
-    std::uint64_t getTypeFieldSize() const
-    {
-        return getArraySize()*getTypeSize();
-    }
 
 
     std::string getPlainTypeName() const // For plain C
@@ -352,6 +264,84 @@ struct PacketDiagramItem
             default: return true;
         }
     }
+
+    bool isOrgEntry() const
+    {
+        return itemType==EPacketDiagramItemType::org;
+    }
+
+    bool isFillEntry() const
+    {
+        return fillEntry;
+    }
+
+    bool isDataEntry() const
+    {
+        return itemType==EPacketDiagramItemType::explicitType
+            || itemType==EPacketDiagramItemType::singleValue
+            || itemType==EPacketDiagramItemType::range
+             ;
+    }
+
+    bool isArray() const
+    {
+        if (itemType==EPacketDiagramItemType::explicitType)
+            return (arraySize==std::uint64_t(-1)) ? false : true;
+
+        else if (itemType==EPacketDiagramItemType::singleValue)
+            return false;
+
+        else if (itemType==EPacketDiagramItemType::range)
+            return true;
+
+        UMBA_ASSERT_FAIL_MSG("Not a data entry");
+        return false;
+    }
+
+    bool isByteRange() const
+    {
+        if (itemType==EPacketDiagramItemType::range)
+            return true;
+        return false;
+    }
+
+    bool isAsciiZet() const
+    {
+        return asciiZet;
+    }
+
+    // Только размер типа
+    std::uint64_t getTypeSize() const
+    {
+        if (itemType==EPacketDiagramItemType::explicitType)
+            return std::size_t(explicitTypeTokenId&0x0F);
+        else if (itemType==EPacketDiagramItemType::singleValue || itemType==EPacketDiagramItemType::range)
+            return 1;
+        UMBA_ASSERT_FAIL_MSG("Not a data entry");
+        return 0;
+    }
+
+    std::uint64_t getArraySize() const
+    {
+        if (itemType==EPacketDiagramItemType::explicitType)
+            return (arraySize==std::uint64_t(-1)) ? std::uint64_t(1) : arraySize;
+
+        else if (itemType==EPacketDiagramItemType::singleValue)
+            return 1;
+
+        else if (itemType==EPacketDiagramItemType::range)
+            return addressRange.end - addressRange.start+1;
+
+        UMBA_ASSERT_FAIL_MSG("Not a data entry");
+        return 0;
+    }
+
+    // Размер типа * кол-во элеметов
+    std::uint64_t getTypeFieldSize() const
+    {
+        return getArraySize()*getTypeSize();
+    }
+
 
     std::string getCppTypeName() const // For C++
     {
@@ -437,28 +427,121 @@ struct PacketDiagram
     std::vector<PacketDiagramItemType>     data   ;
     std::vector<ChecksumOptions>           checksumList;
     
-    DiagramParsingOptions                  parsingOptions  = DiagramParsingOptions::all;
+    PacketDiagramParsingOptions            parsingOptions      = PacketDiagramParsingOptions::all;
 
-    Endianness                             endianness      = Endianness::unknown;
-    EMemoryModel                           memoryModel     = EMemoryModel::flat;
+    Endianness                             endianness          = Endianness::unknown;
+    EMemoryModel                           memoryModel         = EMemoryModel::flat;
+    PacketDiagramDisplayOptionFlags        displayOptionFlags  = PacketDiagramDisplayOptionFlags::byteNumbers 
+                                                               | PacketDiagramDisplayOptionFlags::splitWordsToBytes
+                                                               // | PacketDiagramDisplayOptionFlags::singleByteNumbers
+                                                               ;
 
-    std::uint64_t                          dataBitSize     = 32; // 
-    std::uint64_t                          segmentBitSize  = 16; // 
-    std::uint64_t                          segmentShift    =  4; // 
-    std::uint64_t                          offsetBitSize   = 16; // 
+    std::uint64_t                          dataBitSize         = 32; // 
+    std::uint64_t                          segmentBitSize      = 16; // 
+    std::uint64_t                          segmentShift        =  4; // 
+    std::uint64_t                          offsetBitSize       = 16; // 
 
-    std::uint64_t                          displayWidth    = 32;
-    std::uint64_t                          lastOrg         = 0 ;
-    std::uint64_t                          lastOrgOffset   = 0 ;
-    std::uint64_t                          orgAddress      = std::uint64_t(-1);
-    std::uint64_t                          orgOffset       = std::uint64_t(-1);
+    std::uint64_t                          displayWidth        = 32;
+    std::uint64_t                          lastOrg             = 0 ;
+    std::uint64_t                          lastOrgOffset       = 0 ;
+    std::uint64_t                          orgAddress          = std::uint64_t(-1);
+    std::uint64_t                          orgOffset           = std::uint64_t(-1);
 
 
     std::unordered_map<std::string, std::size_t>     entryNames;  // храним индекс в векторе data
     std::unordered_map<std::string, std::size_t>     orgNames  ;  // храним индекс в векторе data
     std::size_t                                      fillEntryCounter = 0;
 
-    
+
+    void setDisplayOptionFlags(PacketDiagramDisplayOptionFlags flags)
+    {
+        displayOptionFlags = flags;
+    }
+
+    //void setResetOptionFlag(DiagramDisplayOptionFlags flag, bool bSet /* else - clear*/)
+    void setResetOptionFlags(PacketDiagramDisplayOptionFlags flagsSet, PacketDiagramDisplayOptionFlags flagsReset)
+    {
+        displayOptionFlags &= ~flagsReset;
+        displayOptionFlags |=  flagsSet  ;
+    }
+
+    void setOptionFlag(PacketDiagramDisplayOptions opt)
+    {
+        if ((parsingOptions&PacketDiagramParsingOptions::allowOverrideDisplayOptionFlags)==0) // Если переопределение не разрешено, выходим
+            return;
+
+        switch(opt)
+        {
+            case PacketDiagramDisplayOptions::singleByteNumbers       : setResetOptionFlags(PacketDiagramDisplayOptionFlags::singleByteNumbers, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noSingleByteNumbers     : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::singleByteNumbers); break;
+
+            case PacketDiagramDisplayOptions::singleByteBlockNumbers  : setResetOptionFlags(PacketDiagramDisplayOptionFlags::singleByteBlockNumbers, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noSingleByteBlockNumbers: setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::singleByteBlockNumbers); break;
+
+            case PacketDiagramDisplayOptions::byteNumbers             : setResetOptionFlags(PacketDiagramDisplayOptionFlags::byteNumbers, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noByteNumbers           : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::byteNumbers); break;
+
+            case PacketDiagramDisplayOptions::splitWordsToBytes       : setResetOptionFlags(PacketDiagramDisplayOptionFlags::splitWordsToBytes, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noSplitWordsToBytes     : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::splitWordsToBytes); break;
+
+            case PacketDiagramDisplayOptions::rangeAsChars            : setResetOptionFlags(PacketDiagramDisplayOptionFlags::rangeAsChars, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::rangeAsBytes            : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::rangeAsChars); break;
+
+            case PacketDiagramDisplayOptions::none   : break;
+            case PacketDiagramDisplayOptions::invalid: break;
+        }
+    }
+
+    bool testDisplayOption(PacketDiagramDisplayOptionFlags flags) const
+    {
+        return (displayOptionFlags&flags) == flags;
+    }
+
+    bool testDisplayOption(PacketDiagramDisplayOptions opt) const
+    {
+        switch(opt)
+        {
+            case PacketDiagramDisplayOptions::singleByteNumbers       : return  testDisplayOption(PacketDiagramDisplayOptionFlags::singleByteNumbers);
+            case PacketDiagramDisplayOptions::noSingleByteNumbers     : return !testDisplayOption(PacketDiagramDisplayOptionFlags::singleByteNumbers);
+
+            case PacketDiagramDisplayOptions::singleByteBlockNumbers  : return  testDisplayOption(PacketDiagramDisplayOptionFlags::singleByteBlockNumbers);
+            case PacketDiagramDisplayOptions::noSingleByteBlockNumbers: return !testDisplayOption(PacketDiagramDisplayOptionFlags::singleByteBlockNumbers);
+
+            case PacketDiagramDisplayOptions::byteNumbers             : return  testDisplayOption(PacketDiagramDisplayOptionFlags::byteNumbers);
+            case PacketDiagramDisplayOptions::noByteNumbers           : return !testDisplayOption(PacketDiagramDisplayOptionFlags::byteNumbers);
+
+            case PacketDiagramDisplayOptions::splitWordsToBytes       : return  testDisplayOption(PacketDiagramDisplayOptionFlags::splitWordsToBytes);
+            case PacketDiagramDisplayOptions::noSplitWordsToBytes     : return !testDisplayOption(PacketDiagramDisplayOptionFlags::splitWordsToBytes);
+
+            case PacketDiagramDisplayOptions::rangeAsChars            : return  testDisplayOption(PacketDiagramDisplayOptionFlags::rangeAsChars);
+            case PacketDiagramDisplayOptions::rangeAsBytes            : return !testDisplayOption(PacketDiagramDisplayOptionFlags::rangeAsChars);
+
+            case PacketDiagramDisplayOptions::none   : break;
+            case PacketDiagramDisplayOptions::invalid: break;
+        }
+        
+        UMBA_ASSERT_FAIL_MSG("unknown PacketDiagramDisplayOptions option");
+        throw std::runtime_error("unknown PacketDiagramDisplayOptions option");
+    }
+
+
+    int getDisplayWidth() const
+    {
+        if (displayWidth<=12u)
+            return 8;
+        if (displayWidth<=20u)
+            return 16;
+        if (displayWidth<=28u)
+            return 24;
+        // if (displayWidth<=40u)
+        //     return 32;
+        // if (displayWidth<=56u)
+        //     return 48;
+        //  
+        // return 64;
+
+        return 32;
+    }
     
     Endianness getItemEndianness(const PacketDiagramItemType &item) const
     {
@@ -1533,7 +1616,8 @@ void memorySetVariable(const PacketDiagram<TokenCollectionItemType> &diagram, ma
         //LOG_MSG << std::string(fieldMemoryIt) << ": " << byteStr << "\n";
         logMsgHandler(std::string(fieldMemoryIt) + ": " + byteStr);
 
-        *fieldMemoryIt++ = b;
+        *fieldMemoryIt = b;
+        ++fieldMemoryIt;
     }
 
 }
