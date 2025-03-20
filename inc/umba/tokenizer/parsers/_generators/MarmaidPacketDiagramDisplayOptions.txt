@@ -11,4 +11,10 @@ splitWordsToBytes,splitWords           // Split words to single bytes with verti
 noSplitWordsToBytes,noSplitWords       // Don't split words to single bytes with vertical lines
 rangeAsChars                           // Display ranges as char sequences
 rangeAsBytes                           // Display ranges as byte/uint8 sequences
+uintBytesAsBlock                       // Show uint ranges/arrays as single block
+noUintBytesAsBlock                     // Don't show uint ranges/arrays as single block
+intBytesAsBlock                        // Show uint ranges/arrays as single block
+noIntBytesAsBlock                      // Don't show uint ranges/arrays as single block
+charBytesAsBlock                       // Show char ranges/arrays as single block
+noCharBytesAsBlock                     // Don't show char ranges/arrays as single block
 

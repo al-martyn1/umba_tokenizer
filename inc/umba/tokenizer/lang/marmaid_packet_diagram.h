@@ -154,6 +154,7 @@ struct PacketDiagramTokenizerConfigurator
                                                                                     , {"segment-shift"              , MARMAID_TOKEN_ATTR_SEGMENT_SHIFT         }
                                                                                     , {"offset"                     , MARMAID_TOKEN_ATTR_OFFSET                }
                                                                                     , {"data"                       , MARMAID_TOKEN_ATTR_DATA                  }
+                                                                                    , {"block"                      , MARMAID_TOKEN_ATTR_BLOCK                 }
 
                                                                                     //, {""           ,              }
                                                                                     //, {""           ,              }

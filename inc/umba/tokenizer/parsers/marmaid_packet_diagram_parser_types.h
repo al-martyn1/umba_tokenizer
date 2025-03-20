@@ -200,7 +200,8 @@ struct PacketDiagramItem
     bool                            emptyOrg      = false; // no data records after this
     bool                            textGenerated = false; // text is auto-generated
     bool                            asciiZet      = false; // can be used only with ranges or byte/char arrays
-    // bool                            charsRange    = false; // used only with ranges or byte/char arrays, 
+    bool                            charsRange    = false; // used only with ranges or byte/char arrays, 
+    bool                            blockMode     = false; // show as single block instead of separate bytes/chars, valid for sizeof==1 arrays/ranges
 
     Endianness                      endianness   = Endianness::undefined; // use project endianness or override endianness for this entry
     AddressRange                    addressRange; // Если указан тип - вычисляем при добавлении, 
@@ -224,6 +225,14 @@ struct PacketDiagramItem
         if (!realTypeName.empty())
             return realTypeName;
 
+        if (itemType==EPacketDiagramItemType::range)
+        {
+            if (charsRange)
+                return "char";
+
+            return "uint8_t";
+        }
+
         if (itemType!=EPacketDiagramItemType::explicitType)
             return "uint8_t"; // threat singles and ranges as bytes
 
@@ -246,6 +255,14 @@ struct PacketDiagramItem
 
     bool isSigned() const
     {
+        if (itemType==EPacketDiagramItemType::range)
+        {
+            if (charsRange)
+                return true;
+
+            return false; // bytes are unsigned
+        }
+
         if (itemType!=EPacketDiagramItemType::explicitType)
             return false; // bytes are unsigned
 
@@ -283,6 +300,29 @@ struct PacketDiagramItem
              ;
     }
 
+    // bool                            fillEntry     = false;
+    // std::string                     reusedOrg;
+    // bool                            emptyOrg      = false; // no data records after this
+    // bool                            textGenerated = false; // text is auto-generated
+    // bool                            asciiZet      = false; // can be used only with ranges or byte/char arrays
+    // bool                            charsRange    = false; // used only with ranges or byte/char arrays, 
+    // bool                            blockMode     = false; // show as single block instead of separate bytes/chars, valid for sizeof==1 arrays/ranges
+    //  
+    // Endianness                      endianness   = Endianness::undefined; // use project endianness or override endianness for this entry
+    // AddressRange                    addressRange; // Если указан тип - вычисляем при добавлении, 
+    // std::uint64_t                   orgAddress   = 0; // В сегментном режиме - сегмент
+    // std::uint64_t                   orgOffset    = 0; // Только для сегментного режима
+    // std::uint64_t                   arraySize    = std::uint64_t(-1); // работает только для явно заданного типа
+
+    bool isBlock() const
+    {
+        if (getTypeSize()!=1)
+            return false;
+        if (!isArray())
+            return false;
+        return blockMode;
+    }
+
     bool isArray() const
     {
         if (itemType==EPacketDiagramItemType::explicitType)
@@ -298,7 +338,7 @@ struct PacketDiagramItem
         return false;
     }
 
-    bool isByteRange() const
+    bool isRange() const
     {
         if (itemType==EPacketDiagramItemType::range)
             return true;
@@ -321,6 +361,7 @@ struct PacketDiagramItem
         return 0;
     }
 
+    // Размер массива
     std::uint64_t getArraySize() const
     {
         if (itemType==EPacketDiagramItemType::explicitType)
@@ -487,10 +528,20 @@ struct PacketDiagram
             case PacketDiagramDisplayOptions::rangeAsChars            : setResetOptionFlags(PacketDiagramDisplayOptionFlags::rangeAsChars, PacketDiagramDisplayOptionFlags::none); break;
             case PacketDiagramDisplayOptions::rangeAsBytes            : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::rangeAsChars); break;
 
+            case PacketDiagramDisplayOptions::uintBytesAsBlock        : setResetOptionFlags(PacketDiagramDisplayOptionFlags::uintBytesAsBlock, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noUintBytesAsBlock      : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::uintBytesAsBlock); break;
+
+            case PacketDiagramDisplayOptions::intBytesAsBlock         : setResetOptionFlags(PacketDiagramDisplayOptionFlags::intBytesAsBlock, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noIntBytesAsBlock       : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::intBytesAsBlock); break;
+
+            case PacketDiagramDisplayOptions::charBytesAsBlock        : setResetOptionFlags(PacketDiagramDisplayOptionFlags::charBytesAsBlock, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noCharBytesAsBlock      : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::charBytesAsBlock); break;
+
             case PacketDiagramDisplayOptions::none   : break;
             case PacketDiagramDisplayOptions::invalid: break;
         }
     }
+
 
     bool testDisplayOption(PacketDiagramDisplayOptionFlags flags) const
     {
@@ -515,6 +566,15 @@ struct PacketDiagram
 
             case PacketDiagramDisplayOptions::rangeAsChars            : return  testDisplayOption(PacketDiagramDisplayOptionFlags::rangeAsChars);
             case PacketDiagramDisplayOptions::rangeAsBytes            : return !testDisplayOption(PacketDiagramDisplayOptionFlags::rangeAsChars);
+
+            case PacketDiagramDisplayOptions::uintBytesAsBlock        : return  testDisplayOption(PacketDiagramDisplayOptionFlags::uintBytesAsBlock);
+            case PacketDiagramDisplayOptions::noUintBytesAsBlock      : return !testDisplayOption(PacketDiagramDisplayOptionFlags::uintBytesAsBlock);
+
+            case PacketDiagramDisplayOptions::intBytesAsBlock         : return  testDisplayOption(PacketDiagramDisplayOptionFlags::intBytesAsBlock);
+            case PacketDiagramDisplayOptions::noIntBytesAsBlock       : return !testDisplayOption(PacketDiagramDisplayOptionFlags::intBytesAsBlock);
+
+            case PacketDiagramDisplayOptions::charBytesAsBlock        : return  testDisplayOption(PacketDiagramDisplayOptionFlags::charBytesAsBlock);
+            case PacketDiagramDisplayOptions::noCharBytesAsBlock      : return !testDisplayOption(PacketDiagramDisplayOptionFlags::charBytesAsBlock);
 
             case PacketDiagramDisplayOptions::none   : break;
             case PacketDiagramDisplayOptions::invalid: break;
@@ -1092,6 +1152,35 @@ inline
 std::uint64_t getHiHalf(std::uint64_t val, std::uint64_t size)
 {
     return (val>>((size/2))*8) & makeByteSizeMask(size/2);
+}
+
+//----------------------------------------------------------------------------
+inline
+byte_vector_t makeByteVector(std::size_t from, std::size_t to)
+{
+    byte_vector_t bv;
+
+    if (from>to)
+    {
+        for(; from>=to; --from)
+            bv.push_back(std::uint8_t(from));
+    }
+    else
+    {
+        for(; from<=to; ++from)
+            bv.push_back(std::uint8_t(from));
+    }
+
+    return bv;
+}
+
+//----------------------------------------------------------------------------
+inline
+byte_vector_t makeByteVector(std::size_t sz)
+{
+    if (!sz)
+        return byte_vector_t();
+    return makeByteVector(std::size_t(0), sz-1);
 }
 
 //----------------------------------------------------------------------------

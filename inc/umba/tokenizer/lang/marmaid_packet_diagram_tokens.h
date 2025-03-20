@@ -104,6 +104,7 @@
 #define MARMAID_TOKEN_ATTR_SEGMENT_SHIFT                  (MARMAID_TOKEN_SET_ATTRS_FIRST+0x010Du)  /* segment-shift */
 #define MARMAID_TOKEN_ATTR_OFFSET                         (MARMAID_TOKEN_SET_ATTRS_FIRST+0x010Eu)  /* offset */
 #define MARMAID_TOKEN_ATTR_DATA                           (MARMAID_TOKEN_SET_ATTRS_FIRST+0x010Fu)  /* data */
+#define MARMAID_TOKEN_ATTR_BLOCK                          (MARMAID_TOKEN_SET_ATTRS_FIRST+0x0110u)  /* block */
 
 
 

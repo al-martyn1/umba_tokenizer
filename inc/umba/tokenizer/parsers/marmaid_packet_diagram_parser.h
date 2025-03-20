@@ -1139,15 +1139,28 @@ public:
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
+        bool bRange = false;
+        bool forceTypedRange = false;
 
         if (isAnyNumber(pTokenInfo->tokenType))
+        {
             pTokenInfo = parseRange(tokenPos, pTokenInfo, item.addressRange, item.itemType);
+            bRange = true;
+        }
 
         else if (isAnyType(pTokenInfo->tokenType))
+        {
             pTokenInfo = parseType(tokenPos, pTokenInfo, item);
-        
+        }
+
         else
             return 0;
+
+
+        if (bRange && diagram.testDisplayOption(PacketDiagramDisplayOptions::rangeAsChars))
+        {
+            item.charsRange = true;
+        }
 
 
         if (!pTokenInfo)
@@ -1186,6 +1199,32 @@ public:
         checksumOptions.crcConfig.seed = 0;
         endianness = Endianness::undefined;
 
+        umba::tokenizer::payload_type itemValueType = MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8;
+
+        if ((item.isArray() || item.isRange()) && item.getTypeSize()==1)
+        {
+            // у нас однобайтный массив или рендж, надо проверить тип, не отображать ли его блоком по типу
+            if (item.isRange())
+            {
+                if (item.charsRange)
+                    itemValueType = MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR;
+                else
+                    itemValueType = MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8;
+            }
+            else // массив заданного явно типа
+            {
+                itemValueType = item.explicitTypeTokenId;
+            }
+
+            if ( (diagram.testDisplayOption(PacketDiagramDisplayOptions::uintBytesAsBlock) && itemValueType==MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8) 
+              || (diagram.testDisplayOption(PacketDiagramDisplayOptions::intBytesAsBlock)  && itemValueType==MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8 )
+              || (diagram.testDisplayOption(PacketDiagramDisplayOptions::charBytesAsBlock) && itemValueType==MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR )
+               )
+            {
+                item.blockMode = true;
+            }
+        }
+
         auto returnCheckUpdateOptions = [&]() -> const TokenInfoType*
         {
             auto tfs = item.getTypeFieldSize();
@@ -1222,7 +1261,7 @@ public:
 
             if (item.isAsciiZet())
             {
-                if (item.getTypeSize()!=1 || !item.isArray()) // 
+                if (item.getTypeSize()!=1 || !(item.isArray() || item.isRange()))
                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'ascii-z' option can be set only for char/int8/uint8 arrays/ranges" ), (const TokenInfoType*)0;
             }
 
@@ -1251,6 +1290,8 @@ public:
 
         // %%#! le be middle-endian le-me be-me crc 0-10 seed 10 poly 0x1234
 
+        using TheVal = umba::TheValue;
+
         while(true)
         {
             if (!pTokenInfo)
@@ -1263,47 +1304,76 @@ public:
 
             item.pTokenInfo = pTokenInfo;
 
+            const auto tokenTypeVal = TheVal(pTokenInfo->tokenType);
+
             if ( !isAnyNumber(pTokenInfo->tokenType)
-              && !umba::TheValue(pTokenInfo->tokenType)
-                     .oneOf( MARMAID_TOKEN_ATTR_LE, MARMAID_TOKEN_ATTR_BE
-                           , MARMAID_TOKEN_ATTR_ME, MARMAID_TOKEN_ATTR_LE_ME, MARMAID_TOKEN_ATTR_BE_ME
-                           , UMBA_TOKENIZER_TOKEN_LINEFEED
-                           , MARMAID_TOKEN_ATTR_ASCII_Z
-                           , MARMAID_TOKEN_ATTR_CRC, MARMAID_TOKEN_ATTR_SEED, MARMAID_TOKEN_ATTR_POLY
-                           , MARMAID_TOKEN_ATTR_CHECKSUM
-                           , MARMAID_TOKEN_ATTR_SIMPLE_SUM, MARMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT, MARMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT
-                           , MARMAID_TOKEN_ATTR_SIMPLE_XOR, MARMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT, MARMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT
-                           )
+              && !tokenTypeVal.oneOf( MARMAID_TOKEN_ATTR_LE, MARMAID_TOKEN_ATTR_BE
+                                    , MARMAID_TOKEN_ATTR_ME, MARMAID_TOKEN_ATTR_LE_ME, MARMAID_TOKEN_ATTR_BE_ME
+                                    , UMBA_TOKENIZER_TOKEN_LINEFEED
+                                    , MARMAID_TOKEN_ATTR_ASCII_Z
+                                    , MARMAID_TOKEN_ATTR_CRC, MARMAID_TOKEN_ATTR_SEED, MARMAID_TOKEN_ATTR_POLY
+                                    , MARMAID_TOKEN_ATTR_CHECKSUM
+                                    , MARMAID_TOKEN_ATTR_SIMPLE_SUM, MARMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT, MARMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT
+                                    , MARMAID_TOKEN_ATTR_SIMPLE_XOR, MARMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT, MARMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT
+                                    , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR, MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8
+                                    , MARMAID_TOKEN_ATTR_BLOCK
+                                    )
                )
             {
                 expectedReachedMsg(pTokenInfo, { /* UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, */  MARMAID_TOKEN_ATTR_LE /* , MARMAID_TOKEN_ATTR_BE */  | UMBA_TOKENIZER_TOKEN_LINEFEED } /*, "invalid 'native' directive options" */ );
                 return 0;
             }
 
-            if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_LINEFEED)
+            if (tokenTypeVal.oneOf(UMBA_TOKENIZER_TOKEN_LINEFEED))
             {
                 return returnCheckUpdateOptions();
             }
 
-            if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_ASCII_Z)
+            if (tokenTypeVal.oneOf(MARMAID_TOKEN_ATTR_BLOCK))
             {
-                item.asciiZet = true;
-                // Берем следующий токен и пилим по циклу дальше
+                if (item.getTypeSize()!=1 || !(item.isArray() || item.isRange()))
+                    return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'block' option can be set only for char/int8/uint8 arrays/ranges" ), (const TokenInfoType*)0;
+                item.blockMode = true;
                 pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-
                 continue;
             }
 
-            if ( umba::TheValue(pTokenInfo->tokenType)
-                     .oneOf( MARMAID_TOKEN_ATTR_LE, MARMAID_TOKEN_ATTR_BE
-                           , MARMAID_TOKEN_ATTR_ME, MARMAID_TOKEN_ATTR_LE_ME, MARMAID_TOKEN_ATTR_BE_ME
-                           )
-               )
+            if (tokenTypeVal.oneOf(MARMAID_TOKEN_ATTR_ASCII_Z))
+            {
+                item.asciiZet = true;
+                item.charsRange = true; // asciiZet автоматом задаёт тип ренджа
+                forceTypedRange = true;
+                // Берем следующий токен и пилим по циклу дальше
+                pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+                continue;
+            }
+
+            if (tokenTypeVal.oneOf(MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR, MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8))
+            {
+                if (!bRange)
+                    return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: trying to set range type for non-range entry" ), (const TokenInfoType*)0;
+
+                if (forceTypedRange)
+                    return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: range type already was set (by type name or by 'ascii-z' option)" ), (const TokenInfoType*)0;
+            
+                forceTypedRange = true;
+
+                if (tokenTypeVal.oneOf(MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR))
+                    item.charsRange = true;
+                else
+                    item.charsRange = false;
+
+                pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+                continue;
+            }
+
+
+            if (tokenTypeVal.oneOf(MARMAID_TOKEN_ATTR_LE, MARMAID_TOKEN_ATTR_BE, MARMAID_TOKEN_ATTR_ME, MARMAID_TOKEN_ATTR_LE_ME, MARMAID_TOKEN_ATTR_BE_ME))
             {
                 if (endianness!=Endianness::unknown)
                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: endianness option already taken" ), (const TokenInfoType*)0;
 
-                if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_ME)
+                if (tokenTypeVal.oneOf(MARMAID_TOKEN_ATTR_ME))
                 {
                     if (diagram.endianness==Endianness::unknown)
                         return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: middle-endian option taken, but project endianness not set" ), (const TokenInfoType*)0;
@@ -1336,7 +1406,7 @@ public:
                 continue;
             }
 
-            if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_CHECKSUM)
+            if (tokenTypeVal.oneOf(MARMAID_TOKEN_ATTR_CHECKSUM))
             {
                 if (hasChecksum)
                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: `checksum` option already taken" ), (const TokenInfoType*)0;
@@ -1351,10 +1421,10 @@ public:
             // для повышения читаемости
 
             // else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_CRC)
-            if (umba::TheValue(pTokenInfo->tokenType).oneOf( MARMAID_TOKEN_ATTR_SIMPLE_SUM, MARMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT, MARMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT
-                                                                , MARMAID_TOKEN_ATTR_SIMPLE_XOR, MARMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT, MARMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT
-                                                                , MARMAID_TOKEN_ATTR_CRC
-                                                                )
+            if (tokenTypeVal.oneOf( MARMAID_TOKEN_ATTR_SIMPLE_SUM, MARMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT, MARMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT
+                                  , MARMAID_TOKEN_ATTR_SIMPLE_XOR, MARMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT, MARMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT
+                                  , MARMAID_TOKEN_ATTR_CRC
+                                  )
                     )
             {
                 // или можно не надо?
@@ -1412,7 +1482,7 @@ public:
                 continue;
             }
 
-            if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_SEED)
+            if (tokenTypeVal.oneOf(MARMAID_TOKEN_ATTR_SEED))
             {
                 if (hasSeed)
                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'seed' option already taken" ), (const TokenInfoType*)0;
@@ -1430,7 +1500,7 @@ public:
                 continue;
             }
 
-            if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_POLY)
+            if (tokenTypeVal.oneOf(MARMAID_TOKEN_ATTR_POLY))
             {
                 if (hasPoly)
                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'poly' option already taken" ), (const TokenInfoType*)0;
