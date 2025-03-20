@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "marmaid_packet_diagram_parser.h"
+#include "mermaid_packet_diagram_parser.h"
 #include "marty_cpp/marty_cpp.h"
 //
 
@@ -15,10 +15,10 @@
 
 
 //----------------------------------------------------------------------------
-// umba::tokenizer::marmaid::cpp::
+// umba::tokenizer::mermaid::cpp::
 namespace umba {
 namespace tokenizer {
-namespace marmaid {
+namespace mermaid {
 namespace cpp {
 
 //----------------------------------------------------------------------------
@@ -307,7 +307,7 @@ std::string makeIntegralTypeTextDiagramRepresentation(std::uint64_t size, bool s
 
     В normal варианте влезет в два раза меньше полей по ширине, но зато имена полей будут обрезаться меньше.
     Для печатного документа 64 символа на строку - это макс. Соответственно, в normal режиме в строку будет влезать
-    только 4 байта. Но оригинальная marmaid packet diagram тоже рисует по 32 бита на строку, так что вроде норм.
+    только 4 байта. Но оригинальная mermaid packet diagram тоже рисует по 32 бита на строку, так что вроде норм.
 
     В compact варианте влезет 64 бита в строку, и его можно использовать, если для байтовых полей использовать короткие имена.
 
@@ -326,7 +326,7 @@ std::string makeIntegralTypeTextDiagramRepresentation(std::uint64_t size, bool s
 
 
 } // namespace cpp
-} // namespace marmaid
+} // namespace mermaid
 } // namespace tokenizer
 } // namespace umba
 

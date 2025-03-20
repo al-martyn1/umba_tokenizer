@@ -1,5 +1,5 @@
 /*! \file
-    \brief Парсер marmaid packet diagram, расширенная версия, с использованием типов и массивов
+    \brief Парсер mermaid packet diagram, расширенная версия, с использованием типов и массивов
  */
 
 
@@ -15,8 +15,8 @@
 #include "umba/tokenizer/token_collection.h"
 //
 #include "parser_base.h"
-#include "marmaid_packet_diagram_parser_types.h"
-#include "umba/tokenizer/lang/marmaid_packet_diagram.h"
+#include "mermaid_packet_diagram_parser_types.h"
+#include "umba/tokenizer/lang/mermaid_packet_diagram.h"
 
 //
 #include "umba/enum_helpers.h"
@@ -30,10 +30,10 @@
 
 
 //----------------------------------------------------------------------------
-// umba::tokenizer::marmaid::
+// umba::tokenizer::mermaid::
 namespace umba {
 namespace tokenizer {
-namespace marmaid {
+namespace mermaid {
 
 //----------------------------------------------------------------------------
 
@@ -379,15 +379,15 @@ public:
     {
         switch(tk)
         {
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR  : return true;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8  : return true;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT16 : return true;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT32 : return true;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT64 : return true;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8 : return true;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT16: return true;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT32: return true;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64: return true;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR  : return true;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8  : return true;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT16 : return true;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT32 : return true;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT64 : return true;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8 : return true;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT16: return true;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT32: return true;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64: return true;
             default: return false;
         }
     }
@@ -415,15 +415,15 @@ public:
         switch(tk)
         {
             /*
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR  : return "type"; // return "char"  ; 
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8  : return "type"; // return "int8"  ; 
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT16 : return "type"; // return "int16" ; 
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT32 : return "type"; // return "int32" ; 
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT64 : return "type"; // return "int64" ; 
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8 : return "type"; // return "uint8" ; 
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT16: return "type"; // return "uint16"; 
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT32: return "type"; // return "uint32"; 
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64: return "type"; // return "uint64"; 
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR  : return "type"; // return "char"  ; 
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8  : return "type"; // return "int8"  ; 
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT16 : return "type"; // return "int16" ; 
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT32 : return "type"; // return "int32" ; 
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT64 : return "type"; // return "int64" ; 
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8 : return "type"; // return "uint8" ; 
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT16: return "type"; // return "uint16"; 
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT32: return "type"; // return "uint32"; 
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64: return "type"; // return "uint64"; 
             */
 
             
@@ -445,12 +445,12 @@ public:
             case UMBA_TOKENIZER_TOKEN_SPACE    : return "space";
             case UMBA_TOKENIZER_TOKEN_TAB      : return "tab";
             case UMBA_TOKENIZER_TOKEN_FORM_FEED: return "form-feed";
-            case MARMAID_TOKEN_OPERATOR_EXTRA  : return "extra-options-operator";
+            case MERMAID_TOKEN_OPERATOR_EXTRA  : return "extra-options-operator";
             
             case UMBA_TOKENIZER_TOKEN_CTRL_FIN: return "EOF";
 
-            case MARMAID_TOKEN_OPERATOR_RANGE: return "range-operator";
-            case MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER: return "follow-delimiter";
+            case MERMAID_TOKEN_OPERATOR_RANGE: return "range-operator";
+            case MERMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER: return "follow-delimiter";
 
             // case : return "";
             // case : return "";
@@ -458,16 +458,16 @@ public:
             // case : return "";
 
             default: 
-                 if (tk>=MARMAID_TOKEN_SET_DIRECTIVES_FIRST && tk<=MARMAID_TOKEN_SET_DIRECTIVES_LAST)
+                 if (tk>=MERMAID_TOKEN_SET_DIRECTIVES_FIRST && tk<=MERMAID_TOKEN_SET_DIRECTIVES_LAST)
                      return "directive";
 
-                 if (tk>=MARMAID_TOKEN_SET_TYPES_FIRST && tk<=MARMAID_TOKEN_SET_TYPES_LAST)
+                 if (tk>=MERMAID_TOKEN_SET_TYPES_FIRST && tk<=MERMAID_TOKEN_SET_TYPES_LAST)
                      return "type";
 
-                 if (tk>=MARMAID_TOKEN_SET_OPERATORS_FIRST && tk<=MARMAID_TOKEN_SET_OPERATORS_LAST )
+                 if (tk>=MERMAID_TOKEN_SET_OPERATORS_FIRST && tk<=MERMAID_TOKEN_SET_OPERATORS_LAST )
                      return "operator";
 
-                 if (tk>=MARMAID_TOKEN_SET_ATTRS_FIRST && tk<=MARMAID_TOKEN_SET_ATTRS_LAST )
+                 if (tk>=MERMAID_TOKEN_SET_ATTRS_FIRST && tk<=MERMAID_TOKEN_SET_ATTRS_LAST )
                      return "attribute/option";
 
                  return "unknown_" + std::to_string(tk);
@@ -555,9 +555,9 @@ public:
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
-        // У нас не обязательно будет на входе range, за которым идёт MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER
+        // У нас не обязательно будет на входе range, за которым идёт MERMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER
         // Так что выше должны это проверить
-        if (pTokenInfo->tokenType!=MARMAID_TOKEN_OPERATOR_RANGE)
+        if (pTokenInfo->tokenType!=MERMAID_TOKEN_OPERATOR_RANGE)
         {
             itemType = EPacketDiagramItemType::singleValue;
             return pTokenInfo;
@@ -616,8 +616,8 @@ public:
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
-        if (pTokenInfo->tokenType!=MARMAID_TOKEN_OPERATOR_RANGE)
-            return expectedReachedMsg(pTokenInfo, {MARMAID_TOKEN_OPERATOR_RANGE}, makeMsg("failed reading range end name")), (const TokenInfoType*)0;
+        if (pTokenInfo->tokenType!=MERMAID_TOKEN_OPERATOR_RANGE)
+            return expectedReachedMsg(pTokenInfo, {MERMAID_TOKEN_OPERATOR_RANGE}, makeMsg("failed reading range end name")), (const TokenInfoType*)0;
 
         // Читаем второе число из диапазона
         pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
@@ -677,29 +677,29 @@ public:
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
-        if (pTokenInfo->tokenType!=MARMAID_TOKEN_OPERATOR_EXTRA)
+        if (pTokenInfo->tokenType!=MERMAID_TOKEN_OPERATOR_EXTRA)
             return pTokenInfo; // Что-то пришло, но не расширенные опции
 
         pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
-        // В данном контексте MARMAID_TOKEN_ATTR_BYTE_DIA==MARMAID_TOKEN_ATTR_BYTE
-        // и MARMAID_TOKEN_ATTR_BIT_DIA==MARMAID_TOKEN_ATTR_BIT
+        // В данном контексте MERMAID_TOKEN_ATTR_BYTE_DIA==MERMAID_TOKEN_ATTR_BYTE
+        // и MERMAID_TOKEN_ATTR_BIT_DIA==MERMAID_TOKEN_ATTR_BIT
 
-        if (!checkExactTokenType(pTokenInfo, {MARMAID_TOKEN_ATTR_BYTE_DIA, MARMAID_TOKEN_ATTR_BIT_DIA, MARMAID_TOKEN_ATTR_MEMORY_DIA, MARMAID_TOKEN_ATTR_BYTE, MARMAID_TOKEN_ATTR_BIT, UMBA_TOKENIZER_TOKEN_LINEFEED}, "invalid 'packet-beta' directive options"))
+        if (!checkExactTokenType(pTokenInfo, {MERMAID_TOKEN_ATTR_BYTE_DIA, MERMAID_TOKEN_ATTR_BIT_DIA, MERMAID_TOKEN_ATTR_MEMORY_DIA, MERMAID_TOKEN_ATTR_BYTE, MERMAID_TOKEN_ATTR_BIT, UMBA_TOKENIZER_TOKEN_LINEFEED}, "invalid 'packet-beta' directive options"))
             return 0;
 
         if ((diagram.parsingOptions&PacketDiagramParsingOptions::allowOverrideType)!=0u)
         {
             switch(pTokenInfo->tokenType)
             {
-                case MARMAID_TOKEN_ATTR_BYTE      : [[fallthrough]]; // error C2416: attribute 'fallthrough' cannot be applied in this context
-                case MARMAID_TOKEN_ATTR_BYTE_DIA  : diagram.diagramType = EPacketDiagramType::byteDiagram; break;
-                case MARMAID_TOKEN_ATTR_BIT       : [[fallthrough]]; // error C2416: attribute 'fallthrough' cannot be applied in this context
-                case MARMAID_TOKEN_ATTR_BIT_DIA   : diagram.diagramType = EPacketDiagramType::bitDiagram ; break;
+                case MERMAID_TOKEN_ATTR_BYTE      : [[fallthrough]]; // error C2416: attribute 'fallthrough' cannot be applied in this context
+                case MERMAID_TOKEN_ATTR_BYTE_DIA  : diagram.diagramType = EPacketDiagramType::byteDiagram; break;
+                case MERMAID_TOKEN_ATTR_BIT       : [[fallthrough]]; // error C2416: attribute 'fallthrough' cannot be applied in this context
+                case MERMAID_TOKEN_ATTR_BIT_DIA   : diagram.diagramType = EPacketDiagramType::bitDiagram ; break;
 
-                case MARMAID_TOKEN_ATTR_MEMORY_DIA: diagram.diagramType = EPacketDiagramType::memDiagram ; break;
+                case MERMAID_TOKEN_ATTR_MEMORY_DIA: diagram.diagramType = EPacketDiagramType::memDiagram ; break;
                 case UMBA_TOKENIZER_TOKEN_LINEFEED: return pTokenInfo;
             }
         }
@@ -793,7 +793,7 @@ public:
 
         bool hasPlus = false;
 
-        if (pTokenInfo->tokenType==MARMAID_TOKEN_OPERATOR_PLUS)
+        if (pTokenInfo->tokenType==MERMAID_TOKEN_OPERATOR_PLUS)
         {
             hasPlus = true;
             pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
@@ -810,8 +810,8 @@ public:
                 //pTokenInfo = BaseClass::getToken(&tokenPos);
                 if (!pTokenInfo)
                     return 0; // Сообщение уже выведено, просто возвращаем ошибку
-                if (pTokenInfo->tokenType!=MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER)
-                    return expectedReachedMsg(pTokenInfo, {MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER}, "'org' directive: reading segment address"), (const TokenInfoType*)0;
+                if (pTokenInfo->tokenType!=MERMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER)
+                    return expectedReachedMsg(pTokenInfo, {MERMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER}, "'org' directive: reading segment address"), (const TokenInfoType*)0;
                     //return BaseClass::logSimpleMessage(pTokenInfo, "unexpected-token", "'org' directive: unexpected token while reading segment address"), (const TokenInfoType*)0;
 
                 pTokenInfo = BaseClass::getToken(&tokenPos);
@@ -830,7 +830,7 @@ public:
 
             }
         }
-        else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_AUTO)
+        else if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_AUTO)
         {
             if (hasPlus)
                 return BaseClass::logSimpleMessage(pTokenInfo, "unexpected-auto", "'org' directive: unexpected 'auto' after relative address option ('+')"), (const TokenInfoType*)0;
@@ -848,7 +848,7 @@ public:
         item.itemType           = EPacketDiagramItemType::org;
 
 
-        if (pTokenInfo->tokenType!=MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER) // В отличие от регулярной записи, тут название опционально, нагенерим, если надо будет
+        if (pTokenInfo->tokenType!=MERMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER) // В отличие от регулярной записи, тут название опционально, нагенерим, если надо будет
             return pTokenInfo;
 
         pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
@@ -896,14 +896,14 @@ public:
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
-        if (!umba::TheValue(pTokenInfo->tokenType).oneOf(MARMAID_TOKEN_ATTR_BYTE, MARMAID_TOKEN_ATTR_BIT))
+        if (!umba::TheValue(pTokenInfo->tokenType).oneOf(MERMAID_TOKEN_ATTR_BYTE, MERMAID_TOKEN_ATTR_BIT))
         {
-            BaseClass::logUnexpected( pTokenInfo, {MARMAID_TOKEN_ATTR_BYTE, MARMAID_TOKEN_ATTR_BIT}, msg
+            BaseClass::logUnexpected( pTokenInfo, {MERMAID_TOKEN_ATTR_BYTE, MERMAID_TOKEN_ATTR_BIT}, msg
                                     , [&](umba::tokenizer::payload_type tk)
                                       {   
-                                          if (tk==MARMAID_TOKEN_ATTR_BYTE)
+                                          if (tk==MERMAID_TOKEN_ATTR_BYTE)
                                               return std::string("bytes");
-                                          else if (tk==MARMAID_TOKEN_ATTR_BIT)
+                                          else if (tk==MERMAID_TOKEN_ATTR_BIT)
                                               return std::string("bits");
                                           else 
                                               return getTokenIdStr(tk);
@@ -913,7 +913,7 @@ public:
         }
 
         auto savedBitSize = bitSize;
-        if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_BYTE)
+        if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_BYTE)
             bitSize *= 8;
         if (savedBitSize>bitSize)
             return BaseClass::logSimpleMessage(pTokenInfo, "integer-overflow", msg.empty() ? "integer overflow" : msg + ": integer overflow"), (const TokenInfoType*)0;
@@ -922,10 +922,10 @@ public:
     }
 
 
-    // , {"segment"                    , MARMAID_TOKEN_ATTR_SEGMENT               }
-    // , {"segment-shift"              , MARMAID_TOKEN_ATTR_SEGMENT_SHIFT         }
-    // , {"offset"                     , MARMAID_TOKEN_ATTR_OFFSET                }
-    // , {"data"                       , MARMAID_TOKEN_ATTR_DATA                  }
+    // , {"segment"                    , MERMAID_TOKEN_ATTR_SEGMENT               }
+    // , {"segment-shift"              , MERMAID_TOKEN_ATTR_SEGMENT_SHIFT         }
+    // , {"offset"                     , MERMAID_TOKEN_ATTR_OFFSET                }
+    // , {"data"                       , MERMAID_TOKEN_ATTR_DATA                  }
 
     // native le 32 bits bit byte bytes
     //! Разбор директивы native. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
@@ -1034,17 +1034,17 @@ public:
                 return returnCheckUpdateOptions();
             }
 
-            if (!umba::TheValue(pTokenInfo->tokenType).oneOf( MARMAID_TOKEN_ATTR_LE
-                                                            , MARMAID_TOKEN_ATTR_BE
-                                                            , MARMAID_TOKEN_ATTR_DATA
-                                                            , MARMAID_TOKEN_ATTR_SEGMENT
-                                                            , MARMAID_TOKEN_ATTR_SEGMENT_SHIFT
-                                                            , MARMAID_TOKEN_ATTR_OFFSET
+            if (!umba::TheValue(pTokenInfo->tokenType).oneOf( MERMAID_TOKEN_ATTR_LE
+                                                            , MERMAID_TOKEN_ATTR_BE
+                                                            , MERMAID_TOKEN_ATTR_DATA
+                                                            , MERMAID_TOKEN_ATTR_SEGMENT
+                                                            , MERMAID_TOKEN_ATTR_SEGMENT_SHIFT
+                                                            , MERMAID_TOKEN_ATTR_OFFSET
                                                             , UMBA_TOKENIZER_TOKEN_LINEFEED
                                                             )
                )
             {
-                expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, MARMAID_TOKEN_ATTR_LE /* , MARMAID_TOKEN_ATTR_BE */  | UMBA_TOKENIZER_TOKEN_LINEFEED }, "invalid 'native' directive options" );
+                expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, MERMAID_TOKEN_ATTR_LE /* , MERMAID_TOKEN_ATTR_BE */  | UMBA_TOKENIZER_TOKEN_LINEFEED }, "invalid 'native' directive options" );
                 return 0;
             }
 
@@ -1053,21 +1053,21 @@ public:
                 return returnCheckUpdateOptions();
             }
 
-            if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_LE)
+            if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_LE)
             {
                 if (!updateEndianness(Endianness::littleEndian))
                     return 0;
                 pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
             }
 
-            else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_BE)
+            else if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_BE)
             {
                 if (!updateEndianness(Endianness::bigEndian))
                     return 0;
                 pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
             }
 
-            else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_DATA)
+            else if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_DATA)
             {
                 if (dataSizeTaken)
                     return BaseClass::logMessage(pTokenInfo, "native-options", "data size ('data' option) already taken"), (const TokenInfoType*)0;
@@ -1076,7 +1076,7 @@ public:
                 pTokenInfo = parseBitSize(tokenPos, pTokenInfo, diagram.dataBitSize, "'native' directive 'data' option");
             }
 
-            else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_SEGMENT)
+            else if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_SEGMENT)
             {
                 if (segmentSizeTaken)
                     return BaseClass::logMessage(pTokenInfo, "native-options", "segment size ('segment' option) already taken"), (const TokenInfoType*)0;
@@ -1086,7 +1086,7 @@ public:
                 pTokenInfo = parseBitSize(tokenPos, pTokenInfo, diagram.segmentBitSize, "'native' directive 'segment' option");
             }
 
-            else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_SEGMENT_SHIFT)
+            else if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_SEGMENT_SHIFT)
             {
                 if (segmentShiftTaken)
                     return BaseClass::logMessage(pTokenInfo, "native-options", "segment shift ('segment-shift' option) already taken"), (const TokenInfoType*)0;
@@ -1096,7 +1096,7 @@ public:
                 pTokenInfo = parseBitSize(tokenPos, pTokenInfo, diagram.segmentShift, "'native' directive 'segment-shift' option");
             }
 
-            else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_OFFSET)
+            else if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_OFFSET)
             {
                 if (offsetSizeTaken)
                     return BaseClass::logMessage(pTokenInfo, "native-options", "offset size ('offset' option) already taken"), (const TokenInfoType*)0;
@@ -1122,9 +1122,9 @@ public:
                 if (!pTokenInfo)
                     return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
-                if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_BYTE || pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_BIT )
+                if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_BYTE || pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_BIT )
                 {
-                    bitSizeSizeType = (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_BYTE) ? EPacketDiagramType::byteDiagram : EPacketDiagramType::bitDiagram;
+                    bitSizeSizeType = (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_BYTE) ? EPacketDiagramType::byteDiagram : EPacketDiagramType::bitDiagram;
                     pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
                 }
             }
@@ -1166,7 +1166,7 @@ public:
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
-        if (!checkExactTokenType(pTokenInfo, {MARMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER}, "invalid record definition"))
+        if (!checkExactTokenType(pTokenInfo, {MERMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER}, "invalid record definition"))
             return 0;
 
         // Читаем следующий токен
@@ -1181,7 +1181,7 @@ public:
         if (!pTokenInfo)
             return 0; // Сообщение уже выведено, просто возвращаем ошибку
 
-        if (pTokenInfo->tokenType!=MARMAID_TOKEN_OPERATOR_EXTRA)
+        if (pTokenInfo->tokenType!=MERMAID_TOKEN_OPERATOR_EXTRA)
             return pTokenInfo;
 
         pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
@@ -1199,7 +1199,7 @@ public:
         checksumOptions.crcConfig.seed = 0;
         endianness = Endianness::undefined;
 
-        umba::tokenizer::payload_type itemValueType = MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8;
+        umba::tokenizer::payload_type itemValueType = MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8;
 
         if ((item.isArray() || item.isRange()) && item.getTypeSize()==1)
         {
@@ -1207,18 +1207,18 @@ public:
             if (item.isRange())
             {
                 if (item.charsRange)
-                    itemValueType = MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR;
+                    itemValueType = MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR;
                 else
-                    itemValueType = MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8;
+                    itemValueType = MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8;
             }
             else // массив заданного явно типа
             {
                 itemValueType = item.explicitTypeTokenId;
             }
 
-            if ( (diagram.testDisplayOption(PacketDiagramDisplayOptions::uintBytesAsBlock) && itemValueType==MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8) 
-              || (diagram.testDisplayOption(PacketDiagramDisplayOptions::intBytesAsBlock)  && itemValueType==MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8 )
-              || (diagram.testDisplayOption(PacketDiagramDisplayOptions::charBytesAsBlock) && itemValueType==MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR )
+            if ( (diagram.testDisplayOption(PacketDiagramDisplayOptions::uintBytesAsBlock) && itemValueType==MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8) 
+              || (diagram.testDisplayOption(PacketDiagramDisplayOptions::intBytesAsBlock)  && itemValueType==MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8 )
+              || (diagram.testDisplayOption(PacketDiagramDisplayOptions::charBytesAsBlock) && itemValueType==MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR )
                )
             {
                 item.blockMode = true;
@@ -1307,20 +1307,20 @@ public:
             const auto tokenTypeVal = TheVal(pTokenInfo->tokenType);
 
             if ( !isAnyNumber(pTokenInfo->tokenType)
-              && !tokenTypeVal.oneOf( MARMAID_TOKEN_ATTR_LE, MARMAID_TOKEN_ATTR_BE
-                                    , MARMAID_TOKEN_ATTR_ME, MARMAID_TOKEN_ATTR_LE_ME, MARMAID_TOKEN_ATTR_BE_ME
+              && !tokenTypeVal.oneOf( MERMAID_TOKEN_ATTR_LE, MERMAID_TOKEN_ATTR_BE
+                                    , MERMAID_TOKEN_ATTR_ME, MERMAID_TOKEN_ATTR_LE_ME, MERMAID_TOKEN_ATTR_BE_ME
                                     , UMBA_TOKENIZER_TOKEN_LINEFEED
-                                    , MARMAID_TOKEN_ATTR_ASCII_Z
-                                    , MARMAID_TOKEN_ATTR_CRC, MARMAID_TOKEN_ATTR_SEED, MARMAID_TOKEN_ATTR_POLY
-                                    , MARMAID_TOKEN_ATTR_CHECKSUM
-                                    , MARMAID_TOKEN_ATTR_SIMPLE_SUM, MARMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT, MARMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT
-                                    , MARMAID_TOKEN_ATTR_SIMPLE_XOR, MARMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT, MARMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT
-                                    , MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR, MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8
-                                    , MARMAID_TOKEN_ATTR_BLOCK
+                                    , MERMAID_TOKEN_ATTR_ASCII_Z
+                                    , MERMAID_TOKEN_ATTR_CRC, MERMAID_TOKEN_ATTR_SEED, MERMAID_TOKEN_ATTR_POLY
+                                    , MERMAID_TOKEN_ATTR_CHECKSUM
+                                    , MERMAID_TOKEN_ATTR_SIMPLE_SUM, MERMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT, MERMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT
+                                    , MERMAID_TOKEN_ATTR_SIMPLE_XOR, MERMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT, MERMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT
+                                    , MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR, MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8
+                                    , MERMAID_TOKEN_ATTR_BLOCK
                                     )
                )
             {
-                expectedReachedMsg(pTokenInfo, { /* UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, */  MARMAID_TOKEN_ATTR_LE /* , MARMAID_TOKEN_ATTR_BE */  | UMBA_TOKENIZER_TOKEN_LINEFEED } /*, "invalid 'native' directive options" */ );
+                expectedReachedMsg(pTokenInfo, { /* UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, */  MERMAID_TOKEN_ATTR_LE /* , MERMAID_TOKEN_ATTR_BE */  | UMBA_TOKENIZER_TOKEN_LINEFEED } /*, "invalid 'native' directive options" */ );
                 return 0;
             }
 
@@ -1329,7 +1329,7 @@ public:
                 return returnCheckUpdateOptions();
             }
 
-            if (tokenTypeVal.oneOf(MARMAID_TOKEN_ATTR_BLOCK))
+            if (tokenTypeVal.oneOf(MERMAID_TOKEN_ATTR_BLOCK))
             {
                 if (item.getTypeSize()!=1 || !(item.isArray() || item.isRange()))
                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'block' option can be set only for char/int8/uint8 arrays/ranges" ), (const TokenInfoType*)0;
@@ -1338,7 +1338,7 @@ public:
                 continue;
             }
 
-            if (tokenTypeVal.oneOf(MARMAID_TOKEN_ATTR_ASCII_Z))
+            if (tokenTypeVal.oneOf(MERMAID_TOKEN_ATTR_ASCII_Z))
             {
                 item.asciiZet = true;
                 item.charsRange = true; // asciiZet автоматом задаёт тип ренджа
@@ -1348,7 +1348,7 @@ public:
                 continue;
             }
 
-            if (tokenTypeVal.oneOf(MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR, MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8))
+            if (tokenTypeVal.oneOf(MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR, MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8))
             {
                 if (!bRange)
                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: trying to set range type for non-range entry" ), (const TokenInfoType*)0;
@@ -1358,7 +1358,7 @@ public:
             
                 forceTypedRange = true;
 
-                if (tokenTypeVal.oneOf(MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR))
+                if (tokenTypeVal.oneOf(MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR))
                     item.charsRange = true;
                 else
                     item.charsRange = false;
@@ -1368,12 +1368,12 @@ public:
             }
 
 
-            if (tokenTypeVal.oneOf(MARMAID_TOKEN_ATTR_LE, MARMAID_TOKEN_ATTR_BE, MARMAID_TOKEN_ATTR_ME, MARMAID_TOKEN_ATTR_LE_ME, MARMAID_TOKEN_ATTR_BE_ME))
+            if (tokenTypeVal.oneOf(MERMAID_TOKEN_ATTR_LE, MERMAID_TOKEN_ATTR_BE, MERMAID_TOKEN_ATTR_ME, MERMAID_TOKEN_ATTR_LE_ME, MERMAID_TOKEN_ATTR_BE_ME))
             {
                 if (endianness!=Endianness::unknown)
                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: endianness option already taken" ), (const TokenInfoType*)0;
 
-                if (tokenTypeVal.oneOf(MARMAID_TOKEN_ATTR_ME))
+                if (tokenTypeVal.oneOf(MERMAID_TOKEN_ATTR_ME))
                 {
                     if (diagram.endianness==Endianness::unknown)
                         return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: middle-endian option taken, but project endianness not set" ), (const TokenInfoType*)0;
@@ -1391,10 +1391,10 @@ public:
                 {
                     switch(pTokenInfo->tokenType)
                     {
-                        case MARMAID_TOKEN_ATTR_LE    : item.endianness = Endianness::littleEndian  ; break;
-                        case MARMAID_TOKEN_ATTR_BE    : item.endianness = Endianness::bigEndian     ; break;
-                        case MARMAID_TOKEN_ATTR_LE_ME : item.endianness = Endianness::leMiddleEndian; break;
-                        case MARMAID_TOKEN_ATTR_BE_ME : item.endianness = Endianness::beMiddleEndian; break;
+                        case MERMAID_TOKEN_ATTR_LE    : item.endianness = Endianness::littleEndian  ; break;
+                        case MERMAID_TOKEN_ATTR_BE    : item.endianness = Endianness::bigEndian     ; break;
+                        case MERMAID_TOKEN_ATTR_LE_ME : item.endianness = Endianness::leMiddleEndian; break;
+                        case MERMAID_TOKEN_ATTR_BE_ME : item.endianness = Endianness::beMiddleEndian; break;
                         default:
                             return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: something goes wrong" ), (const TokenInfoType*)0;
                     }
@@ -1406,7 +1406,7 @@ public:
                 continue;
             }
 
-            if (tokenTypeVal.oneOf(MARMAID_TOKEN_ATTR_CHECKSUM))
+            if (tokenTypeVal.oneOf(MERMAID_TOKEN_ATTR_CHECKSUM))
             {
                 if (hasChecksum)
                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: `checksum` option already taken" ), (const TokenInfoType*)0;
@@ -1420,10 +1420,10 @@ public:
             // Все опции типа контрольной суммы могут не предваряться ключевым словом checksum, но лучше его использовать
             // для повышения читаемости
 
-            // else if (pTokenInfo->tokenType==MARMAID_TOKEN_ATTR_CRC)
-            if (tokenTypeVal.oneOf( MARMAID_TOKEN_ATTR_SIMPLE_SUM, MARMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT, MARMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT
-                                  , MARMAID_TOKEN_ATTR_SIMPLE_XOR, MARMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT, MARMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT
-                                  , MARMAID_TOKEN_ATTR_CRC
+            // else if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_CRC)
+            if (tokenTypeVal.oneOf( MERMAID_TOKEN_ATTR_SIMPLE_SUM, MERMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT, MERMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT
+                                  , MERMAID_TOKEN_ATTR_SIMPLE_XOR, MERMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT, MERMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT
+                                  , MERMAID_TOKEN_ATTR_CRC
                                   )
                     )
             {
@@ -1436,13 +1436,13 @@ public:
 
                 switch(pTokenInfo->tokenType)
                 {
-                    case MARMAID_TOKEN_ATTR_SIMPLE_SUM           : checksumOptions.kind = ChecksumKind::simpleSum          ; break;
-                    case MARMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT: checksumOptions.kind = ChecksumKind::simpleSumComplement; break;
-                    case MARMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT    : checksumOptions.kind = ChecksumKind::simpleSumInvert    ; break;
-                    case MARMAID_TOKEN_ATTR_SIMPLE_XOR           : checksumOptions.kind = ChecksumKind::simpleXor          ; break;
-                    case MARMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT: checksumOptions.kind = ChecksumKind::simpleXorComplement; break;
-                    case MARMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT    : checksumOptions.kind = ChecksumKind::simpleXorInvert    ; break;
-                    case MARMAID_TOKEN_ATTR_CRC                  : checksumOptions.kind = ChecksumKind::crc                ; break;
+                    case MERMAID_TOKEN_ATTR_SIMPLE_SUM           : checksumOptions.kind = ChecksumKind::simpleSum          ; break;
+                    case MERMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT: checksumOptions.kind = ChecksumKind::simpleSumComplement; break;
+                    case MERMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT    : checksumOptions.kind = ChecksumKind::simpleSumInvert    ; break;
+                    case MERMAID_TOKEN_ATTR_SIMPLE_XOR           : checksumOptions.kind = ChecksumKind::simpleXor          ; break;
+                    case MERMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT: checksumOptions.kind = ChecksumKind::simpleXorComplement; break;
+                    case MERMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT    : checksumOptions.kind = ChecksumKind::simpleXorInvert    ; break;
+                    case MERMAID_TOKEN_ATTR_CRC                  : checksumOptions.kind = ChecksumKind::crc                ; break;
                 }
 
                 //checksumOptions.kind = ChecksumKind::crc;
@@ -1482,7 +1482,7 @@ public:
                 continue;
             }
 
-            if (tokenTypeVal.oneOf(MARMAID_TOKEN_ATTR_SEED))
+            if (tokenTypeVal.oneOf(MERMAID_TOKEN_ATTR_SEED))
             {
                 if (hasSeed)
                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'seed' option already taken" ), (const TokenInfoType*)0;
@@ -1500,7 +1500,7 @@ public:
                 continue;
             }
 
-            if (tokenTypeVal.oneOf(MARMAID_TOKEN_ATTR_POLY))
+            if (tokenTypeVal.oneOf(MERMAID_TOKEN_ATTR_POLY))
             {
                 if (hasPoly)
                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'poly' option already taken" ), (const TokenInfoType*)0;
@@ -1574,21 +1574,21 @@ public:
                     return false;
             }
 
-            else if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_PACKET_BETA)
+            else if (pTokenInfo->tokenType==MERMAID_TOKEN_DIRECTIVE_PACKET_BETA)
             {
                 if (!diagram.isDataEmpty())
                     return BaseClass::logMessage( pTokenInfo, "unexpected-packet-beta", "'packet-beta' directive must follow before the data records definition" ), false;
                 pTokenInfo = parsePacketBetaDirective(tokenPos, pTokenInfo);
             }
 
-            else if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_TITLE)
+            else if (pTokenInfo->tokenType==MERMAID_TOKEN_DIRECTIVE_TITLE)
             {
                 if (!diagram.isDataEmpty())
                     return BaseClass::logMessage( pTokenInfo, "unexpected-title", "'title' directive must follow before the data records definition" ), false;
                 pTokenInfo = parseTitleDirective(tokenPos, pTokenInfo);
             }
 
-            else if (pTokenInfo->tokenType==MARMAID_TOKEN_OPERATOR_EXTRA)
+            else if (pTokenInfo->tokenType==MERMAID_TOKEN_OPERATOR_EXTRA)
             {
                 pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
                 if (!pTokenInfo)
@@ -1600,41 +1600,41 @@ public:
                 if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
                     return true; // normal stop
     
-                if (!umba::TheValue(pTokenInfo->tokenType).oneOf( MARMAID_TOKEN_DIRECTIVE_NATIVE
-                                                                , MARMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH
-                                                                , MARMAID_TOKEN_DIRECTIVE_DISPLAY_OPTIONS
-                                                                , MARMAID_TOKEN_DIRECTIVE_ORG
+                if (!umba::TheValue(pTokenInfo->tokenType).oneOf( MERMAID_TOKEN_DIRECTIVE_NATIVE
+                                                                , MERMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH
+                                                                , MERMAID_TOKEN_DIRECTIVE_DISPLAY_OPTIONS
+                                                                , MERMAID_TOKEN_DIRECTIVE_ORG
                                                                 )
                    )
                 {
-                     expectedReachedMsg(pTokenInfo, {MARMAID_TOKEN_DIRECTIVE_NATIVE } /* , msg */ );
+                     expectedReachedMsg(pTokenInfo, {MERMAID_TOKEN_DIRECTIVE_NATIVE } /* , msg */ );
                      return 0;
                 }
-                // if (!checkExactTokenType(pTokenInfo, {MARMAID_TOKEN_DIRECTIVE_NATIVE, MARMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH} /* , "invalid 'packet-beta' directive options" */ ))
+                // if (!checkExactTokenType(pTokenInfo, {MERMAID_TOKEN_DIRECTIVE_NATIVE, MERMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH} /* , "invalid 'packet-beta' directive options" */ ))
                 //     return 0;
 
-                if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_NATIVE)
+                if (pTokenInfo->tokenType==MERMAID_TOKEN_DIRECTIVE_NATIVE)
                 {
                     if (!diagram.isDataEmpty())
                         return BaseClass::logMessage( pTokenInfo, "unexpected-native", "'native' directive must follow before the data records definition" ), false;
                     pTokenInfo = parseNativeDirective(tokenPos, pTokenInfo);
                 }
     
-                else if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH)
+                else if (pTokenInfo->tokenType==MERMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH)
                 {
                     if (!diagram.isDataEmpty())
                         return BaseClass::logMessage( pTokenInfo, "unexpected-display-width", "'display-width' directive must follow before the data records definition" ), false;
                     pTokenInfo = parseDisplayWidthDirective(tokenPos, pTokenInfo);
                 }
 
-                else if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_DISPLAY_OPTIONS)
+                else if (pTokenInfo->tokenType==MERMAID_TOKEN_DIRECTIVE_DISPLAY_OPTIONS)
                 {
                     if (!diagram.isDataEmpty())
                         return BaseClass::logMessage( pTokenInfo, "unexpected-display-options", "'display-options' directive must follow before the data records definition" ), false;
                     pTokenInfo = parseDisplayOptionsDirective(tokenPos, pTokenInfo);
                 }
 
-                else if (pTokenInfo->tokenType==MARMAID_TOKEN_DIRECTIVE_ORG)
+                else if (pTokenInfo->tokenType==MERMAID_TOKEN_DIRECTIVE_ORG)
                 {
                     PacketDiagramItemType item;
                     item.pTokenInfo = pTokenInfo; // На всякий случай инфу сохраняем
@@ -1659,7 +1659,7 @@ public:
 
             else
             {
-                expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, MARMAID_TOKEN_SET_TYPES_FIRST, MARMAID_TOKEN_DIRECTIVE_PACKET_BETA, MARMAID_TOKEN_OPERATOR_EXTRA /* , MARMAID_TOKEN_DIRECTIVE_TITLE */ } /* , msg */ );
+                expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, MERMAID_TOKEN_SET_TYPES_FIRST, MERMAID_TOKEN_DIRECTIVE_PACKET_BETA, MERMAID_TOKEN_OPERATOR_EXTRA /* , MERMAID_TOKEN_DIRECTIVE_TITLE */ } /* , msg */ );
                 return false;
             }
 
@@ -1685,7 +1685,7 @@ public:
 
 
 
-} // namespace marmaid
+} // namespace mermaid
 } // namespace tokenizer
 } // namespace umba
 

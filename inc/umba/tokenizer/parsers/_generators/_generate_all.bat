@@ -35,13 +35,13 @@
 @rem --override-template-parameter=EnumNameFormat:E$(ENAMNAME)                                                ^
 
 umba-enum-gen %GEN_OPTS% %HEX2% %TPL_OVERRIDE% %SNIPPETOPTIONS_GEN_FLAGS%                                    ^
-    --namespace=umba/tokenizer/marmaid                                                                       ^
+    --namespace=umba/tokenizer/mermaid                                                                       ^
     --override-template-parameter=EnumNameFormat:$(ENAMNAME)                                                 ^
-    %UINT32% %HEX4% -E=PacketDiagramDisplayOptions          -F=@MarmaidPacketDiagramDisplayOptions.txt       ^
-    %UINT32% %HEX4% -E=PacketDiagramType                    -F=@MarmaidPacketDiagramType.txt                 ^
-    %UINT32% %HEX4% -E=MemoryModel                          -F=@MarmaidPacketDiagramMemoryModel.txt          ^
+    %UINT32% %HEX4% -E=PacketDiagramDisplayOptions          -F=@MermaidPacketDiagramDisplayOptions.txt       ^
+    %UINT32% %HEX4% -E=PacketDiagramType                    -F=@MermaidPacketDiagramType.txt                 ^
+    %UINT32% %HEX4% -E=MemoryModel                          -F=@MermaidPacketDiagramMemoryModel.txt          ^
     %FLAGS%                                                                                                  ^
-    %UINT32% %HEX4% -E=PacketDiagramDisplayOptionFlags      -F=@MarmaidPacketDiagramDisplayOptionFlags.txt   ^
-    %UINT32% %HEX4% -E=PacketDiagramParsingOptions          -F=@MarmaidPacketDiagramParsingOptions.txt       ^
-..\marmaid_packet_diagram_enums.h
+    %UINT32% %HEX4% -E=PacketDiagramDisplayOptionFlags      -F=@MermaidPacketDiagramDisplayOptionFlags.txt   ^
+    %UINT32% %HEX4% -E=PacketDiagramParsingOptions          -F=@MermaidPacketDiagramParsingOptions.txt       ^
+..\mermaid_packet_diagram_enums.h
 

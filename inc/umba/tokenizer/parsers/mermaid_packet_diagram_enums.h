@@ -19,7 +19,7 @@
 
 namespace umba{
 namespace tokenizer{
-namespace marmaid{
+namespace mermaid{
 
 //#!PacketDiagramDisplayOptions
 enum class PacketDiagramDisplayOptions : std::uint32_t
@@ -336,7 +336,7 @@ MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( PacketDiagramParsingOptions, std::map, 1
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramParsingOptions::all                 , "all"                                 );
 MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( PacketDiagramParsingOptions, std::map, 1 )
 
-} // namespace marmaid
+} // namespace mermaid
 } // namespace tokenizer
 } // namespace umba
 

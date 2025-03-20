@@ -1,11 +1,11 @@
 /*! \file
-    \brief Типы для парсера marmaid packet diagram, расширенная версия, с использованием типов и массивов
+    \brief Типы для парсера mermaid packet diagram, расширенная версия, с использованием типов и массивов
  */
 
 
 #pragma once
 
-#include "marmaid_packet_diagram_enums.h"
+#include "mermaid_packet_diagram_enums.h"
 //
 #include "umba/string.h"
 //
@@ -17,7 +17,7 @@
 #include "umba/tokenizer/token_collection.h"
 //
 #include "parser_base.h"
-#include "umba/tokenizer/lang/marmaid_packet_diagram.h"
+#include "umba/tokenizer/lang/mermaid_packet_diagram.h"
 #include "umba/string.h"
 
 
@@ -46,21 +46,21 @@
 
 
 //----------------------------------------------------------------------------
-// umba::tokenizer::marmaid::
+// umba::tokenizer::mermaid::
 namespace umba {
 namespace tokenizer {
-namespace marmaid {
+namespace mermaid {
 
 //----------------------------------------------------------------------------
 
 
 
 //----------------------------------------------------------------------------
-// using DiagramDisplayOptionFlags     = umba::tokenizer::MarmaidPacketDiagramDisplayOptionFlags;
-// using DiagramDisplayOptions         = umba::tokenizer::EMarmaidPacketDiagramDisplayOptions   ;
-// using DiagramParsingOptions         = umba::tokenizer::MarmaidPacketDiagramParsingOptions    ;
-// using EPacketDiagramType            = umba::tokenizer::EMarmaidPacketDiagramType             ;
-// using EMemoryModel                  = umba::tokenizer::EMarmaidPacketDiagramMemoryModel      ;
+// using DiagramDisplayOptionFlags     = umba::tokenizer::MermaidPacketDiagramDisplayOptionFlags;
+// using DiagramDisplayOptions         = umba::tokenizer::EMermaidPacketDiagramDisplayOptions   ;
+// using DiagramParsingOptions         = umba::tokenizer::MermaidPacketDiagramParsingOptions    ;
+// using EPacketDiagramType            = umba::tokenizer::EMermaidPacketDiagramType             ;
+// using EMemoryModel                  = umba::tokenizer::EMermaidPacketDiagramMemoryModel      ;
 
 using EPacketDiagramType            = PacketDiagramType;
 using EMemoryModel                  = MemoryModel      ;
@@ -238,15 +238,15 @@ struct PacketDiagramItem
 
         switch(explicitTypeTokenId)
         {
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR  : return "char"   ;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8  : return "int8_t" ;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT16 : return "int16_t";
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT32 : return "int32_t";
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT64 : return "int64_t";
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8 : return "uint8_t" ;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT16: return "uint16_t";
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT32: return "uint32_t";
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64: return "uint64_t";
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR  : return "char"   ;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8  : return "int8_t" ;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT16 : return "int16_t";
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT32 : return "int32_t";
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT64 : return "int64_t";
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8 : return "uint8_t" ;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT16: return "uint16_t";
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT32: return "uint32_t";
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64: return "uint64_t";
 
             default: return "unknown";
         }
@@ -268,15 +268,15 @@ struct PacketDiagramItem
 
         switch(explicitTypeTokenId)
         {
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR  : return true ;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8  : return true ;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT16 : return true ;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT32 : return true ;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT64 : return true ;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8 : return false;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT16: return false;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT32: return false;
-            case MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64: return false;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR  : return true ;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8  : return true ;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT16 : return true ;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT32 : return true ;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT64 : return true ;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8 : return false;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT16: return false;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT32: return false;
+            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64: return false;
 
             default: return true;
         }
@@ -393,7 +393,7 @@ struct PacketDiagramItem
         if (itemType!=EPacketDiagramItemType::explicitType)
             return "std::" + name;
 
-        if (explicitTypeTokenId!=MARMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR)
+        if (explicitTypeTokenId!=MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR)
             return "std::" + name;
 
         return name;
@@ -593,14 +593,14 @@ struct PacketDiagram
             return 16;
         if (displayWidth<=28u)
             return 24;
-        // if (displayWidth<=40u)
-        //     return 32;
-        // if (displayWidth<=56u)
-        //     return 48;
-        //  
-        // return 64;
+        if (displayWidth<=40u)
+            return 32;
+        if (displayWidth<=56u)
+            return 48;
+         
+        return 64;
 
-        return 32;
+        //return 32;
     }
     
     Endianness getItemEndianness(const PacketDiagramItemType &item) const
@@ -985,7 +985,7 @@ struct PacketDiagram
 
 
 //----------------------------------------------------------------------------
-// umba::tokenizer::marmaid::utils::
+// umba::tokenizer::mermaid::utils::
 namespace utils {
 
 //----------------------------------------------------------------------------
@@ -1589,7 +1589,7 @@ void memorySetVariable(const PacketDiagram<TokenCollectionItemType> &diagram, ma
 
     umba::string::unquote(varFullName);
 
-    int parseVarNameRes = umba::tokenizer::marmaid::utils::simpleSplitNameAndIndex(varFullName , &varName, &varArrayIndex);
+    int parseVarNameRes = umba::tokenizer::mermaid::utils::simpleSplitNameAndIndex(varFullName , &varName, &varArrayIndex);
     if (parseVarNameRes==0)
     {
         marty::mem::throwMemoryAccessError(marty::mem::MemoryAccessResultCode::memoryFillError, "error in entry name: '" + varFullName + "'");
@@ -2183,7 +2183,7 @@ void prepareTextForDiagramParsing(const std::string &text, std::vector<std::stri
 
 //----------------------------------------------------------------------------
 } // namespace utils
-// umba::tokenizer::marmaid::utils::
+// umba::tokenizer::mermaid::utils::
 
 //----------------------------------------------------------------------------
 
@@ -2191,8 +2191,8 @@ void prepareTextForDiagramParsing(const std::string &text, std::vector<std::stri
 
 //----------------------------------------------------------------------------
 
-} // namespace marmaid
+} // namespace mermaid
 } // namespace tokenizer
 } // namespace umba
-// umba::tokenizer::marmaid::
+// umba::tokenizer::mermaid::
 
