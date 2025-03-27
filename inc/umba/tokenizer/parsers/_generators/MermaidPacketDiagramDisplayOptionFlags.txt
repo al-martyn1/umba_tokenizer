@@ -9,5 +9,16 @@ rangeAsChars                           // Default type for ranges is byte/uint8_
 uintBytesAsBlock,uint8BytesAsBlock     // Show uint8_t ranges/arrays as single block
 intBytesAsBlock,int8BytesAsBlock       // Show uint8_t ranges/arrays as single block
 charBytesAsBlock                       // Show char ranges/arrays as single block
-
+showFieldIndex                         // Show field index
+showSingleByteFieldIndex               // Show single byt field index
+hexFieldIndex                          // Field index hex
+hexPrefixFieldIndex                    // Field index hex prefix (if hex mode used)
+showArrayBounds                        // Show arrays bounds
+hexPrefixSection                       // Section address hex prefix
+hexData                                // Data in hex format
+hexPrefixData                          // Hex prefix for data
+showFieldLabels                        // Show field labels
+showTitle                              // Show diagram title
+titleOnTop                             // Show diagram title at top (else at bottom)
+dataMode                               // Data mode
 

@@ -24,28 +24,50 @@ namespace mermaid{
 //#!PacketDiagramDisplayOptions
 enum class PacketDiagramDisplayOptions : std::uint32_t
 {
-    invalid                    = (std::uint32_t)(-1) /*!<  */,
-    unknown                    = (std::uint32_t)(-1) /*!<  */,
-    undefined                  = (std::uint32_t)(-1) /*!<  */,
-    none                       = 0x0000 /*!<  */,
-    singleByteNumbers          = 0x0001 /*!< Show byte numbers for single bytes */,
-    noSingleByteNumbers        = 0x0002 /*!< Don't show byte numbers for single bytes */,
-    singleByteBlockNumbers     = 0x0003 /*!< Show byte numbers in single byte blocks */,
-    noSingleByteBlockNumbers   = 0x0004 /*!< Don't show byte numbers in single byte blocks */,
-    byteNumbers                = 0x0005 /*!< Show byte numbers for bytes in words */,
-    noByteNumbers              = 0x0006 /*!< Don't show byte numbers for bytes in words */,
-    splitWordsToBytes          = 0x0007 /*!< Split words to single bytes with vertical lines */,
-    splitWords                 = 0x0007 /*!< Split words to single bytes with vertical lines */,
-    noSplitWordsToBytes        = 0x0008 /*!< Don't split words to single bytes with vertical lines */,
-    noSplitWords               = 0x0008 /*!< Don't split words to single bytes with vertical lines */,
-    rangeAsChars               = 0x0009 /*!< Display ranges as char sequences */,
-    rangeAsBytes               = 0x000A /*!< Display ranges as byte/uint8 sequences */,
-    uintBytesAsBlock           = 0x000B /*!< Show uint ranges/arrays as single block */,
-    noUintBytesAsBlock         = 0x000C /*!< Don't show uint ranges/arrays as single block */,
-    intBytesAsBlock            = 0x000D /*!< Show uint ranges/arrays as single block */,
-    noIntBytesAsBlock          = 0x000E /*!< Don't show uint ranges/arrays as single block */,
-    charBytesAsBlock           = 0x000F /*!< Show char ranges/arrays as single block */,
-    noCharBytesAsBlock         = 0x0010 /*!< Don't show char ranges/arrays as single block */
+    invalid                      = (std::uint32_t)(-1) /*!<  */,
+    unknown                      = (std::uint32_t)(-1) /*!<  */,
+    undefined                    = (std::uint32_t)(-1) /*!<  */,
+    none                         = 0x0000 /*!<  */,
+    singleByteNumbers            = 0x0001 /*!< Show byte numbers for single bytes */,
+    noSingleByteNumbers          = 0x0002 /*!< Don't show byte numbers for single bytes */,
+    singleByteBlockNumbers       = 0x0003 /*!< Show byte numbers in single byte blocks */,
+    noSingleByteBlockNumbers     = 0x0004 /*!< Don't show byte numbers in single byte blocks */,
+    byteNumbers                  = 0x0005 /*!< Show byte numbers for bytes in words */,
+    noByteNumbers                = 0x0006 /*!< Don't show byte numbers for bytes in words */,
+    splitWordsToBytes            = 0x0007 /*!< Split words to single bytes with vertical lines */,
+    splitWords                   = 0x0007 /*!< Split words to single bytes with vertical lines */,
+    noSplitWordsToBytes          = 0x0008 /*!< Don't split words to single bytes with vertical lines */,
+    noSplitWords                 = 0x0008 /*!< Don't split words to single bytes with vertical lines */,
+    rangeAsChars                 = 0x0009 /*!< Display ranges as char sequences */,
+    rangeAsBytes                 = 0x000A /*!< Display ranges as byte/uint8 sequences */,
+    uintBytesAsBlock             = 0x000B /*!< Show uint ranges/arrays as single block */,
+    noUintBytesAsBlock           = 0x000C /*!< Don't show uint ranges/arrays as single block */,
+    intBytesAsBlock              = 0x000D /*!< Show uint ranges/arrays as single block */,
+    noIntBytesAsBlock            = 0x000E /*!< Don't show uint ranges/arrays as single block */,
+    charBytesAsBlock             = 0x000F /*!< Show char ranges/arrays as single block */,
+    noCharBytesAsBlock           = 0x0010 /*!< Don't show char ranges/arrays as single block */,
+    showFieldIndex               = 0x0011 /*!< Show field index */,
+    noShowFieldIndex             = 0x0012 /*!< Don't show field index */,
+    showSingleByteFieldIndex     = 0x0013 /*!< Show single byte field index */,
+    noShowSingleByteFieldIndex   = 0x0014 /*!< Don't show single byt field index */,
+    hexFieldIndex                = 0x0015 /*!< Field index hex */,
+    noHexFieldIndex              = 0x0016 /*!< Field index dec */,
+    hexPrefixFieldIndex          = 0x0017 /*!< Field index hex prefix (if hex mode used) */,
+    noHexPrefixFieldIndex        = 0x0018 /*!< No field index hex prefix (if hex mode used) */,
+    showArrayBounds              = 0x0019 /*!< Show array bounds */,
+    noShowArrayBounds            = 0x001A /*!< Don't show array bounds */,
+    hexPrefixSection             = 0x001B /*!< Section address hex prefix */,
+    noHexPrefixSection           = 0x001C /*!< Section address hex prefix */,
+    hexData                      = 0x001D /*!< Data in hex format */,
+    noHexData                    = 0x001E /*!< Data in dec format */,
+    hexPrefixData                = 0x001F /*!< Show hex prefix for data */,
+    noHexPrefixData              = 0x0020 /*!< Don't show hex prefix for data */,
+    showFieldLabels              = 0x0021 /*!< Show field labels */,
+    noShowFieldLabels            = 0x0022 /*!< Don't show field labels */,
+    showTitle                    = 0x0023 /*!< Show diagram title */,
+    noShowTitle                  = 0x0024 /*!< Don't show diagram title */,
+    titleOnTop                   = 0x0025 /*!< Show diagram title at top */,
+    noTitleOnTop                 = 0x0026 /*!< Show diagram title at bottom */
 
 }; // enum 
 //#!
@@ -53,85 +75,173 @@ enum class PacketDiagramDisplayOptions : std::uint32_t
 MARTY_CPP_MAKE_ENUM_IS_FLAGS_FOR_NON_FLAGS_ENUM(PacketDiagramDisplayOptions)
 
 MARTY_CPP_ENUM_CLASS_SERIALIZE_BEGIN( PacketDiagramDisplayOptions, std::map, 1 )
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::invalid             , "Invalid"                  );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::singleByteNumbers   , "SingleByteNumbers"        );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::none                , "None"                     );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noByteNumbers       , "NoByteNumbers"            );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noSingleByteNumbers , "NoSingleByteNumbers"      );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::singleByteBlockNumbers , "SingleByteBlockNumbers"   );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::charBytesAsBlock    , "CharBytesAsBlock"         );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noSingleByteBlockNumbers , "NoSingleByteBlockNumbers" );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::byteNumbers         , "ByteNumbers"              );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::splitWordsToBytes   , "SplitWordsToBytes"        );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noSplitWordsToBytes , "NoSplitWordsToBytes"      );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::rangeAsChars        , "RangeAsChars"             );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::rangeAsBytes        , "RangeAsBytes"             );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::uintBytesAsBlock    , "UintBytesAsBlock"         );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noUintBytesAsBlock  , "NoUintBytesAsBlock"       );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noCharBytesAsBlock  , "NoCharBytesAsBlock"       );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::intBytesAsBlock     , "IntBytesAsBlock"          );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noIntBytesAsBlock   , "NoIntBytesAsBlock"        );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::invalid             , "Invalid"                    );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::singleByteNumbers   , "SingleByteNumbers"          );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::none                , "None"                       );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noByteNumbers       , "NoByteNumbers"              );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noShowFieldLabels   , "NoShowFieldLabels"          );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noSingleByteNumbers , "NoSingleByteNumbers"        );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::singleByteBlockNumbers , "SingleByteBlockNumbers"     );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::charBytesAsBlock    , "CharBytesAsBlock"           );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noSingleByteBlockNumbers , "NoSingleByteBlockNumbers"   );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::titleOnTop          , "TitleOnTop"                 );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::showFieldLabels     , "ShowFieldLabels"            );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::byteNumbers         , "ByteNumbers"                );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::splitWordsToBytes   , "SplitWordsToBytes"          );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noSplitWordsToBytes , "NoSplitWordsToBytes"        );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noHexFieldIndex     , "NoHexFieldIndex"            );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::rangeAsChars        , "RangeAsChars"               );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::rangeAsBytes        , "RangeAsBytes"               );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::uintBytesAsBlock    , "UintBytesAsBlock"           );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noUintBytesAsBlock  , "NoUintBytesAsBlock"         );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noCharBytesAsBlock  , "NoCharBytesAsBlock"         );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::intBytesAsBlock     , "IntBytesAsBlock"            );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noIntBytesAsBlock   , "NoIntBytesAsBlock"          );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::showFieldIndex      , "ShowFieldIndex"             );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noShowTitle         , "NoShowTitle"                );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noShowFieldIndex    , "NoShowFieldIndex"           );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::hexData             , "HexData"                    );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::showSingleByteFieldIndex , "ShowSingleByteFieldIndex"   );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noShowArrayBounds   , "NoShowArrayBounds"          );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noShowSingleByteFieldIndex , "NoShowSingleByteFieldIndex" );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::hexFieldIndex       , "HexFieldIndex"              );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::hexPrefixFieldIndex , "HexPrefixFieldIndex"        );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noHexPrefixData     , "NoHexPrefixData"            );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noHexPrefixFieldIndex , "NoHexPrefixFieldIndex"      );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::showArrayBounds     , "ShowArrayBounds"            );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::hexPrefixSection    , "HexPrefixSection"           );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noHexPrefixSection  , "NoHexPrefixSection"         );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noHexData           , "NoHexData"                  );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::hexPrefixData       , "HexPrefixData"              );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::showTitle           , "ShowTitle"                  );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PacketDiagramDisplayOptions::noTitleOnTop        , "NoTitleOnTop"               );
 MARTY_CPP_ENUM_CLASS_SERIALIZE_END( PacketDiagramDisplayOptions, std::map, 1 )
 
 MARTY_CPP_ENUM_CLASS_DESERIALIZE_BEGIN( PacketDiagramDisplayOptions, std::map, 1 )
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::invalid             , "invalid"                      );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::invalid             , "unknown"                      );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::invalid             , "undefined"                    );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::singleByteNumbers   , "single-byte-numbers"          );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::singleByteNumbers   , "single_byte_numbers"          );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::singleByteNumbers   , "singlebytenumbers"            );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::none                , "none"                         );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noByteNumbers       , "no-byte-numbers"              );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noByteNumbers       , "no_byte_numbers"              );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noByteNumbers       , "nobytenumbers"                );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSingleByteNumbers , "no-single-byte-numbers"       );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSingleByteNumbers , "no_single_byte_numbers"       );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSingleByteNumbers , "nosinglebytenumbers"          );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::singleByteBlockNumbers , "single-byte-block-numbers"    );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::singleByteBlockNumbers , "single_byte_block_numbers"    );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::singleByteBlockNumbers , "singlebyteblocknumbers"       );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::charBytesAsBlock    , "char-bytes-as-block"          );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::charBytesAsBlock    , "char_bytes_as_block"          );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::charBytesAsBlock    , "charbytesasblock"             );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSingleByteBlockNumbers , "no-single-byte-block-numbers" );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSingleByteBlockNumbers , "nosinglebyteblocknumbers"     );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSingleByteBlockNumbers , "no_single_byte_block_numbers" );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::byteNumbers         , "byte-numbers"                 );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::byteNumbers         , "byte_numbers"                 );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::byteNumbers         , "bytenumbers"                  );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::splitWordsToBytes   , "split-words-to-bytes"         );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::splitWordsToBytes   , "split-words"                  );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::splitWordsToBytes   , "split_words_to_bytes"         );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::splitWordsToBytes   , "splitwords"                   );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::splitWordsToBytes   , "splitwordstobytes"            );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::splitWordsToBytes   , "split_words"                  );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSplitWordsToBytes , "no-split-words-to-bytes"      );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSplitWordsToBytes , "nosplitwordstobytes"          );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSplitWordsToBytes , "no_split_words_to_bytes"      );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSplitWordsToBytes , "no-split-words"               );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSplitWordsToBytes , "nosplitwords"                 );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSplitWordsToBytes , "no_split_words"               );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::rangeAsChars        , "range-as-chars"               );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::rangeAsChars        , "range_as_chars"               );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::rangeAsChars        , "rangeaschars"                 );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::rangeAsBytes        , "range-as-bytes"               );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::rangeAsBytes        , "range_as_bytes"               );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::rangeAsBytes        , "rangeasbytes"                 );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::uintBytesAsBlock    , "uint-bytes-as-block"          );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::uintBytesAsBlock    , "uint_bytes_as_block"          );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::uintBytesAsBlock    , "uintbytesasblock"             );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noUintBytesAsBlock  , "no-uint-bytes-as-block"       );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noUintBytesAsBlock  , "nouintbytesasblock"           );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noUintBytesAsBlock  , "no_uint_bytes_as_block"       );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noCharBytesAsBlock  , "no-char-bytes-as-block"       );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noCharBytesAsBlock  , "no_char_bytes_as_block"       );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noCharBytesAsBlock  , "nocharbytesasblock"           );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::intBytesAsBlock     , "int-bytes-as-block"           );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::intBytesAsBlock     , "int_bytes_as_block"           );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::intBytesAsBlock     , "intbytesasblock"              );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noIntBytesAsBlock   , "no-int-bytes-as-block"        );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noIntBytesAsBlock   , "no_int_bytes_as_block"        );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noIntBytesAsBlock   , "nointbytesasblock"            );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::invalid             , "invalid"                         );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::invalid             , "unknown"                         );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::invalid             , "undefined"                       );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::singleByteNumbers   , "single-byte-numbers"             );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::singleByteNumbers   , "single_byte_numbers"             );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::singleByteNumbers   , "singlebytenumbers"               );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::none                , "none"                            );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noByteNumbers       , "no-byte-numbers"                 );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noByteNumbers       , "no_byte_numbers"                 );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noByteNumbers       , "nobytenumbers"                   );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noShowFieldLabels   , "no-show-field-labels"            );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noShowFieldLabels   , "no_show_field_labels"            );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noShowFieldLabels   , "noshowfieldlabels"               );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSingleByteNumbers , "no-single-byte-numbers"          );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSingleByteNumbers , "no_single_byte_numbers"          );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSingleByteNumbers , "nosinglebytenumbers"             );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::singleByteBlockNumbers , "single-byte-block-numbers"       );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::singleByteBlockNumbers , "single_byte_block_numbers"       );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::singleByteBlockNumbers , "singlebyteblocknumbers"          );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::charBytesAsBlock    , "char-bytes-as-block"             );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::charBytesAsBlock    , "char_bytes_as_block"             );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::charBytesAsBlock    , "charbytesasblock"                );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSingleByteBlockNumbers , "no-single-byte-block-numbers"    );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSingleByteBlockNumbers , "nosinglebyteblocknumbers"        );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSingleByteBlockNumbers , "no_single_byte_block_numbers"    );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::titleOnTop          , "title-on-top"                    );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::titleOnTop          , "title_on_top"                    );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::titleOnTop          , "titleontop"                      );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::showFieldLabels     , "show-field-labels"               );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::showFieldLabels     , "showfieldlabels"                 );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::showFieldLabels     , "show_field_labels"               );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::byteNumbers         , "byte-numbers"                    );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::byteNumbers         , "byte_numbers"                    );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::byteNumbers         , "bytenumbers"                     );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::splitWordsToBytes   , "split-words-to-bytes"            );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::splitWordsToBytes   , "split-words"                     );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::splitWordsToBytes   , "split_words_to_bytes"            );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::splitWordsToBytes   , "splitwords"                      );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::splitWordsToBytes   , "splitwordstobytes"               );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::splitWordsToBytes   , "split_words"                     );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSplitWordsToBytes , "no-split-words-to-bytes"         );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSplitWordsToBytes , "nosplitwordstobytes"             );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSplitWordsToBytes , "no_split_words_to_bytes"         );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSplitWordsToBytes , "no-split-words"                  );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSplitWordsToBytes , "nosplitwords"                    );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noSplitWordsToBytes , "no_split_words"                  );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noHexFieldIndex     , "no-hex-field-index"              );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noHexFieldIndex     , "no_hex_field_index"              );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noHexFieldIndex     , "nohexfieldindex"                 );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::rangeAsChars        , "range-as-chars"                  );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::rangeAsChars        , "range_as_chars"                  );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::rangeAsChars        , "rangeaschars"                    );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::rangeAsBytes        , "range-as-bytes"                  );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::rangeAsBytes        , "range_as_bytes"                  );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::rangeAsBytes        , "rangeasbytes"                    );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::uintBytesAsBlock    , "uint-bytes-as-block"             );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::uintBytesAsBlock    , "uint_bytes_as_block"             );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::uintBytesAsBlock    , "uintbytesasblock"                );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noUintBytesAsBlock  , "no-uint-bytes-as-block"          );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noUintBytesAsBlock  , "nouintbytesasblock"              );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noUintBytesAsBlock  , "no_uint_bytes_as_block"          );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noCharBytesAsBlock  , "no-char-bytes-as-block"          );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noCharBytesAsBlock  , "no_char_bytes_as_block"          );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noCharBytesAsBlock  , "nocharbytesasblock"              );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::intBytesAsBlock     , "int-bytes-as-block"              );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::intBytesAsBlock     , "int_bytes_as_block"              );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::intBytesAsBlock     , "intbytesasblock"                 );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noIntBytesAsBlock   , "no-int-bytes-as-block"           );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noIntBytesAsBlock   , "no_int_bytes_as_block"           );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noIntBytesAsBlock   , "nointbytesasblock"               );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::showFieldIndex      , "show-field-index"                );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::showFieldIndex      , "showfieldindex"                  );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::showFieldIndex      , "show_field_index"                );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noShowTitle         , "no-show-title"                   );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noShowTitle         , "no_show_title"                   );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noShowTitle         , "noshowtitle"                     );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noShowFieldIndex    , "no-show-field-index"             );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noShowFieldIndex    , "no_show_field_index"             );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noShowFieldIndex    , "noshowfieldindex"                );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::hexData             , "hex-data"                        );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::hexData             , "hex_data"                        );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::hexData             , "hexdata"                         );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::showSingleByteFieldIndex , "show-single-byte-field-index"    );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::showSingleByteFieldIndex , "show_single_byte_field_index"    );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::showSingleByteFieldIndex , "showsinglebytefieldindex"        );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noShowArrayBounds   , "no-show-array-bounds"            );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noShowArrayBounds   , "no_show_array_bounds"            );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noShowArrayBounds   , "noshowarraybounds"               );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noShowSingleByteFieldIndex , "no-show-single-byte-field-index" );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noShowSingleByteFieldIndex , "no_show_single_byte_field_index" );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noShowSingleByteFieldIndex , "noshowsinglebytefieldindex"      );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::hexFieldIndex       , "hex-field-index"                 );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::hexFieldIndex       , "hexfieldindex"                   );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::hexFieldIndex       , "hex_field_index"                 );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::hexPrefixFieldIndex , "hex-prefix-field-index"          );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::hexPrefixFieldIndex , "hex_prefix_field_index"          );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::hexPrefixFieldIndex , "hexprefixfieldindex"             );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noHexPrefixData     , "no-hex-prefix-data"              );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noHexPrefixData     , "no_hex_prefix_data"              );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noHexPrefixData     , "nohexprefixdata"                 );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noHexPrefixFieldIndex , "no-hex-prefix-field-index"       );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noHexPrefixFieldIndex , "no_hex_prefix_field_index"       );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noHexPrefixFieldIndex , "nohexprefixfieldindex"           );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::showArrayBounds     , "show-array-bounds"               );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::showArrayBounds     , "show_array_bounds"               );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::showArrayBounds     , "showarraybounds"                 );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::hexPrefixSection    , "hex-prefix-section"              );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::hexPrefixSection    , "hex_prefix_section"              );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::hexPrefixSection    , "hexprefixsection"                );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noHexPrefixSection  , "no-hex-prefix-section"           );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noHexPrefixSection  , "no_hex_prefix_section"           );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noHexPrefixSection  , "nohexprefixsection"              );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noHexData           , "no-hex-data"                     );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noHexData           , "no_hex_data"                     );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noHexData           , "nohexdata"                       );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::hexPrefixData       , "hex-prefix-data"                 );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::hexPrefixData       , "hex_prefix_data"                 );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::hexPrefixData       , "hexprefixdata"                   );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::showTitle           , "show-title"                      );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::showTitle           , "show_title"                      );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::showTitle           , "showtitle"                       );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noTitleOnTop        , "no-title-on-top"                 );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noTitleOnTop        , "no_title_on_top"                 );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PacketDiagramDisplayOptions::noTitleOnTop        , "notitleontop"                    );
 MARTY_CPP_ENUM_CLASS_DESERIALIZE_END( PacketDiagramDisplayOptions, std::map, 1 )
 
 
@@ -207,19 +317,31 @@ MARTY_CPP_ENUM_CLASS_DESERIALIZE_END( MemoryModel, std::map, 1 )
 //#!PacketDiagramDisplayOptionFlags
 enum class PacketDiagramDisplayOptionFlags : std::uint32_t
 {
-    invalid                  = (std::uint32_t)(-1) /*!<  */,
-    none                     = 0x0000 /*!<  */,
-    singleByteNumbers        = 0x0001 /*!< Show byte numbers for single bytes */,
-    singleByteBlockNumbers   = 0x0002 /*!< Show byte numbers for single byte blocks (arrays) */,
-    byteNumbers              = 0x0004 /*!< Show byte numbers for bytes in words */,
-    splitWordsToBytes        = 0x0008 /*!< Split words to single bytes with vertical lines */,
-    splitWords               = 0x0008 /*!< Split words to single bytes with vertical lines */,
-    rangeAsChars             = 0x0010 /*!< Default type for ranges is byte/uint8_t, use rangeAsChars to switch display mode to chars */,
-    uintBytesAsBlock         = 0x0020 /*!< Show uint8_t ranges/arrays as single block */,
-    uint8BytesAsBlock        = 0x0020 /*!< Show uint8_t ranges/arrays as single block */,
-    intBytesAsBlock          = 0x0040 /*!< Show uint8_t ranges/arrays as single block */,
-    int8BytesAsBlock         = 0x0040 /*!< Show uint8_t ranges/arrays as single block */,
-    charBytesAsBlock         = 0x0080 /*!< Show char ranges/arrays as single block */
+    invalid                    = (std::uint32_t)(-1) /*!<  */,
+    none                       = 0x0000 /*!<  */,
+    singleByteNumbers          = 0x0001 /*!< Show byte numbers for single bytes */,
+    singleByteBlockNumbers     = 0x0002 /*!< Show byte numbers for single byte blocks (arrays) */,
+    byteNumbers                = 0x0004 /*!< Show byte numbers for bytes in words */,
+    splitWordsToBytes          = 0x0008 /*!< Split words to single bytes with vertical lines */,
+    splitWords                 = 0x0008 /*!< Split words to single bytes with vertical lines */,
+    rangeAsChars               = 0x0010 /*!< Default type for ranges is byte/uint8_t, use rangeAsChars to switch display mode to chars */,
+    uintBytesAsBlock           = 0x0020 /*!< Show uint8_t ranges/arrays as single block */,
+    uint8BytesAsBlock          = 0x0020 /*!< Show uint8_t ranges/arrays as single block */,
+    intBytesAsBlock            = 0x0040 /*!< Show uint8_t ranges/arrays as single block */,
+    int8BytesAsBlock           = 0x0040 /*!< Show uint8_t ranges/arrays as single block */,
+    charBytesAsBlock           = 0x0080 /*!< Show char ranges/arrays as single block */,
+    showFieldIndex             = 0x0100 /*!< Show field index */,
+    showSingleByteFieldIndex   = 0x0200 /*!< Show single byt field index */,
+    hexFieldIndex              = 0x0400 /*!< Field index hex */,
+    hexPrefixFieldIndex        = 0x0800 /*!< Field index hex prefix (if hex mode used) */,
+    showArrayBounds            = 0x1000 /*!< Show arrays bounds */,
+    hexPrefixSection           = 0x2000 /*!< Section address hex prefix */,
+    hexData                    = 0x4000 /*!< Data in hex format */,
+    hexPrefixData              = 0x8000 /*!< Hex prefix for data */,
+    showFieldLabels            = 0x10000 /*!< Show field labels */,
+    showTitle                  = 0x20000 /*!< Show diagram title */,
+    titleOnTop                 = 0x40000 /*!< Show diagram title at top (else at bottom) */,
+    dataMode                   = 0x80000 /*!< Data mode */
 
 }; // enum 
 //#!
@@ -227,54 +349,102 @@ enum class PacketDiagramDisplayOptionFlags : std::uint32_t
 MARTY_CPP_MAKE_ENUM_FLAGS(PacketDiagramDisplayOptionFlags)
 
 MARTY_CPP_ENUM_FLAGS_SERIALIZE_BEGIN( PacketDiagramDisplayOptionFlags, std::map, 1 )
-    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::invalid         , "Invalid"                );
-    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::rangeAsChars    , "RangeAsChars"           );
-    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::singleByteNumbers , "SingleByteNumbers"      );
-    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::none            , "None"                   );
-    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::singleByteBlockNumbers , "SingleByteBlockNumbers" );
-    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::byteNumbers     , "ByteNumbers"            );
-    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::splitWordsToBytes , "SplitWordsToBytes"      );
-    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::uintBytesAsBlock , "UintBytesAsBlock"       );
-    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::intBytesAsBlock , "IntBytesAsBlock"        );
-    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::charBytesAsBlock , "CharBytesAsBlock"       );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::invalid         , "Invalid"                  );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::rangeAsChars    , "RangeAsChars"             );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::singleByteNumbers , "SingleByteNumbers"        );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::none            , "None"                     );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::singleByteBlockNumbers , "SingleByteBlockNumbers"   );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::titleOnTop      , "TitleOnTop"               );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::showFieldLabels , "ShowFieldLabels"          );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::byteNumbers     , "ByteNumbers"              );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::splitWordsToBytes , "SplitWordsToBytes"        );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::uintBytesAsBlock , "UintBytesAsBlock"         );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::intBytesAsBlock , "IntBytesAsBlock"          );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::charBytesAsBlock , "CharBytesAsBlock"         );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::showFieldIndex  , "ShowFieldIndex"           );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::hexData         , "HexData"                  );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::showSingleByteFieldIndex , "ShowSingleByteFieldIndex" );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::hexFieldIndex   , "HexFieldIndex"            );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::hexPrefixFieldIndex , "HexPrefixFieldIndex"      );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::showArrayBounds , "ShowArrayBounds"          );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::hexPrefixSection , "HexPrefixSection"         );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::hexPrefixData   , "HexPrefixData"            );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::showTitle       , "ShowTitle"                );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::dataMode        , "DataMode"                 );
 MARTY_CPP_ENUM_FLAGS_SERIALIZE_END( PacketDiagramDisplayOptionFlags, std::map, 1 )
 
 MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( PacketDiagramDisplayOptionFlags, std::map, 1 )
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::invalid         , "invalid"                   );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::rangeAsChars    , "range-as-chars"            );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::rangeAsChars    , "range_as_chars"            );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::rangeAsChars    , "rangeaschars"              );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::singleByteNumbers , "single-byte-numbers"       );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::singleByteNumbers , "single_byte_numbers"       );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::singleByteNumbers , "singlebytenumbers"         );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::none            , "none"                      );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::singleByteBlockNumbers , "single-byte-block-numbers" );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::singleByteBlockNumbers , "single_byte_block_numbers" );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::singleByteBlockNumbers , "singlebyteblocknumbers"    );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::byteNumbers     , "byte-numbers"              );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::byteNumbers     , "byte_numbers"              );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::byteNumbers     , "bytenumbers"               );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::splitWordsToBytes , "split-words-to-bytes"      );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::splitWordsToBytes , "split-words"               );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::splitWordsToBytes , "split_words_to_bytes"      );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::splitWordsToBytes , "splitwords"                );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::splitWordsToBytes , "splitwordstobytes"         );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::splitWordsToBytes , "split_words"               );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::uintBytesAsBlock , "uint8_bytes_as_block"      );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::uintBytesAsBlock , "uint-bytes-as-block"       );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::uintBytesAsBlock , "uint8-bytes-as-block"      );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::uintBytesAsBlock , "uint_bytes_as_block"       );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::uintBytesAsBlock , "uintbytesasblock"          );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::uintBytesAsBlock , "uint8bytesasblock"         );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::intBytesAsBlock , "int-bytes-as-block"        );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::intBytesAsBlock , "int_bytes_as_block"        );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::intBytesAsBlock , "intbytesasblock"           );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::intBytesAsBlock , "int8-bytes-as-block"       );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::intBytesAsBlock , "int8_bytes_as_block"       );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::intBytesAsBlock , "int8bytesasblock"          );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::charBytesAsBlock , "char-bytes-as-block"       );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::charBytesAsBlock , "char_bytes_as_block"       );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::charBytesAsBlock , "charbytesasblock"          );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::invalid         , "invalid"                      );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::rangeAsChars    , "range-as-chars"               );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::rangeAsChars    , "range_as_chars"               );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::rangeAsChars    , "rangeaschars"                 );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::singleByteNumbers , "single-byte-numbers"          );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::singleByteNumbers , "single_byte_numbers"          );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::singleByteNumbers , "singlebytenumbers"            );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::none            , "none"                         );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::singleByteBlockNumbers , "single-byte-block-numbers"    );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::singleByteBlockNumbers , "single_byte_block_numbers"    );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::singleByteBlockNumbers , "singlebyteblocknumbers"       );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::titleOnTop      , "title-on-top"                 );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::titleOnTop      , "title_on_top"                 );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::titleOnTop      , "titleontop"                   );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::showFieldLabels , "show-field-labels"            );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::showFieldLabels , "showfieldlabels"              );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::showFieldLabels , "show_field_labels"            );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::byteNumbers     , "byte-numbers"                 );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::byteNumbers     , "byte_numbers"                 );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::byteNumbers     , "bytenumbers"                  );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::splitWordsToBytes , "split-words-to-bytes"         );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::splitWordsToBytes , "split-words"                  );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::splitWordsToBytes , "split_words_to_bytes"         );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::splitWordsToBytes , "splitwords"                   );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::splitWordsToBytes , "splitwordstobytes"            );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::splitWordsToBytes , "split_words"                  );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::uintBytesAsBlock , "uint8_bytes_as_block"         );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::uintBytesAsBlock , "uint-bytes-as-block"          );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::uintBytesAsBlock , "uint8-bytes-as-block"         );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::uintBytesAsBlock , "uint_bytes_as_block"          );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::uintBytesAsBlock , "uintbytesasblock"             );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::uintBytesAsBlock , "uint8bytesasblock"            );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::intBytesAsBlock , "int-bytes-as-block"           );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::intBytesAsBlock , "int_bytes_as_block"           );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::intBytesAsBlock , "intbytesasblock"              );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::intBytesAsBlock , "int8-bytes-as-block"          );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::intBytesAsBlock , "int8_bytes_as_block"          );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::intBytesAsBlock , "int8bytesasblock"             );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::charBytesAsBlock , "char-bytes-as-block"          );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::charBytesAsBlock , "char_bytes_as_block"          );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::charBytesAsBlock , "charbytesasblock"             );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::showFieldIndex  , "show-field-index"             );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::showFieldIndex  , "showfieldindex"               );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::showFieldIndex  , "show_field_index"             );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::hexData         , "hex-data"                     );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::hexData         , "hex_data"                     );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::hexData         , "hexdata"                      );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::showSingleByteFieldIndex , "show-single-byte-field-index" );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::showSingleByteFieldIndex , "show_single_byte_field_index" );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::showSingleByteFieldIndex , "showsinglebytefieldindex"     );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::hexFieldIndex   , "hex-field-index"              );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::hexFieldIndex   , "hexfieldindex"                );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::hexFieldIndex   , "hex_field_index"              );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::hexPrefixFieldIndex , "hex-prefix-field-index"       );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::hexPrefixFieldIndex , "hex_prefix_field_index"       );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::hexPrefixFieldIndex , "hexprefixfieldindex"          );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::showArrayBounds , "show-array-bounds"            );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::showArrayBounds , "show_array_bounds"            );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::showArrayBounds , "showarraybounds"              );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::hexPrefixSection , "hex-prefix-section"           );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::hexPrefixSection , "hex_prefix_section"           );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::hexPrefixSection , "hexprefixsection"             );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::hexPrefixData   , "hex-prefix-data"              );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::hexPrefixData   , "hex_prefix_data"              );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::hexPrefixData   , "hexprefixdata"                );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::showTitle       , "show-title"                   );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::showTitle       , "show_title"                   );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::showTitle       , "showtitle"                    );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::dataMode        , "data-mode"                    );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::dataMode        , "data_mode"                    );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PacketDiagramDisplayOptionFlags::dataMode        , "datamode"                     );
 MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( PacketDiagramDisplayOptionFlags, std::map, 1 )
 
 

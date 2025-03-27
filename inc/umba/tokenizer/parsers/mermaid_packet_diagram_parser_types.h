@@ -139,6 +139,173 @@ struct ChecksumOptions
 
 }; // struct ChecksumOptions
 
+//----------------------------------------------------------------------------
+
+
+
+
+//----------------------------------------------------------------------------
+// umba::tokenizer::mermaid::utils::
+namespace utils {
+
+//----------------------------------------------------------------------------
+
+#if defined(DEBUG) || defined(_DEBUG)
+
+    using byte_vector_t = std::vector<std::uint8_t>;
+
+#else
+
+    using byte_vector_t = std::basic_string<std::uint8_t>; // std::basic_string uses small string optimization and faster on short strings
+
+#endif
+
+//----------------------------------------------------------------------------
+inline
+std::uint64_t makeByteSizeMask(std::size_t n)
+{
+    switch(n)
+    {
+        case 1 : return std::uint64_t(0x00000000000000FFull);
+        case 2 : return std::uint64_t(0x000000000000FFFFull);
+        case 3 : return std::uint64_t(0x0000000000FFFFFFull);
+        case 4 : return std::uint64_t(0x00000000FFFFFFFFull);
+        case 5 : return std::uint64_t(0x000000FFFFFFFFFFull);
+        case 6 : return std::uint64_t(0x0000FFFFFFFFFFFFull);
+        case 7 : return std::uint64_t(0x00FFFFFFFFFFFFFFull);
+        default: return std::uint64_t(0xFFFFFFFFFFFFFFFFull);
+    }
+}
+
+//----------------------------------------------------------------------------
+inline
+std::size_t calcByteSize(std::uint64_t val)
+{
+    for(std::size_t i=1; i!=8; ++i)
+    {
+        auto mask = makeByteSizeMask(i);
+        if ((val&mask)==val)
+            return i;
+    }
+
+    return 8;
+}
+
+//----------------------------------------------------------------------------
+inline
+std::uint64_t getLoHalf(std::uint64_t val, std::uint64_t size)
+{
+    return val & makeByteSizeMask(size/2);
+}
+
+//----------------------------------------------------------------------------
+inline
+std::uint64_t getHiHalf(std::uint64_t val, std::uint64_t size)
+{
+    return (val>>((size/2))*8) & makeByteSizeMask(size/2);
+}
+
+//----------------------------------------------------------------------------
+inline
+byte_vector_t makeByteVector(std::size_t from, std::size_t to)
+{
+    byte_vector_t bv;
+
+    if (from>to)
+    {
+        for(; from>=to; --from)
+            bv.push_back(std::uint8_t(from));
+    }
+    else
+    {
+        for(; from<=to; ++from)
+            bv.push_back(std::uint8_t(from));
+    }
+
+    return bv;
+}
+
+//----------------------------------------------------------------------------
+inline
+byte_vector_t makeByteVector(std::size_t sz)
+{
+    if (!sz)
+        return byte_vector_t();
+    return makeByteVector(std::size_t(0), sz-1);
+}
+
+//----------------------------------------------------------------------------
+inline
+void makeByteVector(std::uint64_t val, std::uint64_t size, Endianness endianness, byte_vector_t &resVec)
+{
+    if (endianness==Endianness::undefined)
+        endianness = Endianness::littleEndian;
+
+    std::size_t resVecOrgSize = resVec.size();
+
+    if (size>8)
+        throw std::invalid_argument("size too much (greater than 8)");
+
+    std::uint64_t orgVal = val;
+
+    // Допустимы ли только степени двойки (1/2/4/8) или можно использовать и 3/5/7?
+    // в режиме leMiddleEndian и beMiddleEndian - точно нельзя, только 4 или 8
+
+    switch(endianness)
+    {
+        case Endianness::undefined     : throw std::runtime_error("invalid endianness (undefined)");
+        case Endianness::middleEndian  : throw std::runtime_error("invalid endianness (middleEndian)");
+
+        case Endianness::littleEndian  : [[fallthrough]];
+        case Endianness::bigEndian     :
+             {
+                 for(std::size_t i=0; i!=size; ++i, val>>=8)
+                     resVec.push_back(std::uint8_t(val));
+
+                 if (val)
+                     throw std::out_of_range("value can't fit into " + std::to_string(size) + " bytes: " + std::to_string(orgVal));
+             }
+             break;
+
+        case Endianness::leMiddleEndian:
+             if (size!=4 && size!=8)
+                 throw std::invalid_argument("middle-endian values can be only 4 or 8 bytes len");
+             // половинки идут в littleEndian формате, но старшая половинка - первая
+             makeByteVector(getHiHalf(val, size), size/2, Endianness::littleEndian, resVec);
+             makeByteVector(getLoHalf(val, size), size/2, Endianness::littleEndian, resVec);
+             return;
+
+        case Endianness::beMiddleEndian:
+             if (size!=4 && size!=8)
+                 throw std::invalid_argument("middle-endian values can be only 4 or 8 bytes len");
+             // половинки идут в bigEndian формате, но младшая половинка - первая
+             makeByteVector(getLoHalf(val, size), size/2, Endianness::bigEndian, resVec);
+             makeByteVector(getHiHalf(val, size), size/2, Endianness::bigEndian, resVec);
+             return;
+    }
+
+    if (endianness==Endianness::bigEndian)
+    {
+        std::reverse(resVec.begin()+std::ptrdiff_t(resVecOrgSize), resVec.end()); // меняем только то, что добавили сами
+    }
+
+}
+
+//----------------------------------------------------------------------------
+inline
+byte_vector_t makeByteVector(std::uint64_t val, std::uint64_t size, Endianness endianness)
+{
+    byte_vector_t resVec;
+    makeByteVector(val, size, endianness, resVec);
+    return resVec;
+}
+
+//----------------------------------------------------------------------------
+} // namespace utils
+// umba::tokenizer::mermaid::utils::
+
+//----------------------------------------------------------------------------
+
 
 
 
@@ -383,6 +550,12 @@ struct PacketDiagramItem
         return getArraySize()*getTypeSize();
     }
 
+    // Размер типа * кол-во элеметов - более правильное название
+    std::uint64_t getFieldSize() const
+    {
+        return getArraySize()*getTypeSize();
+    }
+
 
     std::string getCppTypeName() const // For C++
     {
@@ -475,6 +648,13 @@ struct PacketDiagram
     PacketDiagramDisplayOptionFlags        displayOptionFlags  = PacketDiagramDisplayOptionFlags::byteNumbers 
                                                                | PacketDiagramDisplayOptionFlags::splitWordsToBytes
                                                                // | PacketDiagramDisplayOptionFlags::singleByteNumbers
+                                                               | PacketDiagramDisplayOptionFlags::showFieldIndex
+                                                               | PacketDiagramDisplayOptionFlags::singleByteBlockNumbers
+                                                               | PacketDiagramDisplayOptionFlags::showSingleByteFieldIndex
+                                                               | PacketDiagramDisplayOptionFlags::showArrayBounds
+                                                               | PacketDiagramDisplayOptionFlags::showFieldLabels
+                                                               | PacketDiagramDisplayOptionFlags::showTitle
+                                                               | PacketDiagramDisplayOptionFlags::titleOnTop
                                                                ;
 
     std::uint64_t                          dataBitSize         = 32; // 
@@ -513,29 +693,65 @@ struct PacketDiagram
 
         switch(opt)
         {
-            case PacketDiagramDisplayOptions::singleByteNumbers       : setResetOptionFlags(PacketDiagramDisplayOptionFlags::singleByteNumbers, PacketDiagramDisplayOptionFlags::none); break;
-            case PacketDiagramDisplayOptions::noSingleByteNumbers     : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::singleByteNumbers); break;
+            case PacketDiagramDisplayOptions::singleByteNumbers          : setResetOptionFlags(PacketDiagramDisplayOptionFlags::singleByteNumbers, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noSingleByteNumbers        : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::singleByteNumbers); break;
 
-            case PacketDiagramDisplayOptions::singleByteBlockNumbers  : setResetOptionFlags(PacketDiagramDisplayOptionFlags::singleByteBlockNumbers, PacketDiagramDisplayOptionFlags::none); break;
-            case PacketDiagramDisplayOptions::noSingleByteBlockNumbers: setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::singleByteBlockNumbers); break;
+            case PacketDiagramDisplayOptions::singleByteBlockNumbers     : setResetOptionFlags(PacketDiagramDisplayOptionFlags::singleByteBlockNumbers, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noSingleByteBlockNumbers   : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::singleByteBlockNumbers); break;
 
-            case PacketDiagramDisplayOptions::byteNumbers             : setResetOptionFlags(PacketDiagramDisplayOptionFlags::byteNumbers, PacketDiagramDisplayOptionFlags::none); break;
-            case PacketDiagramDisplayOptions::noByteNumbers           : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::byteNumbers); break;
+            case PacketDiagramDisplayOptions::byteNumbers                : setResetOptionFlags(PacketDiagramDisplayOptionFlags::byteNumbers, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noByteNumbers              : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::byteNumbers); break;
 
-            case PacketDiagramDisplayOptions::splitWordsToBytes       : setResetOptionFlags(PacketDiagramDisplayOptionFlags::splitWordsToBytes, PacketDiagramDisplayOptionFlags::none); break;
-            case PacketDiagramDisplayOptions::noSplitWordsToBytes     : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::splitWordsToBytes); break;
+            case PacketDiagramDisplayOptions::splitWordsToBytes          : setResetOptionFlags(PacketDiagramDisplayOptionFlags::splitWordsToBytes, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noSplitWordsToBytes        : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::splitWordsToBytes); break;
 
-            case PacketDiagramDisplayOptions::rangeAsChars            : setResetOptionFlags(PacketDiagramDisplayOptionFlags::rangeAsChars, PacketDiagramDisplayOptionFlags::none); break;
-            case PacketDiagramDisplayOptions::rangeAsBytes            : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::rangeAsChars); break;
+            case PacketDiagramDisplayOptions::rangeAsChars               : setResetOptionFlags(PacketDiagramDisplayOptionFlags::rangeAsChars, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::rangeAsBytes               : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::rangeAsChars); break;
 
-            case PacketDiagramDisplayOptions::uintBytesAsBlock        : setResetOptionFlags(PacketDiagramDisplayOptionFlags::uintBytesAsBlock, PacketDiagramDisplayOptionFlags::none); break;
-            case PacketDiagramDisplayOptions::noUintBytesAsBlock      : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::uintBytesAsBlock); break;
+            case PacketDiagramDisplayOptions::uintBytesAsBlock           : setResetOptionFlags(PacketDiagramDisplayOptionFlags::uintBytesAsBlock, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noUintBytesAsBlock         : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::uintBytesAsBlock); break;
 
-            case PacketDiagramDisplayOptions::intBytesAsBlock         : setResetOptionFlags(PacketDiagramDisplayOptionFlags::intBytesAsBlock, PacketDiagramDisplayOptionFlags::none); break;
-            case PacketDiagramDisplayOptions::noIntBytesAsBlock       : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::intBytesAsBlock); break;
+            case PacketDiagramDisplayOptions::intBytesAsBlock            : setResetOptionFlags(PacketDiagramDisplayOptionFlags::intBytesAsBlock, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noIntBytesAsBlock          : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::intBytesAsBlock); break;
 
-            case PacketDiagramDisplayOptions::charBytesAsBlock        : setResetOptionFlags(PacketDiagramDisplayOptionFlags::charBytesAsBlock, PacketDiagramDisplayOptionFlags::none); break;
-            case PacketDiagramDisplayOptions::noCharBytesAsBlock      : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::charBytesAsBlock); break;
+            case PacketDiagramDisplayOptions::charBytesAsBlock           : setResetOptionFlags(PacketDiagramDisplayOptionFlags::charBytesAsBlock, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noCharBytesAsBlock         : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::charBytesAsBlock); break;
+
+            case PacketDiagramDisplayOptions::showFieldIndex             : setResetOptionFlags(PacketDiagramDisplayOptionFlags::showFieldIndex, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noShowFieldIndex           : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::showFieldIndex); break;
+
+            case PacketDiagramDisplayOptions::hexFieldIndex              : setResetOptionFlags(PacketDiagramDisplayOptionFlags::hexFieldIndex, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noHexFieldIndex            : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::hexFieldIndex); break;
+
+            case PacketDiagramDisplayOptions::hexPrefixFieldIndex        : setResetOptionFlags(PacketDiagramDisplayOptionFlags::hexPrefixFieldIndex, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noHexPrefixFieldIndex      : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::hexPrefixFieldIndex); break;
+
+            case PacketDiagramDisplayOptions::showSingleByteFieldIndex   : setResetOptionFlags(PacketDiagramDisplayOptionFlags::showSingleByteFieldIndex, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noShowSingleByteFieldIndex : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::showSingleByteFieldIndex); break;
+
+            case PacketDiagramDisplayOptions::showArrayBounds            : setResetOptionFlags(PacketDiagramDisplayOptionFlags::showArrayBounds, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noShowArrayBounds          : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::showArrayBounds); break;
+
+            case PacketDiagramDisplayOptions::hexPrefixSection           : setResetOptionFlags(PacketDiagramDisplayOptionFlags::hexPrefixSection, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noHexPrefixSection         : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::hexPrefixSection); break;
+
+            case PacketDiagramDisplayOptions::hexData                    : setResetOptionFlags(PacketDiagramDisplayOptionFlags::hexData, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noHexData                  : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::hexData); break;
+
+            case PacketDiagramDisplayOptions::hexPrefixData              : setResetOptionFlags(PacketDiagramDisplayOptionFlags::hexPrefixData, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noHexPrefixData            : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::hexPrefixData); break;
+
+            case PacketDiagramDisplayOptions::showFieldLabels            : setResetOptionFlags(PacketDiagramDisplayOptionFlags::showFieldLabels, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noShowFieldLabels          : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::showFieldLabels); break;
+
+            case PacketDiagramDisplayOptions::showTitle                  : setResetOptionFlags(PacketDiagramDisplayOptionFlags::showTitle, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noShowTitle                : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::showTitle); break;
+
+            case PacketDiagramDisplayOptions::titleOnTop                 : setResetOptionFlags(PacketDiagramDisplayOptionFlags::titleOnTop, PacketDiagramDisplayOptionFlags::none); break;
+            case PacketDiagramDisplayOptions::noTitleOnTop               : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::titleOnTop); break;
+
+            // case PacketDiagramDisplayOptions::      : setResetOptionFlags(PacketDiagramDisplayOptionFlags::, PacketDiagramDisplayOptionFlags::none); break;
+            // case PacketDiagramDisplayOptions::      : setResetOptionFlags(PacketDiagramDisplayOptionFlags::none, PacketDiagramDisplayOptionFlags::); break;
 
             case PacketDiagramDisplayOptions::none   : break;
             case PacketDiagramDisplayOptions::invalid: break;
@@ -548,33 +764,75 @@ struct PacketDiagram
         return (displayOptionFlags&flags) == flags;
     }
 
+// showTitle                              // Show diagram title
+// noShowTitle                            // Don't show diagram title
+//  
+// titleOnTop                             // Show diagram title at top
+// noTitleOnTop                           // Show diagram title at bottom
+
     bool testDisplayOption(PacketDiagramDisplayOptions opt) const
     {
         switch(opt)
         {
-            case PacketDiagramDisplayOptions::singleByteNumbers       : return  testDisplayOption(PacketDiagramDisplayOptionFlags::singleByteNumbers);
-            case PacketDiagramDisplayOptions::noSingleByteNumbers     : return !testDisplayOption(PacketDiagramDisplayOptionFlags::singleByteNumbers);
+            case PacketDiagramDisplayOptions::singleByteNumbers          : return  testDisplayOption(PacketDiagramDisplayOptionFlags::singleByteNumbers);
+            case PacketDiagramDisplayOptions::noSingleByteNumbers        : return !testDisplayOption(PacketDiagramDisplayOptionFlags::singleByteNumbers);
 
-            case PacketDiagramDisplayOptions::singleByteBlockNumbers  : return  testDisplayOption(PacketDiagramDisplayOptionFlags::singleByteBlockNumbers);
-            case PacketDiagramDisplayOptions::noSingleByteBlockNumbers: return !testDisplayOption(PacketDiagramDisplayOptionFlags::singleByteBlockNumbers);
+            case PacketDiagramDisplayOptions::singleByteBlockNumbers     : return  testDisplayOption(PacketDiagramDisplayOptionFlags::singleByteBlockNumbers);
+            case PacketDiagramDisplayOptions::noSingleByteBlockNumbers   : return !testDisplayOption(PacketDiagramDisplayOptionFlags::singleByteBlockNumbers);
 
-            case PacketDiagramDisplayOptions::byteNumbers             : return  testDisplayOption(PacketDiagramDisplayOptionFlags::byteNumbers);
-            case PacketDiagramDisplayOptions::noByteNumbers           : return !testDisplayOption(PacketDiagramDisplayOptionFlags::byteNumbers);
+            case PacketDiagramDisplayOptions::byteNumbers                : return  testDisplayOption(PacketDiagramDisplayOptionFlags::byteNumbers);
+            case PacketDiagramDisplayOptions::noByteNumbers              : return !testDisplayOption(PacketDiagramDisplayOptionFlags::byteNumbers);
 
-            case PacketDiagramDisplayOptions::splitWordsToBytes       : return  testDisplayOption(PacketDiagramDisplayOptionFlags::splitWordsToBytes);
-            case PacketDiagramDisplayOptions::noSplitWordsToBytes     : return !testDisplayOption(PacketDiagramDisplayOptionFlags::splitWordsToBytes);
+            case PacketDiagramDisplayOptions::splitWordsToBytes          : return  testDisplayOption(PacketDiagramDisplayOptionFlags::splitWordsToBytes);
+            case PacketDiagramDisplayOptions::noSplitWordsToBytes        : return !testDisplayOption(PacketDiagramDisplayOptionFlags::splitWordsToBytes);
 
-            case PacketDiagramDisplayOptions::rangeAsChars            : return  testDisplayOption(PacketDiagramDisplayOptionFlags::rangeAsChars);
-            case PacketDiagramDisplayOptions::rangeAsBytes            : return !testDisplayOption(PacketDiagramDisplayOptionFlags::rangeAsChars);
+            case PacketDiagramDisplayOptions::rangeAsChars               : return  testDisplayOption(PacketDiagramDisplayOptionFlags::rangeAsChars);
+            case PacketDiagramDisplayOptions::rangeAsBytes               : return !testDisplayOption(PacketDiagramDisplayOptionFlags::rangeAsChars);
 
-            case PacketDiagramDisplayOptions::uintBytesAsBlock        : return  testDisplayOption(PacketDiagramDisplayOptionFlags::uintBytesAsBlock);
-            case PacketDiagramDisplayOptions::noUintBytesAsBlock      : return !testDisplayOption(PacketDiagramDisplayOptionFlags::uintBytesAsBlock);
+            case PacketDiagramDisplayOptions::uintBytesAsBlock           : return  testDisplayOption(PacketDiagramDisplayOptionFlags::uintBytesAsBlock);
+            case PacketDiagramDisplayOptions::noUintBytesAsBlock         : return !testDisplayOption(PacketDiagramDisplayOptionFlags::uintBytesAsBlock);
 
-            case PacketDiagramDisplayOptions::intBytesAsBlock         : return  testDisplayOption(PacketDiagramDisplayOptionFlags::intBytesAsBlock);
-            case PacketDiagramDisplayOptions::noIntBytesAsBlock       : return !testDisplayOption(PacketDiagramDisplayOptionFlags::intBytesAsBlock);
+            case PacketDiagramDisplayOptions::intBytesAsBlock            : return  testDisplayOption(PacketDiagramDisplayOptionFlags::intBytesAsBlock);
+            case PacketDiagramDisplayOptions::noIntBytesAsBlock          : return !testDisplayOption(PacketDiagramDisplayOptionFlags::intBytesAsBlock);
 
-            case PacketDiagramDisplayOptions::charBytesAsBlock        : return  testDisplayOption(PacketDiagramDisplayOptionFlags::charBytesAsBlock);
-            case PacketDiagramDisplayOptions::noCharBytesAsBlock      : return !testDisplayOption(PacketDiagramDisplayOptionFlags::charBytesAsBlock);
+            case PacketDiagramDisplayOptions::charBytesAsBlock           : return  testDisplayOption(PacketDiagramDisplayOptionFlags::charBytesAsBlock);
+            case PacketDiagramDisplayOptions::noCharBytesAsBlock         : return !testDisplayOption(PacketDiagramDisplayOptionFlags::charBytesAsBlock);
+
+            case PacketDiagramDisplayOptions::showFieldIndex             : return  testDisplayOption(PacketDiagramDisplayOptionFlags::showFieldIndex);
+            case PacketDiagramDisplayOptions::noShowFieldIndex           : return !testDisplayOption(PacketDiagramDisplayOptionFlags::showFieldIndex);
+
+            case PacketDiagramDisplayOptions::hexFieldIndex              : return  testDisplayOption(PacketDiagramDisplayOptionFlags::hexFieldIndex);
+            case PacketDiagramDisplayOptions::noHexFieldIndex            : return !testDisplayOption(PacketDiagramDisplayOptionFlags::hexFieldIndex);
+
+            case PacketDiagramDisplayOptions::hexPrefixFieldIndex        : return  testDisplayOption(PacketDiagramDisplayOptionFlags::hexPrefixFieldIndex);
+            case PacketDiagramDisplayOptions::noHexPrefixFieldIndex      : return !testDisplayOption(PacketDiagramDisplayOptionFlags::hexPrefixFieldIndex);
+
+            case PacketDiagramDisplayOptions::showSingleByteFieldIndex   : return  testDisplayOption(PacketDiagramDisplayOptionFlags::showSingleByteFieldIndex);
+            case PacketDiagramDisplayOptions::noShowSingleByteFieldIndex : return !testDisplayOption(PacketDiagramDisplayOptionFlags::showSingleByteFieldIndex);
+
+            case PacketDiagramDisplayOptions::showArrayBounds            : return  testDisplayOption(PacketDiagramDisplayOptionFlags::showArrayBounds);
+            case PacketDiagramDisplayOptions::noShowArrayBounds          : return !testDisplayOption(PacketDiagramDisplayOptionFlags::showArrayBounds);
+
+            case PacketDiagramDisplayOptions::hexPrefixSection           : return  testDisplayOption(PacketDiagramDisplayOptionFlags::hexPrefixSection);
+            case PacketDiagramDisplayOptions::noHexPrefixSection         : return !testDisplayOption(PacketDiagramDisplayOptionFlags::hexPrefixSection);
+
+            case PacketDiagramDisplayOptions::hexData                    : return  testDisplayOption(PacketDiagramDisplayOptionFlags::hexData);
+            case PacketDiagramDisplayOptions::noHexData                  : return !testDisplayOption(PacketDiagramDisplayOptionFlags::hexData);
+
+            case PacketDiagramDisplayOptions::hexPrefixData              : return  testDisplayOption(PacketDiagramDisplayOptionFlags::hexPrefixData);
+            case PacketDiagramDisplayOptions::noHexPrefixData            : return !testDisplayOption(PacketDiagramDisplayOptionFlags::hexPrefixData);
+
+            case PacketDiagramDisplayOptions::showFieldLabels            : return  testDisplayOption(PacketDiagramDisplayOptionFlags::showFieldLabels);
+            case PacketDiagramDisplayOptions::noShowFieldLabels          : return !testDisplayOption(PacketDiagramDisplayOptionFlags::showFieldLabels);
+
+            case PacketDiagramDisplayOptions::showTitle                  : return  testDisplayOption(PacketDiagramDisplayOptionFlags::showTitle);
+            case PacketDiagramDisplayOptions::noShowTitle                : return !testDisplayOption(PacketDiagramDisplayOptionFlags::showTitle);
+
+            case PacketDiagramDisplayOptions::titleOnTop                 : return  testDisplayOption(PacketDiagramDisplayOptionFlags::titleOnTop);
+            case PacketDiagramDisplayOptions::noTitleOnTop               : return !testDisplayOption(PacketDiagramDisplayOptionFlags::titleOnTop);
+
+            // case PacketDiagramDisplayOptions::      : return  testDisplayOption(PacketDiagramDisplayOptionFlags::);
+            // case PacketDiagramDisplayOptions::      : return !testDisplayOption(PacketDiagramDisplayOptionFlags::);
 
             case PacketDiagramDisplayOptions::none   : break;
             case PacketDiagramDisplayOptions::invalid: break;
@@ -977,6 +1235,94 @@ struct PacketDiagram
             data.back().emptyOrg = true;
     }
 
+    marty::mem::MemoryTraits createMemTraits(marty::mem::MemoryOptionFlags memoryOptionFlags=marty::mem::MemoryOptionFlags::defaultFf) const
+    {
+        marty::mem::MemoryTraits memTraits;
+
+        memTraits.memoryOptionFlags = memoryOptionFlags;
+
+        if (this->endianness==umba::tokenizer::mermaid::Endianness::littleEndian)
+           memTraits.endianness = marty::mem::Endianness::littleEndian;
+        else
+           memTraits.endianness = marty::mem::Endianness::bigEndian;
+
+        return memTraits;
+    }
+
+
+    void fillMemWithByteOrderMarkers(marty::mem::Memory &mem) const
+    {
+        const std::uint64_t numberedBytes8 = 0x0706050403020100ull;
+
+        const auto& diagram = *this;
+
+        for(const auto &item: diagram.data)
+        {
+            if (!item.isDataEntry())
+                 continue;
+    
+            auto entryEndianness = diagram.getItemEndianness(item);
+            std::uint64_t entryTypeSize = item.getTypeSize();
+    
+            std::uint64_t valueMask = marty::mem::bits::makeByteSizeMask(int(entryTypeSize));
+            std::uint64_t value     = std::uint64_t(numberedBytes8&valueMask);
+    
+            auto entryBv = utils::makeByteVector(value, entryTypeSize, entryEndianness);
+    
+            if (item.isArray())
+            {
+                auto memIt = diagram.createMemoryIterator(item, &mem, true /* !errorOnWrappedAccess */ );
+                std::uint64_t arraySz = item.getArraySize();
+                for(std::uint64_t i=0ull; i!=arraySz; ++i)
+                {
+                    std::size_t byteIdx = std::size_t(-1);
+                    for(auto byte : entryBv)
+                    {
+                        ++byteIdx;
+    
+                        try
+                        {
+                            *memIt = byte;
+                        }
+                        catch(const marty::mem::address_wrap &e)
+                        {
+                            std::string msg = e.what();
+                            msg += ": field name: '" + item.text + "', index: " + std::to_string(i) + " (byte index: " + std::to_string(byteIdx) + ")";
+                            throw marty::mem::address_wrap(msg);
+                        }
+    
+                        ++memIt;
+                    }
+                }
+            }
+    
+            else // (!item.isArray())
+            {
+                auto memIt = diagram.createMemoryIterator(item, &mem, true /* !errorOnWrappedAccess */ );
+                std::size_t byteIdx = std::size_t(-1);
+                for(auto byte : entryBv)
+                {
+                    ++byteIdx;
+    
+                    try
+                    {
+                        *memIt = byte;
+                    }
+                    catch(const marty::mem::address_wrap &e)
+                    {
+                        std::string msg = e.what();
+                        msg += ": field name: '" + item.text + "' (byte index: " + std::to_string(byteIdx) + ")";
+                        throw marty::mem::address_wrap(msg);
+                    }
+    
+                    ++memIt;
+                }
+    
+            }
+        }
+
+    }
+
 
 }; // struct PacketDiagram
 
@@ -991,35 +1337,6 @@ namespace utils {
 //----------------------------------------------------------------------------
 
 
-
-//----------------------------------------------------------------------------
-
-#if defined(DEBUG) || defined(_DEBUG)
-
-    using byte_vector_t = std::vector<std::uint8_t>;
-
-#else
-
-    using byte_vector_t = std::basic_string<std::uint8_t>; // std::basic_string uses small string optimization and faster on short strings
-
-#endif
-
-//----------------------------------------------------------------------------
-inline
-std::uint64_t makeByteSizeMask(std::size_t n)
-{
-    switch(n)
-    {
-        case 1 : return std::uint64_t(0x00000000000000FFull);
-        case 2 : return std::uint64_t(0x000000000000FFFFull);
-        case 3 : return std::uint64_t(0x0000000000FFFFFFull);
-        case 4 : return std::uint64_t(0x00000000FFFFFFFFull);
-        case 5 : return std::uint64_t(0x000000FFFFFFFFFFull);
-        case 6 : return std::uint64_t(0x0000FFFFFFFFFFFFull);
-        case 7 : return std::uint64_t(0x00FFFFFFFFFFFFFFull);
-        default: return std::uint64_t(0xFFFFFFFFFFFFFFFFull);
-    }
-}
 
 /*
 CHAR_BIT       = 8 (0x0000000000000008)
@@ -1142,115 +1459,6 @@ std::pair<std::uint64_t, std::uint64_t> getMinMaxValuesUnsigned(std::uint64_t si
 
 //----------------------------------------------------------------------------
 inline
-std::uint64_t getLoHalf(std::uint64_t val, std::uint64_t size)
-{
-    return val & makeByteSizeMask(size/2);
-}
-
-//----------------------------------------------------------------------------
-inline
-std::uint64_t getHiHalf(std::uint64_t val, std::uint64_t size)
-{
-    return (val>>((size/2))*8) & makeByteSizeMask(size/2);
-}
-
-//----------------------------------------------------------------------------
-inline
-byte_vector_t makeByteVector(std::size_t from, std::size_t to)
-{
-    byte_vector_t bv;
-
-    if (from>to)
-    {
-        for(; from>=to; --from)
-            bv.push_back(std::uint8_t(from));
-    }
-    else
-    {
-        for(; from<=to; ++from)
-            bv.push_back(std::uint8_t(from));
-    }
-
-    return bv;
-}
-
-//----------------------------------------------------------------------------
-inline
-byte_vector_t makeByteVector(std::size_t sz)
-{
-    if (!sz)
-        return byte_vector_t();
-    return makeByteVector(std::size_t(0), sz-1);
-}
-
-//----------------------------------------------------------------------------
-inline
-void makeByteVector(std::uint64_t val, std::uint64_t size, Endianness endianness, byte_vector_t &resVec)
-{
-    if (endianness==Endianness::undefined)
-        endianness = Endianness::littleEndian;
-
-    std::size_t resVecOrgSize = resVec.size();
-
-    if (size>8)
-        throw std::invalid_argument("size too much (greater than 8)");
-
-    std::uint64_t orgVal = val;
-
-    // Допустимы ли только степени двойки (1/2/4/8) или можно использовать и 3/5/7?
-    // в режиме leMiddleEndian и beMiddleEndian - точно нельзя, только 4 или 8
-
-    switch(endianness)
-    {
-        case Endianness::undefined     : throw std::runtime_error("invalid endianness (undefined)");
-        case Endianness::middleEndian  : throw std::runtime_error("invalid endianness (middleEndian)");
-
-        case Endianness::littleEndian  : [[fallthrough]];
-        case Endianness::bigEndian     :
-             {
-                 for(std::size_t i=0; i!=size; ++i, val>>=8)
-                     resVec.push_back(std::uint8_t(val));
-
-                 if (val)
-                     throw std::out_of_range("value can't fit into " + std::to_string(size) + " bytes: " + std::to_string(orgVal));
-             }
-             break;
-
-        case Endianness::leMiddleEndian:
-             if (size!=4 && size!=8)
-                 throw std::invalid_argument("middle-endian values can be only 4 or 8 bytes len");
-             // половинки идут в littleEndian формате, но старшая половинка - первая
-             makeByteVector(getHiHalf(val, size), size/2, Endianness::littleEndian, resVec);
-             makeByteVector(getLoHalf(val, size), size/2, Endianness::littleEndian, resVec);
-             return;
-
-        case Endianness::beMiddleEndian:
-             if (size!=4 && size!=8)
-                 throw std::invalid_argument("middle-endian values can be only 4 or 8 bytes len");
-             // половинки идут в bigEndian формате, но младшая половинка - первая
-             makeByteVector(getLoHalf(val, size), size/2, Endianness::bigEndian, resVec);
-             makeByteVector(getHiHalf(val, size), size/2, Endianness::bigEndian, resVec);
-             return;
-    }
-
-    if (endianness==Endianness::bigEndian)
-    {
-        std::reverse(resVec.begin()+std::ptrdiff_t(resVecOrgSize), resVec.end()); // меняем только то, что добавили сами
-    }
-
-}
-
-//----------------------------------------------------------------------------
-inline
-byte_vector_t makeByteVector(std::uint64_t val, std::uint64_t size, Endianness endianness)
-{
-    byte_vector_t resVec;
-    makeByteVector(val, size, endianness, resVec);
-    return resVec;
-}
-
-//----------------------------------------------------------------------------
-inline
 char digitToChar(int d, bool bLower=false)
 {
     d &= 0xF;
@@ -1273,6 +1481,16 @@ int charToDigit(char ch)
         return ch-'a'+10;
 
     return -1;
+}
+
+//----------------------------------------------------------------------------
+inline
+bool isHexDigit(char ch)
+{
+    int d = charToDigit(ch);
+    if (d<0 || d>15)
+        return false;
+    return true;
 }
 
 //----------------------------------------------------------------------------
@@ -1314,7 +1532,38 @@ std::string makeHexString(std::uint64_t val, std::uint64_t size)
     std::reverse(resStr.begin(), resStr.end());
 
     return resStr;
+}
 
+//----------------------------------------------------------------------------
+inline
+std::string makeHexString(std::uint64_t val)
+{
+    return makeHexString(val, calcByteSize(val));
+}
+
+//----------------------------------------------------------------------------
+inline
+std::string addNumberPrefix(const std::string &str, const std::string &prefix="0x")
+{
+    std::string strRes; strRes.reserve(str.size());
+    bool prevIsDigit = false;
+    for(auto ch : str)
+    {
+        if (isHexDigit(ch))
+        {
+            if (!prevIsDigit)
+                strRes.append(prefix);
+            prevIsDigit = true;
+        }
+        else
+        {
+            prevIsDigit = false;
+        }
+
+        strRes.append(1, ch);
+    }
+
+    return strRes;
 }
 
 //----------------------------------------------------------------------------
@@ -2178,6 +2427,11 @@ void prepareTextForDiagramParsing(const std::string &text, std::vector<std::stri
 }
 
 //----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
+
 
 
 

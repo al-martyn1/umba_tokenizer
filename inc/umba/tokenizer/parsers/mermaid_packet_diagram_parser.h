@@ -281,6 +281,8 @@ public:
 
                 gapItem.pTokenInfo = item.pTokenInfo;
 
+                gapItem.blockMode  = true;
+
                 // Вроде всё необходимое задано для гэп записи
 
                 gapItem.text = "Fill_" + std::to_string(diagram.fillEntryCounter);
