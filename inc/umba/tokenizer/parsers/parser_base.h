@@ -1,3 +1,7 @@
+/*! \file
+    \brief Базовый парсер
+ */
+
 #pragma once
 
 #include "umba/warnings/push_disable_rel_inc_contains_dbldot.h"

@@ -81,7 +81,7 @@ struct TokenRangeConversionFilter : FilterBase<TokenizerType, VectorType>
 
             typename TokenizerType::IntegerNumericLiteralData lenghtData;
 
-            lenghtData.data        = lenght;
+            lenghtData.value       = lenght;
             lenghtData.fOverflow   = false ;
             lenghtData.hasSuffix   = false ;
             // lenghtData.suffixStartPos - ничего не задаём
