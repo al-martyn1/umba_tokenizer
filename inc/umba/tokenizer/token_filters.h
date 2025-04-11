@@ -3,7 +3,7 @@
 #include "filters/filter_base.h"
 #include "filters/simple_pass_trough_filter.h"
 #include "filters/token_collecting_filter.h"
-#include "filters/raw_chars_collecting_filter.h"
+#include "filters/unclassified_chars_collecting_filter.h"
 #include "filters/simple_suffix_gluing_filter.h"
 #include "filters/cc_preprocessor_filter.h"
 #include "filters/simple_sequence_composing_filter.h"
