@@ -84,6 +84,10 @@ public:
     {
     }
 
+//    template<typename TVal>
+//    using TheVal = umba::TheValue<TVal>;
+
+
     void setDiagramTitle(const std::string &t)
     {
          diagram.title = t;
@@ -1293,8 +1297,6 @@ public:
 
         // %%#! le be middle-endian le-me be-me crc 0-10 seed 10 poly 0x1234
 
-        using TheVal = umba::TheValue;
-
         while(true)
         {
             if (!pTokenInfo)
@@ -1307,7 +1309,7 @@ public:
 
             item.pTokenInfo = pTokenInfo;
 
-            const auto tokenTypeVal = TheVal(pTokenInfo->tokenType);
+            const auto tokenTypeVal = UMBA_THE_VALUE(pTokenInfo->tokenType); // umba::TheValue<std::decay< decltype(pTokenInfo->tokenType)> >(pTokenInfo->tokenType); // UMBA_THE_VALUE(pTokenInfo->tokenType);
 
             if ( !isAnyNumber(pTokenInfo->tokenType)
               && !tokenTypeVal.oneOf( MERMAID_TOKEN_ATTR_LE, MERMAID_TOKEN_ATTR_BE
@@ -1528,6 +1530,11 @@ public:
             }
 
         }
+
+        if (!pTokenInfo)
+            return 0; // Сообщение уже выведено, просто возвращаем ошибку
+
+        return returnCheckUpdateOptions();
     }
 
 
