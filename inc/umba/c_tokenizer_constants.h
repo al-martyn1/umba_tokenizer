@@ -14,6 +14,12 @@
 #define UMBA_TOKENIZER_TOKEN_CTRL_RST                                                 (UMBA_TOKENIZER_TOKEN_CTRL_FLAG|0x0001u)
 
 
+#define UMBA_TOKENIZER_TOKEN_BASE_FIRST                                               0x0000u
+#define UMBA_TOKENIZER_TOKEN_BASE_LAST                                                0x007Fu
+
+#define UMBA_TOKENIZER_TOKEN_BASE_USER_FIRST                                          (UMBA_TOKENIZER_TOKEN_BASE_LAST+1)
+#define UMBA_TOKENIZER_TOKEN_BASE_USER_LAST                                           0x00FFu     
+
 
 #define UMBA_TOKENIZER_TOKEN_NUL                                                      0x0000u
 #define UMBA_TOKENIZER_TOKEN_UNEXPECTED                                               0x0001u
@@ -23,33 +29,39 @@
 #define UMBA_TOKENIZER_TOKEN_TAB                                                      0x0005u
 #define UMBA_TOKENIZER_TOKEN_FORM_FEED                                                0x0006u /* Надо добавить поддержку FF */
 #define UMBA_TOKENIZER_TOKEN_IDENTIFIER                                               0x0007u
-#define UMBA_TOKENIZER_TOKEN_SEMIALPHA                                                0x0008u
-#define UMBA_TOKENIZER_TOKEN_ESCAPE                                                   0x0009u
-#define UMBA_TOKENIZER_TOKEN_LINE_CONTINUATION                                        0x000Au
-#define UMBA_TOKENIZER_TOKEN_UNCLASSIFIED_CHAR                                        0x000Bu
+#define UMBA_TOKENIZER_TOKEN_FQIDENT                                                  0x0008u /* Full qualified identifier (with NS separators) */
+#define UMBA_TOKENIZER_TOKEN_FQIDENT_SCOPERES                                         0x0009u /* For internal usage Full qualified identifier with scope resolution/NS separators at end */
+#define UMBA_TOKENIZER_TOKEN_FQIDENT_AOPEN                                            0x000Au /* For internal usage Full qualified identifier with '<' at end */
+#define UMBA_TOKENIZER_TOKEN_FQIDENT_ACLOSE                                           0x000Bu /* For internal usage Full qualified identifier with '>' at end */
+#define UMBA_TOKENIZER_TOKEN_FQIDENT_COMMA                                            0x000Cu /* For internal usage Full qualified identifier with ',' at end */
+//#define UMBA_TOKENIZER_TOKEN_FQIDENT_                                            0x000Cu 
+#define UMBA_TOKENIZER_TOKEN_SEMIALPHA                                                0x000Du
+#define UMBA_TOKENIZER_TOKEN_ESCAPE                                                   0x000Eu
+#define UMBA_TOKENIZER_TOKEN_LINE_CONTINUATION                                        0x000Fu
+#define UMBA_TOKENIZER_TOKEN_UNCLASSIFIED_CHAR                                        0x0010u
 
 
-#define UMBA_TOKENIZER_TOKEN_CURLY_BRACKET_OPEN                                       0x0011u
-#define UMBA_TOKENIZER_TOKEN_CURLY_BRACKET_CLOSE                                      0x0012u
+#define UMBA_TOKENIZER_TOKEN_CURLY_BRACKET_OPEN                                       0x0021u
+#define UMBA_TOKENIZER_TOKEN_CURLY_BRACKET_CLOSE                                      0x0022u
 #define UMBA_TOKENIZER_TOKEN_CURLY_BRACKETS                                           UMBA_TOKENIZER_TOKEN_CURLY_BRACKET_OPEN
 
-#define UMBA_TOKENIZER_TOKEN_ROUND_BRACKET_OPEN                                       0x0021u
-#define UMBA_TOKENIZER_TOKEN_ROUND_BRACKET_CLOSE                                      0x0022u
+#define UMBA_TOKENIZER_TOKEN_ROUND_BRACKET_OPEN                                       0x0031u
+#define UMBA_TOKENIZER_TOKEN_ROUND_BRACKET_CLOSE                                      0x0032u
 #define UMBA_TOKENIZER_TOKEN_ROUND_BRACKETS                                           UMBA_TOKENIZER_TOKEN_ROUND_BRACKET_OPEN
 
-#define UMBA_TOKENIZER_TOKEN_ANGLE_BRACKET_OPEN                                       0x0031u
-#define UMBA_TOKENIZER_TOKEN_ANGLE_BRACKET_CLOSE                                      0x0032u
+#define UMBA_TOKENIZER_TOKEN_ANGLE_BRACKET_OPEN                                       0x0041u
+#define UMBA_TOKENIZER_TOKEN_ANGLE_BRACKET_CLOSE                                      0x0042u
 #define UMBA_TOKENIZER_TOKEN_ANGLE_BRACKETS                                           UMBA_TOKENIZER_TOKEN_ANGLE_BRACKET_OPEN
 
-#define UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_OPEN                                      0x0041u
-#define UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE                                     0x0042u
+#define UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_OPEN                                      0x0051u
+#define UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE                                     0x0052u
 #define UMBA_TOKENIZER_TOKEN_SQUARE_BRACKETS                                          UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_OPEN
 
-#define UMBA_TOKENIZER_TOKEN_DBLSQUARE_BRACKET_OPEN                                   0x0051u
-#define UMBA_TOKENIZER_TOKEN_DBLSQUARE_BRACKET_CLOSE                                  0x0052u
+#define UMBA_TOKENIZER_TOKEN_DBLSQUARE_BRACKET_OPEN                                   0x0061u
+#define UMBA_TOKENIZER_TOKEN_DBLSQUARE_BRACKET_CLOSE                                  0x0062u
 #define UMBA_TOKENIZER_TOKEN_DBLSQUARE_BRACKETS                                       UMBA_TOKENIZER_TOKEN_DBLSQUARE_BRACKET_OPEN
 
-
+// !!! При изменении базовых констант не забываем, что нельзя вылезать за UMBA_TOKENIZER_TOKEN_BASE_LAST (или надо поправить эту константу)
 
 
 // Кодирование числовых токенов
@@ -162,6 +174,10 @@
 
 
 // На каждый сет встроенных кейвордов - по 1024 значений хватит?
+#define UMBA_TOKENIZER_TOKEN_KEYWORDS_FIRST                                           0x4000u
+#define UMBA_TOKENIZER_TOKEN_KEYWORDS_LAST                                            0x5FFFu
+
+
 
 #define UMBA_TOKENIZER_TOKEN_KEYWORD_SET1_FIRST                                       0x4000u
 #define UMBA_TOKENIZER_TOKEN_KEYWORD_SET1_LAST                                        0x43FFu
