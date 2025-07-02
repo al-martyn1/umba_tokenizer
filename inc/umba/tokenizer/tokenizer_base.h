@@ -566,6 +566,12 @@ public: // methods
     //mutable std::size_t            rawModeCounter = 0;
 
     static
+    auto makeStringView(InputIteratorType b, InputIteratorType e)
+    {
+        return umba::iterator::makeStringView(b, e);
+    }
+
+    static
     InputIteratorTraits getInputIteratorTraits()
     {
         return InputIteratorTraits();
