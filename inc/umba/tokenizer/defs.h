@@ -5,6 +5,48 @@
 #endif
 
 
+#ifndef MARTY_ARG_USED
+
+    //! Подавление варнинга о неиспользованном аргументе
+    #define MARTY_ARG_USED(x)                   (void)(x)
+
+#endif
+
+#if !defined(USE_MARTY_BIGINT)
+    #define USE_MARTY_BIGINT 1
+#endif
+
+#if !defined(USE_MARTY_DECIMAL)
+    #define USE_MARTY_DECIMAL 1
+#endif
+
+
+
+#if defined(USE_MARTY_BIGINT) && USE_MARTY_BIGINT!=0
+    #include "marty_bigint/marty_bigint.h"
+    #if !defined(UMBA_TOKENOZER_MARTY_BIGINT_USED)
+        #define UMBA_TOKENOZER_MARTY_BIGINT_USED
+    #endif
+#else
+    #if defined(UMBA_TOKENOZER_MARTY_BIGINT_USED)
+        #undef UMBA_TOKENOZER_MARTY_BIGINT_USED
+    #endif
+#endif
+
+#if defined(USE_MARTY_DECIMAL) && USE_MARTY_DECIMAL!=0
+    #include "marty_decimal/marty_decimal.h"
+    #if !defined(UMBA_TOKENOZER_MARTY_DECIMAL_USED)
+        #define UMBA_TOKENOZER_MARTY_DECIMAL_USED
+    #endif
+#else
+    #if defined(UMBA_TOKENOZER_MARTY_DECIMAL_USED)
+        #undef UMBA_TOKENOZER_MARTY_DECIMAL_USED
+    #endif
+#endif
+
+
+
+
 // umba::tokenizer::
 namespace umba {
 namespace tokenizer {

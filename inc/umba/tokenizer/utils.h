@@ -4,12 +4,8 @@
     #error "Do not include this file directly, include 'umba/tokenizer.h header instead'"
 #endif
 
-#if !defined(UMBA_TOKENOZER_DONT_USE_MARTY_DECIMAL)
-    #include "marty_decimal/marty_decimal.h"
-    #if !defined(UMBA_TOKENOZER_MARTY_DECIMAL_USED)
-        #define UMBA_TOKENOZER_MARTY_DECIMAL_USED
-    #endif
-#endif
+//
+#include "defs.h"
 
 
 // umba::tokenizer::
@@ -342,11 +338,12 @@ std::uint64_t addAndCheckOverflow(std::uint64_t op1, std::uint64_t op2, bool &bO
 }
 
 //----------------------------------------------------------------------------
+#if defined(UMBA_TOKENOZER_MARTY_DECIMAL_USED)
 inline
 marty::Decimal mulAndCheckOverflow(marty::Decimal op1, std::uint64_t op2, bool &bOverflow)
 {
     UMBA_USED(bOverflow);
-    return op1 * (marty::Decimal)op2; // переполнения никогда не будет
+    return op1 * marty::Decimal(op2); // переполнения никогда не будет
 }
 
 //----------------------------------------------------------------------------
@@ -354,10 +351,46 @@ inline
 marty::Decimal addAndCheckOverflow(marty::Decimal op1, std::uint64_t op2, bool &bOverflow)
 {
     UMBA_USED(bOverflow);
-    return op1 + (marty::Decimal)op2; // переполнения никогда не будет
+    return op1 + marty::Decimal(op2); // переполнения никогда не будет
+}
+#endif
+
+//----------------------------------------------------------------------------
+#if defined(UMBA_TOKENOZER_MARTY_BIGINT_USED)
+inline
+marty::BigInt mulAndCheckOverflow(marty::BigInt op1, std::uint64_t op2, bool &bOverflow)
+{
+    UMBA_USED(bOverflow);
+    return op1 * marty::BigInt(op2); // переполнения никогда не будет
 }
 
 //----------------------------------------------------------------------------
+inline
+marty::BigInt addAndCheckOverflow(marty::BigInt op1, std::uint64_t op2, bool &bOverflow)
+{
+    UMBA_USED(bOverflow);
+    return op1 + marty::BigInt(op2); // переполнения никогда не будет
+}
+#endif
+
+//----------------------------------------------------------------------------
+inline
+double mulAndCheckOverflow(double op1, std::uint64_t op2, bool &bOverflow)
+{
+    UMBA_USED(bOverflow);
+    return op1 * (double)op2; // переполнения никогда не будет
+}
+
+//----------------------------------------------------------------------------
+inline
+double addAndCheckOverflow(double op1, std::uint64_t op2, bool &bOverflow)
+{
+    UMBA_USED(bOverflow);
+    return op1 + (double)op2; // переполнения никогда не будет
+}
+
+//----------------------------------------------------------------------------
+
 
 
 

@@ -9,12 +9,8 @@
 #include "umba/rule_of_five.h"
 #include "umba/warnings/pop.h"
 
-#if !defined(UMBA_TOKENOZER_DONT_USE_MARTY_DECIMAL)
-    #include "marty_decimal/marty_decimal.h"
-    #if !defined(UMBA_TOKENOZER_MARTY_DECIMAL_USED)
-        #define UMBA_TOKENOZER_MARTY_DECIMAL_USED
-    #endif
-#endif
+//
+#include "defs.h"
 
 //
 #include <variant>

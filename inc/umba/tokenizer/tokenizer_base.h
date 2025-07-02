@@ -9,12 +9,9 @@
 #include "umba/rule_of_five.h"
 #include "umba/warnings/pop.h"
 
-#if !defined(UMBA_TOKENOZER_DONT_USE_MARTY_DECIMAL)
-    #include "marty_decimal/marty_decimal.h"
-    #if !defined(UMBA_TOKENOZER_MARTY_DECIMAL_USED)
-        #define UMBA_TOKENOZER_MARTY_DECIMAL_USED
-    #endif
-#endif
+//
+#include "defs.h"
+
 
 //
 #include <variant>
@@ -258,8 +255,8 @@ public: // depending types
     //------------------------------
     struct IntegerNumericLiteralData
     {
-#if defined(UMBA_TOKENOZER_MARTY_DECIMAL_USED)
-        marty::Decimal       value;
+#if defined(UMBA_TOKENOZER_MARTY_BIGINT_USED)
+        marty::BigInt        value;
 #else
         std::uint64_t        value;
 #endif
@@ -421,10 +418,10 @@ protected: // fileds - состояние токенизатора
     mutable CharClass              allowedDigitCharClass        = CharClass::none;
     mutable int                    numbersBase                  = 0;
 
-#if defined(UMBA_TOKENOZER_MARTY_DECIMAL_USED)
-    mutable marty::Decimal         numberCurrentIntValue        = 0;
-    mutable marty::Decimal         numberCurrentFractionalValue = 0;
-    mutable marty::Decimal         numberCurrentFractionalPower = 1;
+#if defined(UMBA_TOKENOZER_MARTY_BIGINT_USED)
+    mutable marty::BigInt          numberCurrentIntValue        = 0;
+    mutable marty::BigInt          numberCurrentFractionalValue = 0;
+    mutable marty::BigInt          numberCurrentFractionalPower = 1;
 #else
     mutable std::uint64_t          numberCurrentIntValue        = 0;
     mutable std::uint64_t          numberCurrentFractionalValue = 0;
