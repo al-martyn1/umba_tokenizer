@@ -413,16 +413,103 @@ PowerValueType makePowerOf(PowerValueType base, std::uint64_t pwr, bool &bOverfl
 
 
 
+//----------------------------------------------------------------------------
+template<typename StringType>
+StringType normalizeLineFeed(const StringType &str)
+{
+    using CharType = typename StringType::value_type;
 
-} // namespace utils
+    StringType res; res.reserve();
+
+    bool waitCr = false;
+
+    for(auto ch: str)
+    {
+        if (waitCr)
+        {
+            if (ch==CharType('\r'))
+                waitCr = false;
+            else
+                res.append(1, ch);
+        }
+        else
+        {
+            if (ch==CharType('\n'))
+                waitCr = true;
+            res.append(1, ch);
+        }
+    }
+
+    return res;
+}
+
+//----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
+template<typename InputIteratorType>
+auto makeTokenText(umba::tokenizer::payload_type tokenType, InputIteratorType b, InputIteratorType e)
+{
+    if (tokenType==UMBA_TOKENIZER_TOKEN_LINEFEED)
+    {
+        return std::string("\n");
+    }
+
+    if (tokenType==UMBA_TOKENIZER_TOKEN_LINE_CONTINUATION)
+    {
+        return std::string("\\\n");
+    }
+
+    if (tokenType>=UMBA_TOKENIZER_TOKEN_COMMENT_MULTI_LINE_START && tokenType<=UMBA_TOKENIZER_TOKEN_COMMENT_MULTI_LINE_END)
+    {
+        return normalizeLineFeed(umba::iterator::makeString(b, e));
+    }
+
+    return umba::iterator::makeString(b, e);
+}
+
+//----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
+template< typename TokenizerType
+        , typename InputIteratorType = typename TokenizerType::iterator_type
+        >
+bool tokenizeInput( const TokenizerType &tokenizer
+                  , InputIteratorType   itBegin
+                  , InputIteratorType   itEnd  
+                  )
+{
+    bool bOk = true;
+     
+    tokenizer.tokenizeInit();
+
+    auto it = itBegin;
+    for(; it!=itEnd && bOk; ++it)
+    {
+        if (!tokenizer.tokenize(it, itEnd))
+        {
+            bOk = false;
+        }
+    }
+     
+    if (bOk)
+    {
+        bOk = tokenizer.tokenizeFinalize(it, itEnd);
+    }
+
+    return bOk;
+}
+
 //----------------------------------------------------------------------------
 
 
 
 
-
-
-
+} // namespace utils
+//----------------------------------------------------------------------------
 
 
 

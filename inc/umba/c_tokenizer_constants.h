@@ -63,6 +63,18 @@
 
 // !!! При изменении базовых констант не забываем, что нельзя вылезать за UMBA_TOKENIZER_TOKEN_BASE_LAST (или надо поправить эту константу)
 
+// На всякий случай считаем за идентификатор даже константы для внутреннего использования
+#define UMBA_TOKENIZER_TOKEN_IDENTIFIER_FIRST                                         UMBA_TOKENIZER_TOKEN_IDENTIFIER
+#define UMBA_TOKENIZER_TOKEN_IDENTIFIER_LAST                                          UMBA_TOKENIZER_TOKEN_FQIDENT_COMMA
+
+#define UMBA_TOKENIZER_TOKEN_BOOL_LITERAL_FALSE                                       0x0080u
+#define UMBA_TOKENIZER_TOKEN_BOOL_LITERAL_TRUE                                        0x0081u
+
+#define UMBA_TOKENIZER_TOKEN_BOOL_LITERAL_FIRST                                       UMBA_TOKENIZER_TOKEN_BOOL_LITERAL_FALSE
+#define UMBA_TOKENIZER_TOKEN_BOOL_LITERAL_LAST                                        UMBA_TOKENIZER_TOKEN_BOOL_LITERAL_TRUE
+
+
+
 
 // Кодирование числовых токенов
 // Требуется
@@ -78,9 +90,15 @@
 // Базовый номер токена, не флаг признака числового литерала!
 #define UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER                                          0x1000u
 
-#define UMBA_TOKENIZER_TOKEN_FLOAT_NUMBER                                             (UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER|UMBA_TOKENIZER_TOKEN_FLOAT_FLAG)
+#define UMBA_TOKENIZER_TOKEN_FLOAT_NUMBER                                             ((UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER)|(UMBA_TOKENIZER_TOKEN_FLOAT_FLAG))
 #define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_FIRST                                     UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER
 #define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_LAST                                      0x11FFu
+
+#define UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_FIRST                                    UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER
+#define UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_LAST                                     ((UMBA_TOKENIZER_TOKEN_FLOAT_NUMBER)-1)
+
+#define UMBA_TOKENIZER_TOKEN_FLOAT_NUMBER_FIRST                                       UMBA_TOKENIZER_TOKEN_FLOAT_NUMBER
+#define UMBA_TOKENIZER_TOKEN_FLOAT_NUMBER_LAST                                        ((UMBA_TOKENIZER_TOKEN_FLOAT_NUMBER_FIRST)+(UMBA_TOKENIZER_TOKEN_FLOAT_FLAG)-1)
 
 // #define UMBA_TOKENIZER_TOKEN_NUMBER_USER_LITERAL_FIRST                                (UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_FIRST+1)
 // #define UMBA_TOKENIZER_TOKEN_NUMBER_USER_LITERAL_LAST                                 0x11FFu
@@ -275,6 +293,7 @@
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_COLON                                    (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x185u)   /*  :    */
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_SEMICOLON                                (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x186u)   /*  ;    */
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_QMARK                                    (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x187u)   /*  ?    */
+#define UMBA_TOKENIZER_TOKEN_OPERATOR_CC_TERNARY                               UMBA_TOKENIZER_TOKEN_OPERATOR_QMARK
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_ZERO_OR_ONE_REPETITIONS                  UMBA_TOKENIZER_TOKEN_OPERATOR_QMARK            /*  regex mark alias */
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_TERNARY_CONDITIONAL                      UMBA_TOKENIZER_TOKEN_OPERATOR_QMARK
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_TERNARY_ALTERNATIVE                      UMBA_TOKENIZER_TOKEN_OPERATOR_COLON

@@ -180,6 +180,19 @@ public: // depending types
     using iterator_traits_type     = InputIteratorTraits;
     using messages_string_type     = MessagesStringType;
 
+    #if defined(UMBA_TOKENOZER_MARTY_BIGINT_USED)
+        using integer_type = marty::BigInt;
+    #else
+        using integer_type = std::uint64_t;
+    #endif
+
+    #if defined(UMBA_TOKENOZER_MARTY_DECIMAL_USED)
+        using floating_point_type  = marty::Decimal;
+    #else
+        using floating_point_type  = double;
+    #endif
+
+
     using ITokenizerLiteralParser  = umba::tokenizer::ITokenizerLiteralParser<CharType, MessagesStringType, InputIteratorType, InputIteratorTraits>;
 
     using tokenizer_options_type   = TokenizerOptions<string_type>;
@@ -253,13 +266,21 @@ public: // depending types
     }; // struct IdentifierData
 
     //------------------------------
+    // #if defined(UMBA_TOKENOZER_MARTY_BIGINT_USED)
+    //     using integer_type = marty::BigInt;
+    // #else
+    //     using integer_type = std::uint64_t;
+    // #endif
+    //  
+    // #if defined(UMBA_TOKENOZER_MARTY_DECIMAL_USED)
+    //     using floating_point_type  = marty::Decimal;
+    // #else
+    //     using floating_point_type  = double;
+    // #endif
+
     struct IntegerNumericLiteralData
     {
-#if defined(UMBA_TOKENOZER_MARTY_BIGINT_USED)
-        marty::BigInt        value;
-#else
-        std::uint64_t        value;
-#endif
+        integer_type         value;
         iterator_type        suffixStartPos = {};
         //std::size_t          suffixStartPos = std::size_t(-1);
 
@@ -271,17 +292,11 @@ public: // depending types
     //------------------------------
     struct FloatNumericLiteralData
     {
-#if defined(UMBA_TOKENOZER_MARTY_DECIMAL_USED)
-        using DataValueType  = marty::Decimal;
-#else
-        using DataValueType  = double;
-#endif
-
+        floating_point_type  value;
         iterator_type        suffixStartPos = {};
         //std::size_t          suffixStartPos = std::size_t(-1);
         bool                 hasSuffix = false;
 
-        DataValueType        value;
         bool                 fIntegerOverflow   ; // при разборе целая часть не влезла в std::uint64_t. Для marty::Decimal такой ситуации не происходит.
         bool                 fFractionalOverflow; // при разборе дробная часть не влезла в std::uint64_t. Для marty::Decimal такой ситуации не происходит.
 
@@ -289,6 +304,11 @@ public: // depending types
     }; // struct NumericLiteralData
 
     //#include "umba/packpop.h"
+
+
+    // !!! Надо вспомнить, почему я сделал DataType##Holder, ведь изначально в variant'е были именно типы DataType
+    // Скорее всего, variant<DataType> был очень жирный, а также его копирование было дорогим.
+    // Но это не факт.
 
     //------------------------------
     #define UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(DataType)           \
@@ -321,7 +341,14 @@ public: // depending types
     // https://en.cppreference.com/w/cpp/utility/variant/visit
 
     // EmptyData must be a first type in a variant (with zero index)
-    using TokenParsedData = std::variant<EmptyData, CommentDataHolder, RawDataHolder, IdentifierDataHolder, StringLiteralDataHolder, IntegerNumericLiteralDataHolder, FloatNumericLiteralDataHolder>;
+    using TokenParsedData = std::variant< EmptyData
+                                        , CommentDataHolder
+                                        , RawDataHolder
+                                        , IdentifierDataHolder
+                                        , StringLiteralDataHolder
+                                        , IntegerNumericLiteralDataHolder
+                                        , FloatNumericLiteralDataHolder
+                                        >;
 
     using TokenParsedDataType                       = TokenParsedData                ;
     using token_parsed_data_type                    = TokenParsedData                ;
@@ -807,13 +834,16 @@ protected: // methods - helpers - из "грязного" проекта, где
 
         // auto powerDivider = (typename FloatNumericLiteralData::DataValueType)utils::makePowerOf((typename FloatNumericLiteralData::DataValueType)numbersBase, numberCurrentFractionalPower, numberFractionalOverflow);
         //
-        typename FloatNumericLiteralData::DataValueType fractionalPart = 0;
+        //typename FloatNumericLiteralData::DataValueType fractionalPart = 0;
+        floating_point_type fractionalPart = 0;
         if (numberCurrentFractionalPower>0)
         {
-            fractionalPart = (typename FloatNumericLiteralData::DataValueType)numberCurrentFractionalValue / (typename FloatNumericLiteralData::DataValueType)numberCurrentFractionalPower;
+            //fractionalPart = (typename FloatNumericLiteralData::DataValueType)numberCurrentFractionalValue / (typename FloatNumericLiteralData::DataValueType)numberCurrentFractionalPower;
+            fractionalPart = (floating_point_type)numberCurrentFractionalValue / (floating_point_type)numberCurrentFractionalPower;
         }
 
-        res.value = (typename FloatNumericLiteralData::DataValueType)numberCurrentIntValue;
+        //res.value = (typename FloatNumericLiteralData::DataValueType)numberCurrentIntValue;
+        res.value = (floating_point_type)numberCurrentIntValue;
         res.value += fractionalPart;
 
         res.fIntegerOverflow    = numberIntegerOverflow;
