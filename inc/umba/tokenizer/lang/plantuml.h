@@ -12,6 +12,7 @@
 // umba::tokenizer::
 namespace umba {
 namespace tokenizer {
+namespace pluntuml {
 
 
 template< typename CharType            // Input chars type
@@ -25,7 +26,7 @@ template< typename CharType            // Input chars type
         , typename TokenizerType       = Tokenizer< CharType, UserDataType, CharClassTableType, TrieVectorType, StringType, MessagesStringType, InputIteratorType >
         >
 TokenizerBuilder<CharType, UserDataType, CharClassTableType, TrieVectorType, StringType, MessagesStringType, InputIteratorType, InputIteratorTraits, TokenizerType>
-makeTokenizerBuilderPlantUml()
+makeTokenizerBuilder()
 {
     using CppStringLiteralParser     = CppEscapedSimpleQuotedStringLiteralParser<CharType, MessagesStringType, InputIteratorType, InputIteratorTraits>;
     //using AngleBracketsLiteralParser = SimpleQuotedStringLiteralParser<CharType, MessagesStringType, InputIteratorType, InputIteratorTraits>;
@@ -152,208 +153,211 @@ makeTokenizerBuilderPlantUml()
 
 
 
-//----------------------------------------------------------------------------
-namespace pluntuml {
 
 //----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-} // namespace pluntuml
-
-//----------------------------------------------------------------------------
-
-
-//----------------------------------------------------------------------------
-template<typename TokenizerBuilder, typename TokenHandler>
-typename TokenizerBuilder::tokenizer_type makeTokenizerPlantUml(TokenizerBuilder builder, TokenHandler tokenHandler)
+struct TokenizerConfigurator
 {
-    using tokenizer_type = typename TokenizerBuilder::tokenizer_type;
-    using string_type    = typename tokenizer_type::string_type;
+    template<typename TokenizerType>
+    TokenizerType operator()(TokenizerType tokenizer)
+    {
+        using tokenizer_type = typename TokenizerBuilder::tokenizer_type;
+        using string_type    = typename tokenizer_type::string_type;
+    
+        using SimpleSequenceComposingFilter       = umba::tokenizer::filters::SimpleSequenceComposingFilter<tokenizer_type>;
+        using IdentifierToKeywordConversionFilter = umba::tokenizer::filters::IdentifierToKeywordConversionFilter<tokenizer_type>;
+        using RawCharsCollectingFilter            = umba::tokenizer::filters::RawCharsCollectingFilter<tokenizer_type>;
+    
+    
+        auto tokenizer = builder.makeTokenizer();
+        tokenizer.tokenHandler = tokenHandler;
+    
+    
+        // !!! Фильтры, установленные позже, отрабатывают раньше
+    
+        tokenizer.template installTokenFilter<IdentifierToKeywordConversionFilter>( UMBA_TOKENIZER_TOKEN_IDENTIFIER
+                                                                                  , std::unordered_map<string_type, payload_type>
+                                                                                    { {"startuml"        , UMBA_TOKENIZER_TOKEN_PLANTUML_STARTUML     }
+                                                                                    , {"enduml"          , UMBA_TOKENIZER_TOKEN_PLANTUML_ENDUML       }
+                                                                                    , {"state"           , UMBA_TOKENIZER_TOKEN_PLANTUML_STATE        }
+                                                                                    , {"hide"            , UMBA_TOKENIZER_TOKEN_PLANTUML_HIDE         }
+                                                                                    , {"empty"           , UMBA_TOKENIZER_TOKEN_PLANTUML_EMPTY        }
+                                                                                    , {"description"     , UMBA_TOKENIZER_TOKEN_PLANTUML_DESCRIPTION  }
+                                                                                    , {"scale"           , UMBA_TOKENIZER_TOKEN_PLANTUML_SCALE        }
+                                                                                    , {"width"           , UMBA_TOKENIZER_TOKEN_PLANTUML_WIDTH        }
+                                                                                    , {"height"          , UMBA_TOKENIZER_TOKEN_PLANTUML_HEIGHT       }
+                                                                                    , {"as"              , UMBA_TOKENIZER_TOKEN_PLANTUML_AS           }
+                                                                                    , {"note"            , UMBA_TOKENIZER_TOKEN_PLANTUML_NOTE         }
+                                                                                    , {"on"              , UMBA_TOKENIZER_TOKEN_PLANTUML_ON           }
+                                                                                    , {"end"             , UMBA_TOKENIZER_TOKEN_PLANTUML_END          }
+                                                                                    , {"of"              , UMBA_TOKENIZER_TOKEN_PLANTUML_OF           }
+                                                                                    , {"up"              , UMBA_TOKENIZER_TOKEN_PLANTUML_UP           }
+                                                                                    , {"down"            , UMBA_TOKENIZER_TOKEN_PLANTUML_DOWN         }
+                                                                                    , {"left"            , UMBA_TOKENIZER_TOKEN_PLANTUML_LEFT         }
+                                                                                    , {"right"           , UMBA_TOKENIZER_TOKEN_PLANTUML_RIGHT        }
+                                                                                    , {"dashed"          , UMBA_TOKENIZER_TOKEN_PLANTUML_DASHED       }
+                                                                                    , {"dotted"          , UMBA_TOKENIZER_TOKEN_PLANTUML_DOTTED       }
+                                                                                    , {"bold"            , UMBA_TOKENIZER_TOKEN_PLANTUML_BOLD         }
+                                                                                    , {"italic"          , UMBA_TOKENIZER_TOKEN_PLANTUML_ITALIC       }
+                                                                                    , {"skinparam"       , UMBA_TOKENIZER_TOKEN_PLANTUML_SKINPARAM    }
+                                                                                    , {"linetype"        , UMBA_TOKENIZER_TOKEN_PLANTUML_LINETYPE     }
+                                                                                    , {"polyline"        , UMBA_TOKENIZER_TOKEN_PLANTUML_POLYLINE     }
+                                                                                    //, {""          ,        }
+    
+                                                                                    }
+                                                                                  );
+    
+        // Пребразование generic stereotypes в конкретные
+        tokenizer.template installTokenFilter<IdentifierToKeywordConversionFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_GENERIC_STEREOTYPE
+                                                                                  , std::unordered_map<string_type, payload_type>
+                                                                                    { {"fork"            , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_FORK            }
+                                                                                    , {"join"            , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_JOIN            }
+                                                                                    , {"choice"          , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_CHOICE          }
+                                                                                    , {"start"           , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_START           }
+                                                                                    , {"end"             , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_END             }
+                                                                                    , {"entryPoint"      , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_ENTRYPOINT      }
+                                                                                    , {"exitPoint"       , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_EXITPOINT       }
+                                                                                    , {"inputPin"        , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_INPUTPIN        }
+                                                                                    , {"outputPin"       , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_OUTPUTPIN       }
+                                                                                    , {"expansionInput"  , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_EXPANSIONINPUT  }
+                                                                                    , {"expansionOutput" , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_EXPANSIONOUTPUT }
+                                                                                    }
+                                                                                  );
+    
+        tokenizer.template installTokenFilter<IdentifierToKeywordConversionFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_GENERIC_TAG_START
+                                                                                  , std::unordered_map<string_type, payload_type>
+                                                                                    { {"style"           , UMBA_TOKENIZER_TOKEN_PLANTUML_STYLE_TAG_START            }
+                                                                                    //, {"join"            , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_JOIN            }
+                                                                                    }
+                                                                                  );
+        
+        tokenizer.template installTokenFilter<IdentifierToKeywordConversionFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_GENERIC_TAG_END
+                                                                                  , std::unordered_map<string_type, payload_type>
+                                                                                    { {"style"           , UMBA_TOKENIZER_TOKEN_PLANTUML_STYLE_TAG_END              }
+                                                                                    //, {"join"            , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_JOIN            }
+                                                                                    }
+                                                                                  );
+        
+    
+        // Композитим псевдосостояние - [*]
+        tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_PSEUDO_STATE // заменяем последовательность на UMBA_TOKENIZER_TOKEN_PLANTUML_PSEUDO_STATE
+                                                                            , 0u // Нагрузку берём по нулевому индексу
+                                                                            , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_OPEN
+                                                                                                       , UMBA_TOKENIZER_TOKEN_OPERATOR_MULTIPLICATION
+                                                                                                       , UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE
+                                                                                                       }
+                                                                            );
+    
+        // Композитим историческое состояние - [H]
+        tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_HISTORY_STATE
+                                                                            , 1u
+                                                                            , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_OPEN
+                                                                                                       , UMBA_TOKENIZER_TOKEN_IDENTIFIER
+                                                                                                       , UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE
+                                                                                                       }
+                                                                              // std::function<bool(std::size_t,TokenizerType&,bool,payload_type,iterator_type,iterator_type,token_parsed_data_type)>;
+                                                                            , typename SimpleSequenceComposingFilter::extra_check_function_type(
+                                                                                  []( std::size_t idx, tokenizer_type &tokenizer, bool lineStartFlag, payload_type payloadToken
+                                                                                    , typename tokenizer_type::iterator_type b, typename tokenizer_type::iterator_type e, typename tokenizer_type::token_parsed_data_type parsedData
+                                                                                  ) -> bool
+                                                                                  {
+                                                                                      if (idx!=1)
+                                                                                          return true;
+                                                                                      auto identifierData = std::get<typename tokenizer_type::IdentifierDataHolder>(parsedData);
+                                                                                      string_type identifierStr = typename tokenizer_type::string_type(identifierData.pData->value);
+                                                                                      if (umba::string_plus::make_string<std::string>(identifierStr)=="H")
+                                                                                          return true;
+                                                                                      return false;
+                                                                                  }
+                                                                              )
+                                                                            );
+    
+        // Композитим историческое состояние - [H*]
+        tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_HISTORYPLUS_STATE
+                                                                            , 1u
+                                                                            , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_OPEN
+                                                                                                       , UMBA_TOKENIZER_TOKEN_IDENTIFIER
+                                                                                                       , UMBA_TOKENIZER_TOKEN_OPERATOR_MULTIPLICATION
+                                                                                                       , UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE
+                                                                                                       }
+                                                                              // std::function<bool(std::size_t,TokenizerType&,bool,payload_type,iterator_type,iterator_type,token_parsed_data_type)>;
+                                                                            , typename SimpleSequenceComposingFilter::extra_check_function_type(
+                                                                                  []( std::size_t idx, tokenizer_type &tokenizer, bool lineStartFlag, payload_type payloadToken
+                                                                                    , typename tokenizer_type::iterator_type b, typename tokenizer_type::iterator_type e, typename tokenizer_type::token_parsed_data_type parsedData
+                                                                                  ) -> bool
+                                                                                  {
+                                                                                      if (idx!=1)
+                                                                                          return true;
+                                                                                      auto identifierData = std::get<typename tokenizer_type::IdentifierDataHolder>(parsedData);
+                                                                                      string_type identifierStr = typename tokenizer_type::string_type(identifierData.pData->value);
+                                                                                      if (umba::string_plus::make_string<std::string>(identifierStr)=="H")
+                                                                                          return true;
+                                                                                      return false;
+                                                                                  }
+                                                                              )
+                                                                            );
+    
+        // Композитим начало тэга
+        tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_GENERIC_TAG_START
+                                                                            , 1u
+                                                                            , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_OPERATOR_LESS, UMBA_TOKENIZER_TOKEN_IDENTIFIER, UMBA_TOKENIZER_TOKEN_OPERATOR_GREATER }
+                                                                            );
+        // Композитим конец тэга
+        tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_GENERIC_TAG_END
+                                                                            , 2u
+                                                                            , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_OPERATOR_LESS, UMBA_TOKENIZER_TOKEN_OPERATOR_DIVISION, UMBA_TOKENIZER_TOKEN_IDENTIFIER, UMBA_TOKENIZER_TOKEN_OPERATOR_GREATER }
+                                                                            );
+        // Композитим стереотип <<STEREOTYPE>>
+        tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_GENERIC_STEREOTYPE
+                                                                            , 1u
+                                                                            , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_OPERATOR_PLANTUML_STEREOTYPE_LEFT, UMBA_TOKENIZER_TOKEN_IDENTIFIER, UMBA_TOKENIZER_TOKEN_OPERATOR_PLANTUML_STEREOTYPE_RIGHT }
+                                                                            );
+    
+    
+        // Композитим цвет
+        tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_COLOR
+                                                                            , 1u
+                                                                            , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_OPERATOR_HASH, UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_DEC, UMBA_TOKENIZER_TOKEN_IDENTIFIER }
+                                                                            );
+        tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_COLOR
+                                                                            , 1u
+                                                                            , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_OPERATOR_HASH, UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_DEC }
+                                                                            );
+        tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_COLOR
+                                                                            , 1u
+                                                                            , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_OPERATOR_HASH, UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_OCT, UMBA_TOKENIZER_TOKEN_IDENTIFIER }
+                                                                            );
+        tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_COLOR
+                                                                            , 1u
+                                                                            , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_OPERATOR_HASH, UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_OCT }
+                                                                            );
+        tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_COLOR
+                                                                            , 1u
+                                                                            , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_OPERATOR_HASH, UMBA_TOKENIZER_TOKEN_IDENTIFIER }
+                                                                            );
+    
+    
+        tokenizer.template installTokenFilter<RawCharsCollectingFilter>();
+    
+    
+        return tokenizer;
+    }
 
-    using SimpleSequenceComposingFilter       = umba::tokenizer::filters::SimpleSequenceComposingFilter<tokenizer_type>;
-    using IdentifierToKeywordConversionFilter = umba::tokenizer::filters::IdentifierToKeywordConversionFilter<tokenizer_type>;
-    using RawCharsCollectingFilter            = umba::tokenizer::filters::RawCharsCollectingFilter<tokenizer_type>;
+}; // struct TokenizerConfigurator
 
 
+
+template<typename TokenizerBuilder, typename TokenHandler>
+typename TokenizerBuilder::tokenizer_type makeTokenizer(TokenizerBuilder builder, TokenHandler tokenHandler /* , bool suffixGluing=true, bool preprocessorFilter=true */ )
+{
+    using TokenizerType = typename TokenizerBuilder::tokenizer_type;
     auto tokenizer = builder.makeTokenizer();
     tokenizer.tokenHandler = tokenHandler;
 
-
-    // !!! Фильтры, установленные позже, отрабатывают раньше
-
-    tokenizer.template installTokenFilter<IdentifierToKeywordConversionFilter>( UMBA_TOKENIZER_TOKEN_IDENTIFIER
-                                                                              , std::unordered_map<string_type, payload_type>
-                                                                                { {"startuml"        , UMBA_TOKENIZER_TOKEN_PLANTUML_STARTUML     }
-                                                                                , {"enduml"          , UMBA_TOKENIZER_TOKEN_PLANTUML_ENDUML       }
-                                                                                , {"state"           , UMBA_TOKENIZER_TOKEN_PLANTUML_STATE        }
-                                                                                , {"hide"            , UMBA_TOKENIZER_TOKEN_PLANTUML_HIDE         }
-                                                                                , {"empty"           , UMBA_TOKENIZER_TOKEN_PLANTUML_EMPTY        }
-                                                                                , {"description"     , UMBA_TOKENIZER_TOKEN_PLANTUML_DESCRIPTION  }
-                                                                                , {"scale"           , UMBA_TOKENIZER_TOKEN_PLANTUML_SCALE        }
-                                                                                , {"width"           , UMBA_TOKENIZER_TOKEN_PLANTUML_WIDTH        }
-                                                                                , {"height"          , UMBA_TOKENIZER_TOKEN_PLANTUML_HEIGHT       }
-                                                                                , {"as"              , UMBA_TOKENIZER_TOKEN_PLANTUML_AS           }
-                                                                                , {"note"            , UMBA_TOKENIZER_TOKEN_PLANTUML_NOTE         }
-                                                                                , {"on"              , UMBA_TOKENIZER_TOKEN_PLANTUML_ON           }
-                                                                                , {"end"             , UMBA_TOKENIZER_TOKEN_PLANTUML_END          }
-                                                                                , {"of"              , UMBA_TOKENIZER_TOKEN_PLANTUML_OF           }
-                                                                                , {"up"              , UMBA_TOKENIZER_TOKEN_PLANTUML_UP           }
-                                                                                , {"down"            , UMBA_TOKENIZER_TOKEN_PLANTUML_DOWN         }
-                                                                                , {"left"            , UMBA_TOKENIZER_TOKEN_PLANTUML_LEFT         }
-                                                                                , {"right"           , UMBA_TOKENIZER_TOKEN_PLANTUML_RIGHT        }
-                                                                                , {"dashed"          , UMBA_TOKENIZER_TOKEN_PLANTUML_DASHED       }
-                                                                                , {"dotted"          , UMBA_TOKENIZER_TOKEN_PLANTUML_DOTTED       }
-                                                                                , {"bold"            , UMBA_TOKENIZER_TOKEN_PLANTUML_BOLD         }
-                                                                                , {"italic"          , UMBA_TOKENIZER_TOKEN_PLANTUML_ITALIC       }
-                                                                                , {"skinparam"       , UMBA_TOKENIZER_TOKEN_PLANTUML_SKINPARAM    }
-                                                                                , {"linetype"        , UMBA_TOKENIZER_TOKEN_PLANTUML_LINETYPE     }
-                                                                                , {"polyline"        , UMBA_TOKENIZER_TOKEN_PLANTUML_POLYLINE     }
-                                                                                //, {""          ,        }
-
-                                                                                }
-                                                                              );
-
-    // Пребразование generic stereotypes в конкретные
-    tokenizer.template installTokenFilter<IdentifierToKeywordConversionFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_GENERIC_STEREOTYPE
-                                                                              , std::unordered_map<string_type, payload_type>
-                                                                                { {"fork"            , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_FORK            }
-                                                                                , {"join"            , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_JOIN            }
-                                                                                , {"choice"          , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_CHOICE          }
-                                                                                , {"start"           , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_START           }
-                                                                                , {"end"             , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_END             }
-                                                                                , {"entryPoint"      , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_ENTRYPOINT      }
-                                                                                , {"exitPoint"       , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_EXITPOINT       }
-                                                                                , {"inputPin"        , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_INPUTPIN        }
-                                                                                , {"outputPin"       , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_OUTPUTPIN       }
-                                                                                , {"expansionInput"  , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_EXPANSIONINPUT  }
-                                                                                , {"expansionOutput" , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_EXPANSIONOUTPUT }
-                                                                                }
-                                                                              );
-
-    tokenizer.template installTokenFilter<IdentifierToKeywordConversionFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_GENERIC_TAG_START
-                                                                              , std::unordered_map<string_type, payload_type>
-                                                                                { {"style"           , UMBA_TOKENIZER_TOKEN_PLANTUML_STYLE_TAG_START            }
-                                                                                //, {"join"            , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_JOIN            }
-                                                                                }
-                                                                              );
-    
-    tokenizer.template installTokenFilter<IdentifierToKeywordConversionFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_GENERIC_TAG_END
-                                                                              , std::unordered_map<string_type, payload_type>
-                                                                                { {"style"           , UMBA_TOKENIZER_TOKEN_PLANTUML_STYLE_TAG_END              }
-                                                                                //, {"join"            , UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_JOIN            }
-                                                                                }
-                                                                              );
-    
-
-    // Композитим псевдосостояние - [*]
-    tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_PSEUDO_STATE // заменяем последовательность на UMBA_TOKENIZER_TOKEN_PLANTUML_PSEUDO_STATE
-                                                                        , 0u // Нагрузку берём по нулевому индексу
-                                                                        , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_OPEN
-                                                                                                   , UMBA_TOKENIZER_TOKEN_OPERATOR_MULTIPLICATION
-                                                                                                   , UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE
-                                                                                                   }
-                                                                        );
-
-    // Композитим историческое состояние - [H]
-    tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_HISTORY_STATE
-                                                                        , 1u
-                                                                        , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_OPEN
-                                                                                                   , UMBA_TOKENIZER_TOKEN_IDENTIFIER
-                                                                                                   , UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE
-                                                                                                   }
-                                                                          // std::function<bool(std::size_t,TokenizerType&,bool,payload_type,iterator_type,iterator_type,token_parsed_data_type)>;
-                                                                        , typename SimpleSequenceComposingFilter::extra_check_function_type(
-                                                                              []( std::size_t idx, tokenizer_type &tokenizer, bool lineStartFlag, payload_type payloadToken
-                                                                                , typename tokenizer_type::iterator_type b, typename tokenizer_type::iterator_type e, typename tokenizer_type::token_parsed_data_type parsedData
-                                                                              ) -> bool
-                                                                              {
-                                                                                  if (idx!=1)
-                                                                                      return true;
-                                                                                  auto identifierData = std::get<typename tokenizer_type::IdentifierDataHolder>(parsedData);
-                                                                                  string_type identifierStr = typename tokenizer_type::string_type(identifierData.pData->value);
-                                                                                  if (umba::string_plus::make_string<std::string>(identifierStr)=="H")
-                                                                                      return true;
-                                                                                  return false;
-                                                                              }
-                                                                          )
-                                                                        );
-
-    // Композитим историческое состояние - [H*]
-    tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_HISTORYPLUS_STATE
-                                                                        , 1u
-                                                                        , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_OPEN
-                                                                                                   , UMBA_TOKENIZER_TOKEN_IDENTIFIER
-                                                                                                   , UMBA_TOKENIZER_TOKEN_OPERATOR_MULTIPLICATION
-                                                                                                   , UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE
-                                                                                                   }
-                                                                          // std::function<bool(std::size_t,TokenizerType&,bool,payload_type,iterator_type,iterator_type,token_parsed_data_type)>;
-                                                                        , typename SimpleSequenceComposingFilter::extra_check_function_type(
-                                                                              []( std::size_t idx, tokenizer_type &tokenizer, bool lineStartFlag, payload_type payloadToken
-                                                                                , typename tokenizer_type::iterator_type b, typename tokenizer_type::iterator_type e, typename tokenizer_type::token_parsed_data_type parsedData
-                                                                              ) -> bool
-                                                                              {
-                                                                                  if (idx!=1)
-                                                                                      return true;
-                                                                                  auto identifierData = std::get<typename tokenizer_type::IdentifierDataHolder>(parsedData);
-                                                                                  string_type identifierStr = typename tokenizer_type::string_type(identifierData.pData->value);
-                                                                                  if (umba::string_plus::make_string<std::string>(identifierStr)=="H")
-                                                                                      return true;
-                                                                                  return false;
-                                                                              }
-                                                                          )
-                                                                        );
-
-    // Композитим начало тэга
-    tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_GENERIC_TAG_START
-                                                                        , 1u
-                                                                        , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_OPERATOR_LESS, UMBA_TOKENIZER_TOKEN_IDENTIFIER, UMBA_TOKENIZER_TOKEN_OPERATOR_GREATER }
-                                                                        );
-    // Композитим конец тэга
-    tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_GENERIC_TAG_END
-                                                                        , 2u
-                                                                        , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_OPERATOR_LESS, UMBA_TOKENIZER_TOKEN_OPERATOR_DIVISION, UMBA_TOKENIZER_TOKEN_IDENTIFIER, UMBA_TOKENIZER_TOKEN_OPERATOR_GREATER }
-                                                                        );
-    // Композитим стереотип <<STEREOTYPE>>
-    tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_GENERIC_STEREOTYPE
-                                                                        , 1u
-                                                                        , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_OPERATOR_PLANTUML_STEREOTYPE_LEFT, UMBA_TOKENIZER_TOKEN_IDENTIFIER, UMBA_TOKENIZER_TOKEN_OPERATOR_PLANTUML_STEREOTYPE_RIGHT }
-                                                                        );
-
-
-    // Композитим цвет
-    tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_COLOR
-                                                                        , 1u
-                                                                        , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_OPERATOR_HASH, UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_DEC, UMBA_TOKENIZER_TOKEN_IDENTIFIER }
-                                                                        );
-    tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_COLOR
-                                                                        , 1u
-                                                                        , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_OPERATOR_HASH, UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_DEC }
-                                                                        );
-    tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_COLOR
-                                                                        , 1u
-                                                                        , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_OPERATOR_HASH, UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_OCT, UMBA_TOKENIZER_TOKEN_IDENTIFIER }
-                                                                        );
-    tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_COLOR
-                                                                        , 1u
-                                                                        , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_OPERATOR_HASH, UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_BASE_OCT }
-                                                                        );
-    tokenizer.template installTokenFilter<SimpleSequenceComposingFilter>( UMBA_TOKENIZER_TOKEN_PLANTUML_COLOR
-                                                                        , 1u
-                                                                        , std::vector<payload_type>{ UMBA_TOKENIZER_TOKEN_OPERATOR_HASH, UMBA_TOKENIZER_TOKEN_IDENTIFIER }
-                                                                        );
-
-
-    tokenizer.template installTokenFilter<RawCharsCollectingFilter>();
-
-
-    return tokenizer;
+    return TokenizerConfigurator()(tokenizer);
 }
 
 
-
-
-
-
+} // namespace pluntuml
 } // namespace tokenizer
 } // namespace umba
 

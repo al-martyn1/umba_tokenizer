@@ -12,6 +12,7 @@
 // umba::tokenizer::
 namespace umba {
 namespace tokenizer {
+namespace cpp {
 
 
 template< typename CharType                     //!< Input chars type
@@ -25,7 +26,7 @@ template< typename CharType                     //!< Input chars type
         , typename TokenizerType       = umba::tokenizer::Tokenizer< CharType, UserDataType, CharClassTableType, TrieVectorType, StringType, MessagesStringType, InputIteratorType >
         >
 umba::tokenizer::TokenizerBuilder<CharType, UserDataType, CharClassTableType, TrieVectorType, StringType, MessagesStringType, InputIteratorType, InputIteratorTraits, TokenizerType>
-makeTokenizerBuilderCpp()
+makeTokenizerBuilder()
 {
     using CppStringLiteralParser     = CppEscapedSimpleQuotedStringLiteralParser<CharType, MessagesStringType, InputIteratorType, InputIteratorTraits>;
     using AngleBracketsLiteralParser = SimpleQuotedStringLiteralParser<CharType, MessagesStringType, InputIteratorType, InputIteratorTraits>;
@@ -125,39 +126,59 @@ makeTokenizerBuilderCpp()
 
 }
 
+
+
+// template<typename TokenizerBuilder, typename TokenHandler>
+// //typename TokenizerBuilder::tokenizer_type makeTokenizerCpp(const TokenizerBuilder &builder, TokenHandler tokenHandler, bool suffixGluing=true, bool preprocessorFilter=true)
+// typename TokenizerBuilder::tokenizer_type makeTokenizerCpp(TokenizerBuilder builder, TokenHandler tokenHandler, bool suffixGluing=true, bool preprocessorFilter=true)
+
+struct TokenizerConfigurator
+{
+    template<typename TokenizerType>
+    TokenizerType operator()(TokenizerType tokenizer, bool suffixGluing=true, bool preprocessorFilter=true)
+    {
+        // using TokenizerType = typename TokenizerBuilder::tokenizer_type;
+        // auto tokenizer = builder.makeTokenizer();
+        // tokenizer.tokenHandler = tokenHandler;
+    
+        // !!! Фильтры, установленные позже, отрабатывают раньше
+    
+        if (preprocessorFilter)
+            tokenizer.template installTokenFilter<umba::tokenizer::filters::CcPreprocessorFilter<TokenizerType> >();
+    
+        if (suffixGluing)
+            tokenizer.template installTokenFilter<umba::tokenizer::filters::SimpleSuffixGluingFilter<TokenizerType> >();
+    
+        tokenizer.template installTokenFilter<umba::tokenizer::filters::DblSquareBracketOpenComposingFilter <TokenizerType> >();
+        tokenizer.template installTokenFilter<umba::tokenizer::filters::DblSquareBracketCloseComposingFilter<TokenizerType> >();
+    
+    
+        // Символ хэша приобретает значение операторного только внутри директивы define
+        // По умолчанию он не операторный
+        // Сбрасываем операторный флаг для символа '#'
+        tokenizer.setResetCharClassFlags('#', umba::tokenizer::CharClass::none, umba::tokenizer::CharClass::opchar); // Ничего не устанавливаем, сбрасываем opchar
+    
+        return tokenizer;
+    }
+
+}; // struct TokenizerConfigurator
+
+
 template<typename TokenizerBuilder, typename TokenHandler>
 //typename TokenizerBuilder::tokenizer_type makeTokenizerCpp(const TokenizerBuilder &builder, TokenHandler tokenHandler, bool suffixGluing=true, bool preprocessorFilter=true)
-typename TokenizerBuilder::tokenizer_type makeTokenizerCpp(TokenizerBuilder builder, TokenHandler tokenHandler, bool suffixGluing=true, bool preprocessorFilter=true)
+typename TokenizerBuilder::tokenizer_type makeTokenizer(TokenizerBuilder builder, TokenHandler tokenHandler, bool suffixGluing=true, bool preprocessorFilter=true )
 {
     using TokenizerType = typename TokenizerBuilder::tokenizer_type;
     auto tokenizer = builder.makeTokenizer();
     tokenizer.tokenHandler = tokenHandler;
 
-    // !!! Фильтры, установленные позже, отрабатывают раньше
-
-    if (preprocessorFilter)
-        tokenizer.template installTokenFilter<umba::tokenizer::filters::CcPreprocessorFilter<TokenizerType> >();
-
-    if (suffixGluing)
-        tokenizer.template installTokenFilter<umba::tokenizer::filters::SimpleSuffixGluingFilter<TokenizerType> >();
-
-    tokenizer.template installTokenFilter<umba::tokenizer::filters::DblSquareBracketOpenComposingFilter <TokenizerType> >();
-    tokenizer.template installTokenFilter<umba::tokenizer::filters::DblSquareBracketCloseComposingFilter<TokenizerType> >();
-
-
-    // Символ хэша приобретает значение операторного только внутри директивы define
-    // По умолчанию он не операторный
-    // Сбрасываем операторный флаг для символа '#'
-    tokenizer.setResetCharClassFlags('#', umba::tokenizer::CharClass::none, umba::tokenizer::CharClass::opchar); // Ничего не устанавливаем, сбрасываем opchar
-
-    return tokenizer;
+    return TokenizerConfigurator()(tokenizer, suffixGluing, preprocessorFilter);
 }
 
 
 
 
-
-
+} // namespace 
 } // namespace tokenizer
 } // namespace umba
 

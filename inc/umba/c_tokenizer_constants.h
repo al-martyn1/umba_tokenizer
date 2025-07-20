@@ -35,10 +35,19 @@
 #define UMBA_TOKENIZER_TOKEN_FQIDENT_ACLOSE                                           0x000Bu /* For internal usage Full qualified identifier with '>' at end */
 #define UMBA_TOKENIZER_TOKEN_FQIDENT_COMMA                                            0x000Cu /* For internal usage Full qualified identifier with ',' at end */
 //#define UMBA_TOKENIZER_TOKEN_FQIDENT_                                            0x000Cu 
+
 #define UMBA_TOKENIZER_TOKEN_SEMIALPHA                                                0x000Du
 #define UMBA_TOKENIZER_TOKEN_ESCAPE                                                   0x000Eu
 #define UMBA_TOKENIZER_TOKEN_LINE_CONTINUATION                                        0x000Fu
 #define UMBA_TOKENIZER_TOKEN_UNCLASSIFIED_CHAR                                        0x0010u
+
+
+// Для внутреннего использования, не назначается токенам при токенизации
+#define UMBA_TOKENIZER_TOKEN_EXPRESION                                                0x0011u
+#define UMBA_TOKENIZER_TOKEN_FUNCTION_CALL                                            0x0012u
+#define UMBA_TOKENIZER_TOKEN_FUNCTIONAL_CAST                                          0x0013u
+#define UMBA_TOKENIZER_TOKEN_SIMPLE_CAST                                              0x0014u
+
 
 
 #define UMBA_TOKENIZER_TOKEN_CURLY_BRACKET_OPEN                                       0x0021u
@@ -290,9 +299,13 @@
 
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_DOT                                      (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x183u)   /*  .    */
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_COMMA                                    (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x184u)   /*  ,    */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_COLON                                    (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x185u)   /*  :    */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_SEMICOLON                                (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x186u)   /*  ;    */
-#define UMBA_TOKENIZER_TOKEN_OPERATOR_QMARK                                    (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x187u)   /*  ?    */
+
+#define UMBA_TOKENIZER_TOKEN_OPERATOR_ARG_SEPARATOR                            (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x185u)   /*  For internal usage, usually denoted by a comma */
+#define UMBA_TOKENIZER_TOKEN_OPERATOR_ARGS_SEPARATOR                           (UMBA_TOKENIZER_TOKEN_OPERATOR_ARG_SEPARATOR)
+
+#define UMBA_TOKENIZER_TOKEN_OPERATOR_COLON                                    (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x186u)   /*  :    */
+#define UMBA_TOKENIZER_TOKEN_OPERATOR_SEMICOLON                                (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x187u)   /*  ;    */
+#define UMBA_TOKENIZER_TOKEN_OPERATOR_QMARK                                    (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x188u)   /*  ?    */
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_CC_TERNARY                               UMBA_TOKENIZER_TOKEN_OPERATOR_QMARK
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_ZERO_OR_ONE_REPETITIONS                  UMBA_TOKENIZER_TOKEN_OPERATOR_QMARK            /*  regex mark alias */
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_TERNARY_CONDITIONAL                      UMBA_TOKENIZER_TOKEN_OPERATOR_QMARK

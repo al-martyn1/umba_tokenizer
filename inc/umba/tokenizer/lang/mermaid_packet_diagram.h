@@ -17,6 +17,7 @@
 namespace umba {
 namespace tokenizer {
 namespace mermaid {
+namespace packet_diagram {
 
 
 template< typename CharType                     //!< Input chars type
@@ -30,7 +31,7 @@ template< typename CharType                     //!< Input chars type
         , typename TokenizerType       = umba::tokenizer::Tokenizer< CharType, UserDataType, CharClassTableType, TrieVectorType, StringType, MessagesStringType, InputIteratorType >
         >
 umba::tokenizer::TokenizerBuilder<CharType, UserDataType, CharClassTableType, TrieVectorType, StringType, MessagesStringType, InputIteratorType, InputIteratorTraits, TokenizerType>
-makeTokenizerBuilderPacketDiagram()
+makeTokenizerBuilder()
 {
     using CppStringLiteralParser     = CppEscapedSimpleQuotedStringLiteralParser<CharType, MessagesStringType, InputIteratorType, InputIteratorTraits>;
     using AngleBracketsLiteralParser = SimpleQuotedStringLiteralParser<CharType, MessagesStringType, InputIteratorType, InputIteratorTraits>;
@@ -81,7 +82,7 @@ makeTokenizerBuilderPacketDiagram()
 }
 
 
-struct PacketDiagramTokenizerConfigurator
+struct TokenizerConfigurator
 {
     template<typename TokenizerType>
     TokenizerType operator()(TokenizerType tokenizer)
@@ -173,15 +174,16 @@ struct PacketDiagramTokenizerConfigurator
 
 template<typename TokenizerBuilder, typename TokenHandler>
 //typename TokenizerBuilder::tokenizer_type makeTokenizerCpp(const TokenizerBuilder &builder, TokenHandler tokenHandler, bool suffixGluing=true, bool preprocessorFilter=true)
-typename TokenizerBuilder::tokenizer_type makeTokenizerPacketDiagram(TokenizerBuilder builder, TokenHandler tokenHandler, bool suffixGluing=true, bool preprocessorFilter=true)
+typename TokenizerBuilder::tokenizer_type makeTokenizer(TokenizerBuilder builder, TokenHandler tokenHandler /* , bool suffixGluing=true, bool preprocessorFilter=true */ )
 {
     using TokenizerType = typename TokenizerBuilder::tokenizer_type;
     auto tokenizer = builder.makeTokenizer();
     tokenizer.tokenHandler = tokenHandler;
 
-    return PacketDiagramTokenizerConfigurator()(tokenizer);
+    return TokenizerConfigurator()(tokenizer);
 }
 
+} // namespace packet_diagram
 } // namespace mermaid
 } // namespace tokenizer
 } // namespace umba
