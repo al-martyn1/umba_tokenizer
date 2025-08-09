@@ -17,7 +17,7 @@
 #include "umba/tokenizer/token_collection.h"
 //
 #include "parser_base.h"
-#include "umba/tokenizer/lang/usketch_tokenizer.h"
+#include "umba/tokenizer/lexers/usketch_tokenizer.h"
 #include "umba/string.h"
 
 

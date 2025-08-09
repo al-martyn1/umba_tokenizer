@@ -17,7 +17,7 @@
 #include "umba/tokenizer/token_collection.h"
 //
 #include "parser_base.h"
-#include "umba/tokenizer/lang/mermaid_packet_diagram.h"
+#include "umba/tokenizer/lexers/mermaid_packet_diagram.h"
 #include "umba/string.h"
 
 

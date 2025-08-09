@@ -17,7 +17,7 @@
 #include "utils.h"
 #include "parser_base.h"
 #include "mermaid_packet_diagram_parser_types.h"
-#include "umba/tokenizer/lang/mermaid_packet_diagram.h"
+#include "umba/tokenizer/lexers/mermaid_packet_diagram.h"
 
 //
 #include "umba/enum_helpers.h"
