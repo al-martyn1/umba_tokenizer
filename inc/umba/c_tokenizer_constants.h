@@ -97,14 +97,14 @@
 
 // Числовой литерал, целый или плавучка
 // Базовый номер токена, не флаг признака числового литерала!
-#define UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER                                          0x1000u
+#define UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER                                          0x0200u
 
 #define UMBA_TOKENIZER_TOKEN_FLOAT_NUMBER                                             ((UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER)|(UMBA_TOKENIZER_TOKEN_FLOAT_FLAG))
 #define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_FIRST                                     UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER
-#define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_LAST                                      0x11FFu
+#define UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_LAST                                      0x02FFu
 
-#define UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_FIRST                                    UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER
-#define UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_LAST                                     ((UMBA_TOKENIZER_TOKEN_FLOAT_NUMBER)-1)
+#define UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_FIRST                                    UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_FIRST
+#define UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_LAST                                     UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_LAST 
 
 #define UMBA_TOKENIZER_TOKEN_FLOAT_NUMBER_FIRST                                       UMBA_TOKENIZER_TOKEN_FLOAT_NUMBER
 #define UMBA_TOKENIZER_TOKEN_FLOAT_NUMBER_LAST                                        ((UMBA_TOKENIZER_TOKEN_FLOAT_NUMBER_FIRST)+(UMBA_TOKENIZER_TOKEN_FLOAT_FLAG)-1)
@@ -139,6 +139,15 @@
 #define UMBA_TOKENIZER_TOKEN_FLOAT_NUMBER_OCT                                         (UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_OCT |UMBA_TOKENIZER_TOKEN_FLOAT_FLAG)
 #define UMBA_TOKENIZER_TOKEN_FLOAT_NUMBER_DUOD                                        (UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DUOD|UMBA_TOKENIZER_TOKEN_FLOAT_FLAG)
 #define UMBA_TOKENIZER_TOKEN_FLOAT_NUMBER_HEX                                         (UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_HEX |UMBA_TOKENIZER_TOKEN_FLOAT_FLAG)
+
+
+
+#define UMBA_TOKENIZER_TOKEN_LITERAL_KNOWN_BASE                                       0x0200u
+#define UMBA_TOKENIZER_TOKEN_LITERAL_KNOWN_FIRST                                      UMBA_TOKENIZER_TOKEN_LITERAL_KNOWN_BASE
+#define UMBA_TOKENIZER_TOKEN_LITERAL_KNOWN_LAST                                       0x02FFu
+
+#define UMBA_TOKENIZER_TOKEN_LITERAL_KNOWN_BOOL_FALSE                                 UMBA_TOKENIZER_TOKEN_LITERAL_KNOWN_FIRST
+#define UMBA_TOKENIZER_TOKEN_LITERAL_KNOWN_BOOL_TRUE                                  (UMBA_TOKENIZER_TOKEN_LITERAL_KNOWN_FIRST+0x01)
 
 
 
@@ -200,35 +209,81 @@
 #define UMBA_TOKENIZER_TOKEN_STRING_USER_LITERAL_LAST                                 UMBA_TOKENIZER_TOKEN_LITERAL_LAST
 
 
-// На каждый сет встроенных кейвордов - по 1024 значений хватит?
+// На каждый сет встроенных кейвордов - по 256 значений хватит?
 #define UMBA_TOKENIZER_TOKEN_KEYWORDS_FIRST                                           0x4000u
 #define UMBA_TOKENIZER_TOKEN_KEYWORDS_LAST                                            0x5FFFu
 
 
 
-#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET1_FIRST                                       0x4000u
-#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET1_LAST                                        0x43FFu
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET0_FIRST                                       0x4000u
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET0_LAST                                        0x40FFu
 
-#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET2_FIRST                                       0x4400u
-#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET2_LAST                                        0x47FFu
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET1_FIRST                                       0x4100u
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET1_LAST                                        0x41FFu
 
-#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET3_FIRST                                       0x4800u
-#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET3_LAST                                        0x4BFFu
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET2_FIRST                                       0x4200u
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET2_LAST                                        0x42FFu
 
-#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET4_FIRST                                       0x4C00u
-#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET4_LAST                                        0x4FFFu
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET3_FIRST                                       0x4300u
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET3_LAST                                        0x43FFu
 
-#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET5_FIRST                                       0x5000u
-#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET5_LAST                                        0x53FFu
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET4_FIRST                                       0x4400u
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET4_LAST                                        0x44FFu
 
-#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET6_FIRST                                       0x5400u
-#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET6_LAST                                        0x57FFu
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET5_FIRST                                       0x4500u
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET5_LAST                                        0x45FFu
 
-#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET7_FIRST                                       0x5800u
-#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET7_LAST                                        0x5BFFu
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET6_FIRST                                       0x4600u
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET6_LAST                                        0x46FFu
 
-#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET8_FIRST                                       0x5C00u
-#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET8_LAST                                        0x5FFFu
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET7_FIRST                                       0x4700u
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET7_LAST                                        0x47FFu
+
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET8_FIRST                                       0x4800u
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET8_LAST                                        0x48FFu
+
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET9_FIRST                                       0x4900u
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET9_LAST                                        0x49FFu
+
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SETA_FIRST                                       0x4A00u
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SETA_LAST                                        0x4AFFu
+
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SETB_FIRST                                       0x4B00u
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SETB_LAST                                        0x4BFFu
+
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SETC_FIRST                                       0x4C00u
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SETC_LAST                                        0x4CFFu
+
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SETD_FIRST                                       0x4D00u
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SETD_LAST                                        0x4DFFu
+
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SETE_FIRST                                       0x4E00u
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SETE_LAST                                        0x4EFFu
+
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SETF_FIRST                                       0x4F00u
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SETF_LAST                                        0x4FFFu
+
+
+// Алиасы
+
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET10_FIRST                                       UMBA_TOKENIZER_TOKEN_KEYWORD_SETA_FIRST
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET10_LAST                                        UMBA_TOKENIZER_TOKEN_KEYWORD_SETA_LAST 
+                                                                                                                             
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET11_FIRST                                       UMBA_TOKENIZER_TOKEN_KEYWORD_SETB_FIRST
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET11_LAST                                        UMBA_TOKENIZER_TOKEN_KEYWORD_SETB_LAST 
+                                                                                                                             
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET12_FIRST                                       UMBA_TOKENIZER_TOKEN_KEYWORD_SETC_FIRST
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET12_LAST                                        UMBA_TOKENIZER_TOKEN_KEYWORD_SETC_LAST 
+                                                                                                                             
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET13_FIRST                                       UMBA_TOKENIZER_TOKEN_KEYWORD_SETD_FIRST
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET13_LAST                                        UMBA_TOKENIZER_TOKEN_KEYWORD_SETD_LAST 
+                                                                                                                             
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET14_FIRST                                       UMBA_TOKENIZER_TOKEN_KEYWORD_SETE_FIRST
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET14_LAST                                        UMBA_TOKENIZER_TOKEN_KEYWORD_SETE_LAST 
+                                                                                                                             
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET15_FIRST                                       UMBA_TOKENIZER_TOKEN_KEYWORD_SETF_FIRST
+#define UMBA_TOKENIZER_TOKEN_KEYWORD_SET15_LAST                                        UMBA_TOKENIZER_TOKEN_KEYWORD_SETF_LAST 
+
 
 
 // #define UMBA_TOKENIZER_TOKEN_CTRL_PP_DEFINE                                           (UMBA_TOKENIZER_TOKEN_CTRL_FLAG|0x0003u) /* empty token, that "define" PP directive detected. Non-paired token */
@@ -364,8 +419,8 @@
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_PLANTUML_STEREOTYPE_RIGHT                UMBA_TOKENIZER_TOKEN_OPERATOR_BITWISE_SHIFT_RIGHT
 
 
-// C/C++ препроцессор относится ко второму набору ключевых слов
-#define UMBA_TOKENIZER_TOKEN_CC_PP_BASE                                        UMBA_TOKENIZER_TOKEN_KEYWORD_SET2_FIRST
+// C/C++ препроцессор относится ко второму набору ключевых слов (set1)
+#define UMBA_TOKENIZER_TOKEN_CC_PP_BASE                                        UMBA_TOKENIZER_TOKEN_KEYWORD_SET1_FIRST
 
 #define UMBA_TOKENIZER_TOKEN_CC_PP_INCLUDE                                     (UMBA_TOKENIZER_TOKEN_CC_PP_BASE|0x0008u)
 #define UMBA_TOKENIZER_TOKEN_CC_PP_DEFINE                                      (UMBA_TOKENIZER_TOKEN_CC_PP_BASE|0x0009u)
@@ -407,8 +462,8 @@
 
 // PlantUML
 
-#define UMBA_TOKENIZER_TOKEN_PLANTUML_NORMAL_KEYWORDS_FIRST                    UMBA_TOKENIZER_TOKEN_KEYWORD_SET1_FIRST
-#define UMBA_TOKENIZER_TOKEN_PLANTUML_NORMAL_KEYWORDS_LAST                     (UMBA_TOKENIZER_TOKEN_KEYWORD_SET2_FIRST-1)
+#define UMBA_TOKENIZER_TOKEN_PLANTUML_NORMAL_KEYWORDS_FIRST                    UMBA_TOKENIZER_TOKEN_KEYWORD_SET0_FIRST
+#define UMBA_TOKENIZER_TOKEN_PLANTUML_NORMAL_KEYWORDS_LAST                     (UMBA_TOKENIZER_TOKEN_KEYWORD_SET0_LAST)
 #define UMBA_TOKENIZER_TOKEN_PLANTUML_STATE                                    (UMBA_TOKENIZER_TOKEN_PLANTUML_NORMAL_KEYWORDS_FIRST+0x000u)
 // [*] begin/end pseudo states
 #define UMBA_TOKENIZER_TOKEN_PLANTUML_PSEUDO_STATE                             (UMBA_TOKENIZER_TOKEN_PLANTUML_NORMAL_KEYWORDS_FIRST+0x001u)   /* [*] */
@@ -439,14 +494,14 @@
 #define UMBA_TOKENIZER_TOKEN_PLANTUML_POLYLINE                                 (UMBA_TOKENIZER_TOKEN_PLANTUML_NORMAL_KEYWORDS_FIRST+0x025u)
 
 
-#define UMBA_TOKENIZER_TOKEN_PLANTUML_UML_FRAME_KEYWORDS_FIRST                 UMBA_TOKENIZER_TOKEN_KEYWORD_SET2_FIRST
-#define UMBA_TOKENIZER_TOKEN_PLANTUML_UML_FRAME_KEYWORDS_LAST                  (UMBA_TOKENIZER_TOKEN_KEYWORD_SET3_FIRST-1)
+#define UMBA_TOKENIZER_TOKEN_PLANTUML_UML_FRAME_KEYWORDS_FIRST                 UMBA_TOKENIZER_TOKEN_KEYWORD_SET1_FIRST
+#define UMBA_TOKENIZER_TOKEN_PLANTUML_UML_FRAME_KEYWORDS_LAST                  (UMBA_TOKENIZER_TOKEN_KEYWORD_SET1_LAST)
 #define UMBA_TOKENIZER_TOKEN_PLANTUML_STARTUML                                 (UMBA_TOKENIZER_TOKEN_PLANTUML_UML_FRAME_KEYWORDS_FIRST+0x000u)
 #define UMBA_TOKENIZER_TOKEN_PLANTUML_ENDUML                                   (UMBA_TOKENIZER_TOKEN_PLANTUML_UML_FRAME_KEYWORDS_FIRST+0x001u)
 
 
-#define UMBA_TOKENIZER_TOKEN_PLANTUML_TAG_KEYWORDS_FIRST                       UMBA_TOKENIZER_TOKEN_KEYWORD_SET3_FIRST
-#define UMBA_TOKENIZER_TOKEN_PLANTUML_TAG_KEYWORDS_LAST                        (UMBA_TOKENIZER_TOKEN_KEYWORD_SET4_FIRST-1)
+#define UMBA_TOKENIZER_TOKEN_PLANTUML_TAG_KEYWORDS_FIRST                       UMBA_TOKENIZER_TOKEN_KEYWORD_SET2_FIRST
+#define UMBA_TOKENIZER_TOKEN_PLANTUML_TAG_KEYWORDS_LAST                        (UMBA_TOKENIZER_TOKEN_KEYWORD_SET2_LAST)
 
 #define UMBA_TOKENIZER_TOKEN_PLANTUML_GENERIC_TAG_START                        (UMBA_TOKENIZER_TOKEN_PLANTUML_TAG_KEYWORDS_FIRST+0x000u)   /* <tag> */
 #define UMBA_TOKENIZER_TOKEN_PLANTUML_GENERIC_TAG_END                          (UMBA_TOKENIZER_TOKEN_PLANTUML_TAG_KEYWORDS_FIRST+0x001u)   /* </tag> */
@@ -454,8 +509,8 @@
 #define UMBA_TOKENIZER_TOKEN_PLANTUML_STYLE_TAG_END                            (UMBA_TOKENIZER_TOKEN_PLANTUML_TAG_KEYWORDS_FIRST+0x003u)
 
 
-#define UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_FIRST                         UMBA_TOKENIZER_TOKEN_KEYWORD_SET4_FIRST
-#define UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_LAST                          (UMBA_TOKENIZER_TOKEN_KEYWORD_SET5_FIRST-1)
+#define UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_FIRST                         UMBA_TOKENIZER_TOKEN_KEYWORD_SET3_FIRST
+#define UMBA_TOKENIZER_TOKEN_PLANTUML_STEREOTYPE_LAST                          (UMBA_TOKENIZER_TOKEN_KEYWORD_SET3_LAST)
 
 // <<STEREOTYPE>>
 
