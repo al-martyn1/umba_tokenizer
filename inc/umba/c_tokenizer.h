@@ -314,6 +314,9 @@ struct TrieNodeTokenGreater
 template<typename ContainerType>
 trie_index_type tokenTrieFindNext(const ContainerType &tokenTrie, trie_index_type curIndex, token_type tk)
 {
+    if (tokenTrie.size()==0u)
+        return trie_index_invalid;
+
     // Если на входе инвалид, то начинать надо со старта
 
     trie_index_type lookupChunkStartIdx  = 0;
