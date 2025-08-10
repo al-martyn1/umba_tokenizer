@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "mermaid_packet_diagram_enums.h"
+#include "packet_diagram_enums.h"
 //
 #include "umba/string.h"
 //
@@ -16,7 +16,7 @@
 #include "umba/tokenizer/tokenizer_log_console.h"
 #include "umba/tokenizer/token_collection.h"
 //
-#include "parser_base.h"
+#include "../parser_base.h"
 #include "umba/tokenizer/lexers/mermaid_packet_diagram.h"
 #include "umba/string.h"
 

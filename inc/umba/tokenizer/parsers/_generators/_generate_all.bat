@@ -43,5 +43,5 @@ umba-enum-gen %GEN_OPTS% %HEX2% %TPL_OVERRIDE% %SNIPPETOPTIONS_GEN_FLAGS%       
     %FLAGS%                                                                                                  ^
     %UINT32% %HEX4% -E=PacketDiagramDisplayOptionFlags      -F=@MermaidPacketDiagramDisplayOptionFlags.txt   ^
     %UINT32% %HEX4% -E=PacketDiagramParsingOptions          -F=@MermaidPacketDiagramParsingOptions.txt       ^
-..\mermaid_packet_diagram_enums.h
+..\mermaid\packet_diagram_enums.h
 

@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "mermaid_packet_diagram_parser.h"
+#include "packet_diagram_parser.h"
 #include "marty_cpp/marty_cpp.h"
 //
 
