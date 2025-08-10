@@ -5,6 +5,7 @@
 #include "filters/token_collecting_filter.h"
 #include "filters/unclassified_chars_collecting_filter.h"
 #include "filters/simple_suffix_gluing_filter.h"
+#include "filters/simple_replace_filter.h"
 #include "filters/cc_preprocessor_filter.h"
 #include "filters/simple_sequence_composing_filter.h"
 #include "filters/repeated_token_composing_filter.h"
