@@ -1,0 +1,370 @@
+#!ufsm
+
+/*
+    Автоматы управления светофорами.
+
+    Дефиниции, общие для всех светофором.
+
+    Автомат пешеходного светофора. // Pedestrian 
+
+    --- Мы пока тут
+
+    Автомат автомобильного светофора. // Road users
+
+    Автомат управления перекрёстком.
+*/
+
+
+namespace samples::traffic_lights
+{
+
+
+// Управляющие команды
+// Всё почти как в state-machine, но из definitions нельзя сгенерировать автомат, и нельзя задавать переходы
+definitions TrafficLightCommands - "Defines commands for Traffic Light"
+{
+    events
+    {
+        // Отправляется в светофор для переключения в режим trafficStopped - горящий красный
+        cmdStopTraffic : external - "The RED light (stop) mode is on";
+
+        // Отправляется в светофор для включения разрешающего сигнала
+        cmdAllowTraffic : external - "The GREEN light (go) mode is on";
+
+        // Приходит для выключения всех сигналов светофора
+        cmdTurnOff : external - "Traffic Light goes down";
+
+        // Приходит для переключения светофора в "неуправляемый" режим
+        cmdUncontrolledMode : external - "Traffic Light goes to uncontrolled mode";
+    }
+
+} // state-machine TrafficLightCommands
+
+
+/*
+    Светофор по команде cmdStopTraffic не сразу включает запрещающий сигнал.
+    Включается сигнал, уведомляющий о скором (~5 сек) включении запрещающего сигнала.
+    Обычно это мигание зеленого сигнала.
+    После мигающего зеленого включается желтый сигнал (~1-2 сек).
+    После этого включается красный запрещающий сигнл светофора.
+    
+    Переключение с красного на зеленый осуществляется по аналогичному алгоритму, но 
+    а) фазы могут отличаться сигналами и б) некоторые фазы могут быть пропущены.
+*/
+
+definitions TrafficLightEventsActions
+// : inherits TrafficLightCommands 
+- "Defines internal events and actions for Traffic Light automato"
+{
+    /*
+        Объявляем события таймеров
+        В языке нет средств для этого, реализация таймеров и отложенных событий лежит на пользовательской обвязке.
+        Но при помощи ключевого слова generated мы указываем, что событие генерируется пользовательским кодом.
+        При описании действий (actions) при помощи ключевого слова generates мы можем указать список событий, которые
+        генерирует действие.
+    */
+
+    events
+    {
+        // Приходит по таймеру за небольшое время до сигнала tmStopTraffic, 
+        // для двухцветного светофора ничего не делает
+        tmStopTrafficWarning : external generated - "The RED light (stop) will come on very soon";
+        tmStopTraffic : external generated;
+
+        // Приходит по таймеру за некоторое время до включения разрешающего сигнала,
+        // на двухцветных светофорах обычно не обозначается отдельно
+        tmAllowTrafficWarning : external generated - "The GREEN light (go) will come on very soon";
+        tmAllowTraffic : external generated;
+
+        // Приходит, когда требуется сменить состяние зелёного сигнала на противоположный
+        tmToggleGreen  : external generated;
+
+        // Приходит, когда требуется сменить состяние желтого сигнала на противоположный
+        tmToggleYellow : external generated;
+
+        // Приходит по таймеру aliveTimer
+        tmAlivePoll    : external;
+    }
+
+    actions
+    {
+        /*
+            Тут мы делаем пометки, что внешние действия могут генерировать события,
+            и если эти действия не используются в автомате, то и события, которые они генерируют
+            тоже не могут поступать на вход автомата
+        */
+
+        deferStopTrafficWarning  : external generates tmStopTrafficWarning 
+            - "Generates deferred tmStopTrafficWarning event"; // starts one shot timer for tmStopTrafficWarning
+        deferStopTraffic         : external generates tmStopTraffic; // starts one shot timer for tmStopTraffic
+
+        deferAllowTrafficWarning : external generates tmAllowTrafficWarning; // starts one shot timer for tmAllowTrafficWarning
+        deferAllowTraffic        : external generates tmAllowTraffic; // starts one shot timer for tmAllowTraffic
+
+        startToggleGreen  : external generates tmToggleGreen; // starts periodic timer for tmToggleGreen
+        stopToggleGreen   : external;
+
+        startToggleYellow : external generates tmToggleYellow; // starts periodic timer for tmToggleYellow
+        stopToggleYellow  : external;
+
+        // Alive Poll Timer стартует где-то вне автомата, и событие tmAlivePoll приходит к нам как данность выданная свыше
+        //startAlivePoll    : external; // starts periodic timer for tmAlivePoll
+
+        reportAlive      : external;
+        reportAliveStop  : external;
+        reportAliveAllow : external;
+        reportAliveOff   : external;
+        reportAliveUncontrolled : external;
+    }
+
+} // state-machine TrafficLightBase
+
+
+
+
+// Пешеходный светофор
+state-machine TrafficLightPedestrian : 
+//inherits TrafficLightBase,
+uses TrafficLightCommands, 
+     TrafficLightEventsActions override // возможные коллизии молча переписываются более поздними значениями
+- "Pedestrian Traffic Light (Red-Green)"
+{
+    /*
+        На пешеходном светофоре, как правило, используются два сигнала: зеленый и красный. 
+        Зеленый сигнал разрешает пешеходам переходить дорогу, а красный - запрещает. 
+        Дополнительно, иногда используется мигающий зеленый, предупреждающий о скором 
+        включении красного света.
+
+        Реализуется "сложная" логика, когда светофор работает под управлением управляющей системы, которая
+        выдаёт команды на переключение.
+
+        При этом действие reportAlive в своей реализации рапортаует управляющей системе, в каком режиме работает
+        светофор - выключен, включен разрещающий сигнал, включен запрещающий сигнал.
+        Это вынесено за рамки описания данного автомата для его упрощения.
+
+        Светофор может игнорировать команды, если, например, горит зелёный, и приходит команда на включение красного.
+        Такое поведение может спровоцровать аварии. Светофор должен переключаться согласно прописанным последовательостям.
+        При этом светофор может быть выключен в любой момент, но после выключения должен пройти аймаут, после которого
+        он будет реагировать на команды (чтобы не было возможно "хакнуть" его логику, отправив команду выключения, а 
+        сразу следом команду на включение противоположного сигнала).
+
+        Предполагается также, что величины таймаутов задаются конфигурацией, получаемой от управляющей системы.
+    */
+
+    events
+    {
+    }
+
+    actions
+    {
+        // Включение/выключение сигналов
+        greenOn  : external - "Turns the GREEN light On";
+        greenOff : external - "Turns the GREEN light Off";
+        redOn    : external - "Turns the RED light On";
+        redOff   : external - "Turns the RED light Off";
+
+        reportAlive        : external;
+        reportFail         : external;
+
+        // в трёхцветном светофоре надо переопределить это действие и добавить выключение зеленого
+        turnOff = greenOff, redOff - "Turn all lights off"; 
+
+        // раннее предупреждение о включении красного - просто начинаем мигать зелёным
+        runStopNotice     = startToggleGreen, deferStopTraffic; 
+        // runStop           = stopToggleGreen;
+        runTrafficStopped = turnOff, redOn, stopToggleGreen;
+        
+        // Нет никакого раннего предупреждения о включении разрешающего сигнала
+        runTrafficAllowed = turnOff, greenOn;
+
+    }
+
+    predicates
+    {
+        // Для инвертирования зелёного сигнала
+        greenLightIsOn : external - "Checks the GREEN light is ON"; // valid-for {toggleGreen}
+        // hardwareGood   : external - "Checks that the hardware is working properly";
+    }
+
+    /*
+        Описываем события, без переходов из них и действий по переходам
+        В данном автомате нет конечных состояний
+        При наследовании автоматов мы у родительского автомата наследуем все состояния.
+        Нам надо иметь возможность как-то сбросить или установить признаки initial/final
+        Например:
+        starting : override initial; // Делает состояние стартовым
+        starting : override not-initial; // Сбрасывает признак стартового состояния
+        Если override используется для состояния, которого нет в базовом автомате - ошибка
+        Если при установке initial уже есть состояние с таким признаком - ошибка, надо сначала 
+        сбросить признак у initial состояния родителя, а потом установить новое initial состояние.
+        Или это потом проверим? Когда описание автомата полностью собрано?
+        Для final состояний такой проблемы нет, их может быть много
+       
+        enter-событие для стартового состояния означает, что при инициализации автомата 
+        вызываются действия этого события
+    */
+    states 
+    {
+
+        turnedOff : initial - "Traffic Light is turned OFF"
+        {
+            enter { turnOff /*, startAliveTimer */ } // При входе в состояние всегда всё выключаем
+        }
+
+        // pedestrians/road users
+
+        trafficAllowed - "Informs pedestrians that they are can go"
+        { enter { runTrafficAllowed } }
+
+        // Светофор показыват уведомление, что скоро произойдёт смена сигнала на запрещающий
+        stopNotice - "Informs pedestrians that the RED light is coming soon"
+        { enter {runStopNotice} }
+
+        trafficStopped - "Informs pedestrians that the traffic must stops"
+        { enter { runTrafficStopped } }
+
+    }
+
+    transitions
+    {
+        /*
+            Примеры описаний переходов
+           
+            Для состояний State1, State2 по событию Event переходим в TargetState, если 
+            дополнительное условие Condition выполнено
+            State1, State2 : Event -> TargetState ? Condition - "Описание"
+           
+            Для всех состоянй (присутствует звёздочка), наличие State2 игнорируется - 
+            надо наверно вывести предупреждение
+            *, State2 : Event -> TargetState ? Condition - "Описание"
+           
+            Для всех состояний, исключая State2, по событиям Event1 и Event2
+            *, !State2 : Event1, Event2 -> TargetState ? Condition - "Описание"
+           
+            Для всех состояний, исключая State2, и для всех событий
+            *, !State2 : * -> TargetState ? Condition - "Описание"
+           
+            Как переопределить переходы?
+            А что у нас является переопределением переходов?
+            Ладно, надо пока без переопределения сделать, потом посмотрим, что и как переопределяется, 
+            и что из этого получается
+            // Для всех состояний, исключая State2, и для всех событий
+            // При этом, если 
+            // *, !State2 override: * -> TargetState ? Condition - "Описание"
+           
+            Переходы сравниваются по событию и предикатам?
+            Если следующее состояние такое же - ошибка дублирования
+            Если другое - ошибка (не)детерминированности
+           
+        */
+
+        // Команды - cmdStopTraffic cmdAllowTraffic cmdTurnOff cmdUncontrolledMode
+        // Генерируемые события - tmStopTrafficWarning, tmStopTraffic, tmAllowTrafficWarning, tmAllowTraffic, 
+        //                        tmToggleGreen, tmToggleYellow, tmAlivePoll
+        // Состояния - turnedOff, trafficAllowed, stopNotice, trafficStopped
+
+        turnedOff : cmdStopTraffic   -> trafficStopped;
+        turnedOff : cmdAllowTraffic  -> trafficAllowed;
+        turnedOff : * -> self; // cmdTurnOff,cmdUncontrolledMode и пр -> turnedOff
+
+        trafficAllowed : cmdStopTraffic      -> stopNotice;
+        trafficAllowed : cmdTurnOff          -> turnedOff;
+        trafficAllowed : cmdUncontrolledMode -> turnedOff;
+        trafficAllowed : * -> self; // cmdAllowTraffic и пр -> trafficAllowed, 
+
+        stopNotice : tmToggleGreen ?  greenLightIsOn -> self : greenOff;
+        stopNotice : tmToggleGreen ? !greenLightIsOn -> self : greenOn;
+        stopNotice : tmStopTraffic                   -> trafficStopped;
+        stopNotice : * -> self;
+
+        trafficStopped : cmdAllowTraffic -> trafficAllowed;
+        trafficStopped : cmdTurnOff      -> turnedOff;
+        trafficStopped : * -> self;
+
+        // Вроде бы все команды/события обработали
+        // Но есть проблема - tmAlivePoll
+        // tmAlivePoll - пример проблемы
+        // Если по "звездочкам" событий в описании переходов генерировать
+        // все недостающие переходы, то более общая "звёздочка"
+        // ничего не сгенерирует
+        // Надо как-то разрулить правила, когда "звёздочка" события имеет приоритет,
+        // но, возможно, не полный, и "звёздочка" события более приоритетна.
+        // У нас есть действия reportAliveStop, reportAliveAllow, reportAliveOff, reportAliveUncontrolled
+        // но для простоты мы принимаем, что у нас есть одно действие - reportAlive
+        // которое само знает, что отослать наверх
+
+        * : tmAlivePoll -> self : reportAlive;
+
+    }
+
+} // state-machine TrafficLightTwoLights
+
+
+// Отсюда надо перерабатывать, старая версия
+
+
+// Трёх-цветный светофор, красный-желтый-синий
+state-machine TrafficLightRYG - "Three-lights traffic light (Reg-Yellow-Green)"
+{
+    /*
+        Алгоритм работы светофора:
+
+        При разрешающем зеленом он предупреждает миганием о скором окончании сигнала.
+        После мигающего зеленого кратковременно включается желтый (0.5-1 сек).
+        После желтого включается красный - запрещающий.
+        Красный всегда горит постоянно. Перед переключением на разрешающий зелёный
+        может кратковременно (на несколько секунд) включаться желтый, таким образом,
+        что красный и желтый горят одновременно.
+
+        У светофора может быть состояние, когда желтый сигнал мигает. Этот сигнал означает, 
+        что перекрёсток не регалируется.
+
+        В случае логической ошибки светофор мигает красным.
+
+        В случае аппаратной ошибки светофор выключает все сигналы.
+
+        Переключается светофор по внешним сигналам управления, но режимы мигания формирует сам.
+
+        Светофор умеет рапортовать и своём состоянии в сеть (которая, например, связывает
+        все светофоры на одном перекрёстке).
+    
+    */
+
+    events // Объявляем приходящие в светофор события
+    {
+        // Отправляется в светофор за некоторое время до сигнала stopTrafficWarning, и включает "уведомляющий" сигнал (обычно - мигание зелёного)
+        stopTrafficNotice : external - "The red light (stop) will come on soon";
+
+        // Отправляется в светофор за некоторое время до сигнала stopTraffic, и включает предупреждающий сигнал - желтый (при мигающем зелёном)
+        stopTrafficWarning : external - "The red light (stop) will come on soon";
+
+        // Отправляется в светофор для переключения в режим trafficStopped - горящий красный
+        stopTraffic : external - "The red light (stop) mode is on";
+
+        // Отправляется в светофор за некоторое время до включения разрешающего сигнала - опционально может включать желтый сигнал
+        allowTrafficNotice : external - "The green light (go) will come on soon";
+
+        // Отправляется в светофор для включения разрешающего сигнала
+        allowTraffic : external - "The green light (go) mode is on";
+
+    }
+
+    actions
+    {
+    }
+
+    predicates
+    {
+    }
+
+    states
+    {
+    }
+
+
+} // state-machine RYGTrafficLight
+
+
+
+} // namespace samples::traffic_lights
+

@@ -44,6 +44,8 @@
 // Графическое отображение ДКА планируется, для этого предполагается генерация
 // в GraphVIZ и/или PlantUML описания FSM.
 
+// Также глянуть тут - https://github.com/statelyai/xstate
+
 
 fsm: ExpressionTreeBuilder - "Автомат разбора потока лексем в дерево выражения";
 
@@ -185,6 +187,19 @@ states // state actions and transitions
         # Может, сделать найси токены selfe/selfle (self-e/self-l/enter-self/enter-s/leave-self/leave-s)?
     
     }
+--------
+        starting : initial - "Starting"
+        {
+            // State actions
+            enter { turnOff; startAliveTimer; }
+            leave {} // Можно не указывать
+            self-enter; // : inherits enter;
+            self-leave; // Можно не указывать
+            // self-leave : inherits enter call-before, parent-enter call-after; // { }
+        }
+--------
+
+
 
     transitions # Описываем переходы из состояния - bash-стайл коммент
     {
