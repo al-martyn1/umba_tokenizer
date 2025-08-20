@@ -7,18 +7,24 @@
 
     Автомат пешеходного светофора. // Pedestrian 
 
-    --- Мы пока тут
-
     Автомат автомобильного светофора. // Road users
+
+    --- Мы пока тут
 
     Автомат управления перекрёстком.
 */
 
+//----------------------------------------------------------------------------
 
+
+
+//----------------------------------------------------------------------------
 namespace samples::traffic_lights
 {
 
 
+
+//----------------------------------------------------------------------------
 // Управляющие команды
 // Всё почти как в state-machine, но из definitions нельзя сгенерировать автомат, и нельзя задавать переходы
 definitions TrafficLightCommands - "Defines commands for Traffic Light"
@@ -40,7 +46,10 @@ definitions TrafficLightCommands - "Defines commands for Traffic Light"
 
 } // state-machine TrafficLightCommands
 
+//----------------------------------------------------------------------------
 
+
+//----------------------------------------------------------------------------
 /*
     Светофор по команде cmdStopTraffic не сразу включает запрещающий сигнал.
     Включается сигнал, уведомляющий о скором (~5 сек) включении запрещающего сигнала.
@@ -119,9 +128,11 @@ definitions TrafficLightEventsActions
 
 } // state-machine TrafficLightBase
 
+//----------------------------------------------------------------------------
 
 
 
+//----------------------------------------------------------------------------
 // Пешеходный светофор
 state-machine TrafficLightPedestrian : 
 //inherits TrafficLightBase,
@@ -151,31 +162,30 @@ uses TrafficLightCommands,
         Предполагается также, что величины таймаутов задаются конфигурацией, получаемой от управляющей системы.
     */
 
-    events
-    {
-    }
+    events{ }
 
     actions
     {
         // Включение/выключение сигналов
-        greenOn  : external - "Turns the GREEN light On";
-        greenOff : external - "Turns the GREEN light Off";
-        redOn    : external - "Turns the RED light On";
-        redOff   : external - "Turns the RED light Off";
+        greenOn   : external - "Turns the GREEN light On";
+        greenOff  : external - "Turns the GREEN light Off";
+        redOn     : external - "Turns the RED light On";
+        redOff    : external - "Turns the RED light Off";
 
-        reportAlive        : external;
-        reportFail         : external;
+        reportAlive : external;
+        reportFail  : external;
 
-        // в трёхцветном светофоре надо переопределить это действие и добавить выключение зеленого
-        turnOff = greenOff, redOff - "Turn all lights off"; 
+        turnOff   = greenOff, redOff - "Turn all lights off"; 
+        onlyGreen = redOff, greenOn;
+        onlyRed   = greenOff, redOn;
 
         // раннее предупреждение о включении красного - просто начинаем мигать зелёным
         runStopNotice     = startToggleGreen, deferStopTraffic; 
         // runStop           = stopToggleGreen;
-        runTrafficStopped = turnOff, redOn, stopToggleGreen;
+        runTrafficStopped = stopToggleGreen, onlyRed;
         
         // Нет никакого раннего предупреждения о включении разрешающего сигнала
-        runTrafficAllowed = turnOff, greenOn;
+        runTrafficAllowed = onlyGreen;
 
     }
 
@@ -210,8 +220,6 @@ uses TrafficLightCommands,
         {
             enter { turnOff /*, startAliveTimer */ } // При входе в состояние всегда всё выключаем
         }
-
-        // pedestrians/road users
 
         trafficAllowed - "Informs pedestrians that they are can go"
         { enter { runTrafficAllowed } }
@@ -258,7 +266,7 @@ uses TrafficLightCommands,
            
         */
 
-        // Команды - cmdStopTraffic cmdAllowTraffic cmdTurnOff cmdUncontrolledMode
+        // Команды - cmdStopTraffic, cmdAllowTraffic, cmdTurnOff, cmdUncontrolledMode
         // Генерируемые события - tmStopTrafficWarning, tmStopTraffic, tmAllowTrafficWarning, tmAllowTraffic, 
         //                        tmToggleGreen, tmToggleYellow, tmAlivePoll
         // Состояния - turnedOff, trafficAllowed, stopNotice, trafficStopped
@@ -268,8 +276,6 @@ uses TrafficLightCommands,
         turnedOff : * -> self; // cmdTurnOff,cmdUncontrolledMode и пр -> turnedOff
 
         trafficAllowed : cmdStopTraffic      -> stopNotice;
-        trafficAllowed : cmdTurnOff          -> turnedOff;
-        trafficAllowed : cmdUncontrolledMode -> turnedOff;
         trafficAllowed : * -> self; // cmdAllowTraffic и пр -> trafficAllowed, 
 
         stopNotice : tmToggleGreen ?  greenLightIsOn -> self : greenOff;
@@ -281,30 +287,63 @@ uses TrafficLightCommands,
         trafficStopped : cmdTurnOff      -> turnedOff;
         trafficStopped : * -> self;
 
-        // Вроде бы все команды/события обработали
-        // Но есть проблема - tmAlivePoll
-        // tmAlivePoll - пример проблемы
-        // Если по "звездочкам" событий в описании переходов генерировать
-        // все недостающие переходы, то более общая "звёздочка"
-        // ничего не сгенерирует
-        // Надо как-то разрулить правила, когда "звёздочка" события имеет приоритет,
-        // но, возможно, не полный, и "звёздочка" события более приоритетна.
-        // У нас есть действия reportAliveStop, reportAliveAllow, reportAliveOff, reportAliveUncontrolled
-        // но для простоты мы принимаем, что у нас есть одно действие - reportAlive
-        // которое само знает, что отослать наверх
-
+        /*
+            Вроде бы все команды/события обработали
+            Но есть проблема - tmAlivePoll
+            tmAlivePoll - пример проблемы
+            Если по "звездочкам" событий в описании переходов генерировать
+            все недостающие переходы, то более общая "звёздочка"
+            ничего не сгенерирует
+            Надо как-то разрулить правила, когда "звёздочка" события имеет приоритет,
+            но, возможно, не полный, и "звёздочка" события более приоритетна.
+            У нас есть действия reportAliveStop, reportAliveAllow, reportAliveOff, reportAliveUncontrolled
+            но для простоты мы принимаем, что у нас есть одно действие - reportAlive
+            которое само знает, что отослать наверх
+        */
+        * : cmdUncontrolledMode -> turnedOff;
+        * : cmdTurnOff          -> turnedOff;
         * : tmAlivePoll -> self : reportAlive;
 
+
+        /*
+            Попробуем прикинуть алгоритм задания переходов.
+            Переходы по событию "звёздочка" (если список событий содержит звёздочку) из конкретного состояния обрабатываем в самом конце.
+            Переходы из состояния "звёздочка" (если список состояний содержит звёздочку) обрабатываем после всех переходов без звёздочки.
+            Таким образом, порядок обработки переходов для текущего автомата будет выглядеть так:
+
+            turnedOff : cmdStopTraffic                   -> trafficStopped;
+            turnedOff : cmdAllowTraffic                  -> trafficAllowed;
+            trafficAllowed : cmdStopTraffic              -> stopNotice;
+            trafficAllowed : cmdTurnOff                  -> turnedOff;
+            trafficAllowed : cmdUncontrolledMode         -> turnedOff;
+            stopNotice : tmToggleGreen ?  greenLightIsOn -> self : greenOff;
+            stopNotice : tmToggleGreen ? !greenLightIsOn -> self : greenOn;
+            stopNotice : tmStopTraffic                   -> trafficStopped;
+            trafficStopped : cmdAllowTraffic             -> trafficAllowed;
+            trafficStopped : cmdTurnOff                  -> turnedOff;
+            * : cmdUncontrolledMode                      -> turnedOff;
+            * : tmAlivePoll                              -> self : reportAlive;
+            turnedOff : *                                -> self; // cmdTurnOff,cmdUncontrolledMode и пр -> turnedOff
+            trafficAllowed : *                           -> self; // cmdAllowTraffic и пр -> trafficAllowed, 
+            stopNotice : *                               -> self;
+            trafficStopped : *                           -> self;
+
+            Вроде всё логично
+        */
     }
 
-} // state-machine TrafficLightTwoLights
+} // state-machine TrafficLightPedestrian
+
+//----------------------------------------------------------------------------
 
 
-// Отсюда надо перерабатывать, старая версия
 
-
-// Трёх-цветный светофор, красный-желтый-синий
-state-machine TrafficLightRYG - "Three-lights traffic light (Reg-Yellow-Green)"
+//----------------------------------------------------------------------------
+// Трёх-цветный светофор, красный-желтый-зелёный
+state-machine TrafficLightRoad :
+uses TrafficLightCommands, 
+     TrafficLightEventsActions override // возможные коллизии молча переписываются более поздними значениями
+- "Three-lights traffic light (Reg-Yellow-Green)"
 {
     /*
         Алгоритм работы светофора:
@@ -317,7 +356,7 @@ state-machine TrafficLightRYG - "Three-lights traffic light (Reg-Yellow-Green)"
         что красный и желтый горят одновременно.
 
         У светофора может быть состояние, когда желтый сигнал мигает. Этот сигнал означает, 
-        что перекрёсток не регалируется.
+        что перекрёсток не регулируется.
 
         В случае логической ошибки светофор мигает красным.
 
@@ -330,39 +369,107 @@ state-machine TrafficLightRYG - "Three-lights traffic light (Reg-Yellow-Green)"
     
     */
 
-    events // Объявляем приходящие в светофор события
-    {
-        // Отправляется в светофор за некоторое время до сигнала stopTrafficWarning, и включает "уведомляющий" сигнал (обычно - мигание зелёного)
-        stopTrafficNotice : external - "The red light (stop) will come on soon";
-
-        // Отправляется в светофор за некоторое время до сигнала stopTraffic, и включает предупреждающий сигнал - желтый (при мигающем зелёном)
-        stopTrafficWarning : external - "The red light (stop) will come on soon";
-
-        // Отправляется в светофор для переключения в режим trafficStopped - горящий красный
-        stopTraffic : external - "The red light (stop) mode is on";
-
-        // Отправляется в светофор за некоторое время до включения разрешающего сигнала - опционально может включать желтый сигнал
-        allowTrafficNotice : external - "The green light (go) will come on soon";
-
-        // Отправляется в светофор для включения разрешающего сигнала
-        allowTraffic : external - "The green light (go) mode is on";
-
-    }
+    events{};
 
     actions
     {
+        // Включение/выключение сигналов
+        greenOn   : external - "Turns the GREEN light On";
+        greenOff  : external - "Turns the GREEN light Off";
+        redOn     : external - "Turns the RED light On";
+        redOff    : external - "Turns the RED light Off";
+        yellowOn  : external - "Turns the YELLOW light On";
+        yellowOff : external - "Turns the YELLOW light Off";
+
+        reportAlive : external;
+        reportFail  : external;
+
+        turnOff    = greenOff, yellowOff, redOff - "Turn all lights off"; 
+        onlyGreen  = redOff, yellowOff, greenOn;
+        onlyRed    = greenOff, yellowOff, redOn;
+        onlyYellow = redOff, greenOff, yellowOn;
+
+        // раннее предупреждение о включении красного - просто начинаем мигать зелёным
+        runStopNotice     = startToggleGreen, deferStopTrafficWarning; // deferStopTraffic; // Мигание зеленого
+        runStopWarning    = stopToggleGreen, onlyYellow, deferStopTraffic; // кратковременный желтый
+        runTrafficStopped = onlyRed;
+
+        // runAllowNotice
+        runAllowWarning   = onlyYellow, deferAllowTraffic;
+        runTrafficAllowed = onlyGreen;
+
+        runUncontrolledMode  = stopToggleGreen, onlyYellow, startToggleYellow;
+        awayFromUncontrolled = stopToggleYellow, turnOff;
     }
 
     predicates
     {
+        greenLightIsOn  : external - "Checks the GREEN light is ON"; // valid-for {toggleGreen}
+        yellowLightIsOn : external - "Checks the YELLOW light is ON"; // valid-for {toggleYellow}
     }
 
     states
     {
+        turnedOff : initial - "Traffic Light is turned OFF"
+        { enter { turnOff } }
+
+        allowWarning { enter {runAllowWarning} }
+
+        trafficAllowed - "Informs road users that they are can go"
+        { enter { runTrafficAllowed } }
+
+        stopNotice - "Informs road users that the RED light is coming soon"
+        { enter {runStopNotice} }
+
+        stopWarning { enter {runStopWarning} }
+
+        trafficStopped - "Informs road users that the traffic must stops"
+        { enter { runTrafficStopped } }
+
+        uncontrolledMode
+        {
+            enter {runUncontrolledMode}
+            leave {awayFromUncontrolled}
+        }
+
     }
 
+    transitions
+    {
+        // Команды - cmdStopTraffic, cmdAllowTraffic, cmdTurnOff, cmdUncontrolledMode
+        // Генерируемые события - tmStopTrafficWarning, tmStopTraffic, tmAllowTrafficWarning, tmAllowTraffic, 
+        //                        tmToggleGreen, tmToggleYellow, tmAlivePoll
+        // Состояния - turnedOff, allowWarning, trafficAllowed, stopNotice, stopWarning, trafficStopped, uncontrolled
 
-} // state-machine RYGTrafficLight
+        turnedOff : cmdStopTraffic      -> trafficStopped;
+        turnedOff : cmdAllowTraffic     -> trafficAllowed;
+
+        //allowWarning : cmdStopTraffic   -> trafficStopped;
+        //allowWarning : cmdAllowTraffic  -> trafficAllowed;
+        allowWarning : tmAllowTraffic   -> trafficAllowed;
+
+        //tmAllowTrafficWarning : external generated - "The GREEN light (go) will come on very soon";
+        //tmAllowTraffic : external generated;
+
+        trafficAllowed : cmdStopTraffic      -> stopNotice;
+
+        stopNotice : tmToggleGreen ?  greenLightIsOn -> self : greenOff;
+        stopNotice : tmToggleGreen ? !greenLightIsOn -> self : greenOn;
+        stopNotice : tmStopTraffic                   -> trafficStopped;
+
+        uncontrolledMode : tmToggleYellow ?  yellowLightIsOn -> self : yellowOff;
+        uncontrolledMode : tmToggleYellow ? !yellowLightIsOn -> self : yellowOn;
+
+        trafficStopped : cmdAllowTraffic -> allowWarning;
+
+        * : cmdUncontrolledMode -> uncontrolledMode;
+        * : tmAlivePoll -> self : reportAlive;
+        * : cmdTurnOff      -> turnedOff;
+        * : * -> self;
+
+    }
+
+} // state-machine TrafficLightRoad
 
 
 
