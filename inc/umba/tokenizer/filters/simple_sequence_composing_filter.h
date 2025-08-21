@@ -1,3 +1,6 @@
+/*! \file
+    \brief Фильтр замены последовательности токенов на один токен
+ */
 #pragma once
 
 #include "filter_base.h"

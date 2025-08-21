@@ -1,3 +1,6 @@
+/*! \file
+    \brief TokenizerBuilder - создание токенизера. Для создания поисковых trie в токенизере используются TrieBuilder'ы. Внутренний хидер.
+ */
 #pragma once
 
 #ifndef UMBA_TOKENIZER_H__DCAEEDE0_7624_4E47_9919_08460EF65A3B__

@@ -1,3 +1,7 @@
+/*! \file
+    \brief Таблица классов символов для симолов базовой таблицы ASCII, версия "C++"
+ */
+
 std::array<umba::tokenizer::CharClass, 128> charClassesTable =
 { umba::tokenizer::CharClass::nonprintable  //  0
 , umba::tokenizer::CharClass::nonprintable  //  1

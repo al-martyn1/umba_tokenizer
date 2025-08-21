@@ -1,3 +1,6 @@
+/*! \file
+    \brief Лексер (сканер) диаграмм UmbaFSM
+ */
 #pragma once
 
 #include "umba/umba.h"

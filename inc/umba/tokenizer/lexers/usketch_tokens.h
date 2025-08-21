@@ -1,5 +1,5 @@
 /*! \file
-    \brief Определение токенов, специфичных для simple drawing
+    \brief Определение токенов, специфичных для usketch
  */
 
 #pragma once

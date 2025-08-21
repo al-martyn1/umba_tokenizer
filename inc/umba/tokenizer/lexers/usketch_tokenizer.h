@@ -1,5 +1,5 @@
 /*! \file
-    \brief Токенизатор/лексер для protogen'а
+    \brief Токенизатор/лексер usketch
  */
 
 #pragma once

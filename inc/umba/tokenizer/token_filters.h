@@ -1,3 +1,6 @@
+/*! \file
+    \brief Сборник всех фильтров токенизера
+ */
 #pragma once
 
 #include "filters/filter_base.h"

@@ -1,3 +1,6 @@
+/*! \file
+    \brief Фильтры DblSquareBracketOpenComposingFilter и DblSquareBracketCloseComposingFilter - преобразуют двойные токены [[ и ]] в одинарные
+ */
 #pragma once
 
 #include "filter_base.h"

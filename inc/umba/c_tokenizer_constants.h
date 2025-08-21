@@ -1,3 +1,6 @@
+/*! \file
+    \brief "Стандартные" предопределенные константы для токенов. Используются макросы, так как предполагается расширение набора констант, и предполагалось использование из языка "C"
+ */
 #pragma once
 
 /* Dummy/control tokens without any payload and iterators, only signals for something special */

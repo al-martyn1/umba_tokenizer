@@ -1,3 +1,7 @@
+/*! \file
+    \brief Таблица классов символов для симолов базовой таблицы ASCII, версия "C"
+ */
+
 UMBA_TOKENIZER_CHARCLASS charClassesTable[128] =
 { UMBA_TOKENIZER_CHARCLASS_NONPRINTABLE  /*  0 */
 , UMBA_TOKENIZER_CHARCLASS_NONPRINTABLE  /*  1 */

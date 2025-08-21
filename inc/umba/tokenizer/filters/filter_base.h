@@ -1,3 +1,6 @@
+/*! \file
+    \brief Базовый класс для сложных фильтров с буферизацией токенов
+ */
 #pragma once
 
 #include "umba/warnings/push_disable_rel_inc_contains_dbldot.h"

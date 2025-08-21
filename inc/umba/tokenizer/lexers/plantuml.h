@@ -1,3 +1,6 @@
+/*! \file
+    \brief Лексер (сканер) диаграмм plantuml
+ */
 #pragma once
 
 #include "umba/umba.h"

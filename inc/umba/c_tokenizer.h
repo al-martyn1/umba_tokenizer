@@ -1,3 +1,6 @@
+/*! \file
+    \brief Утилиты для работы с trie символов. Предполагалось делать с поддержкой языка "C"
+ */
 #pragma once
 
 // #if !defined(__cplusplus)

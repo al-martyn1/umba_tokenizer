@@ -1,3 +1,6 @@
+/*! \file
+    \brief Лексер (сканер) для языка C/C++
+ */
 #pragma once
 
 #include "umba/umba.h"

@@ -1,3 +1,6 @@
+/*! \file
+    \brief Коллекция токенов.
+ */
 #pragma once
 
 #include "../tokenizer.h"

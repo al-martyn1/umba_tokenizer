@@ -1,3 +1,6 @@
+/*! \file
+    \brief Лексер (сканер) диаграмм mermaid packet diagram
+ */
 #pragma once
 
 #include "umba/umba.h"
