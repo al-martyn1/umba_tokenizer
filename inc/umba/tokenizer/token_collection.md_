@@ -1,2 +1,70 @@
 # TokenCollection
 
+#// frag-num,proto-fmt=msdn,frag-start-idx=3
+#!prototype{}  tokenizer/token_collection.h#`void setLineNumber`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`void setFileId`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`file_id_type getFileId`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`tokenizer_type& getTokenizer`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`string_type& getText`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`char_type* getTextPointer`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`std::string getTokenTextLine`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`bool getLastTokenizeResult`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`std::size_t getNumFetchedTokens`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`token_parsed_data_type* getTokenParsedData`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`TextPositionInfo getTokenPositionInfo`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`string_type getTokenText`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`token_pos_type getCurTokenPos()`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`token_pos_type getNextTokenPos`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`void setTokenPos`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`void clearFetched`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`TokenCollectionItemType* getToken`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`TokenCollectionItemType* peekToken`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`std::size_t getNumberOfTokensTotal`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`std::size_t getNumberOfTokenDataTotal`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`std::size_t getBytesOfTokensTotal`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#`std::size_t getBytesOfTokenDataTotal`*-{};
+
+#!prototype{}  tokenizer/token_collection.h#``*-{};
+
+#!prototype{}  tokenizer/token_collection.h#``*-{};
+
+#!prototype{}  tokenizer/token_collection.h#``*-{};
+
+#!prototype{}  tokenizer/token_collection.h#``*-{};
+
+#!prototype{}  tokenizer/token_collection.h#``*-{};
+
+#!prototype{}  tokenizer/token_collection.h#``*-{};
+
+#!prototype{}  tokenizer/token_collection.h#``*-{};
+
+#!prototype{}  tokenizer/token_collection.h#``*-{};
+
+
+
+
+Класс `TokenCollection` предназначен для:
+
+1. хранит список токенов;
+2. по команде умеет очищать выбранные из лексера токены;
