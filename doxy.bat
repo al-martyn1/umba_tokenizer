@@ -3,7 +3,7 @@
 @rem https://stackoverflow.com/questions/15472320/how-to-set-an-input-directory-for-doxygen
 @rem https://stackoverflow.com/questions/24295820/doxygen-isnt-generating-documentation-for-source-files
 @rem CLANG_ASSISTED_PARSING
-copy /A /Y %~dp0\.config\doxygen_common.cfg+%~dp0\.config\doxygen_xml.cfg   %~dp0\.config\doxygen.cfg
+copy /A /Y %~dp0\.config\doxygen_common.cfg+%~dp0\.config\doxygen_xml.cfg+%~dp0\.config\doxygen_html.cfg   %~dp0\.config\doxygen.cfg
 doxygen %~dp0\.config\doxygen.cfg > %~dp0\doxygen_xml.log 2>&1
 
 @rem copy /Y _doc_utils\navtree\*.* doxy\html\
