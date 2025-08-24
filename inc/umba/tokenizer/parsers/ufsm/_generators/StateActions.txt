@@ -1,0 +1,7 @@
+invalid=-1
+
+none                            = 0
+enter
+leave
+selfEnter
+selfLeave

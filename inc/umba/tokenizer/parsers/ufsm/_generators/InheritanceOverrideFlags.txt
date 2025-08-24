@@ -1,0 +1,9 @@
+invalid=-1
+
+none                            = 0
+events
+actions
+predicates
+states
+transitions
+all                             = events|actions|predicates|states|transitions
