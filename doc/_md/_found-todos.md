@@ -19,22 +19,22 @@ Generator: Umba Brief Scanner
 - [ ] `[inc/umba/tokenizer/tokenizer_base.h:2070]`
   Разобраться с continuation
 
-- [ ] `[inc/umba/tokenizer/tokenizer_builder.h:210]`
+- [ ] `[inc/umba/tokenizer/tokenizer_builder.h:216]`
   Проверить, что pairBaseToken один из: UMBA_TOKENIZER_TOKEN_CURLY_BRACKETS
   UMBA_TOKENIZER_TOKEN_ROUND_BRACKETS UMBA_TOKENIZER_TOKEN_ANGLE_BRACKETS
   UMBA_TOKENIZER_TOKEN_SQUARE_BRACKETS или 0, для автоопределения, и сделать
   автоопределение
 
-- [ ] `[inc/umba/tokenizer/tokenizer_builder.h:247]`
+- [ ] `[inc/umba/tokenizer/tokenizer_builder.h:253]`
   Подумать, как сделать, чтобы числа можно было начинать с символов @ # $
 
-- [ ] `[inc/umba/tokenizer/tokenizer_builder.h:248]`
+- [ ] `[inc/umba/tokenizer/tokenizer_builder.h:254]`
   Проверить tokenId на вхождение в диапазон, или сделать автоопределение
 
-- [ ] `[inc/umba/tokenizer/tokenizer_builder.h:265]`
+- [ ] `[inc/umba/tokenizer/tokenizer_builder.h:271]`
   Проверить tokenId на вхождение в диапазон, или сделать автоопределение
 
-- [ ] `[inc/umba/tokenizer/tokenizer_builder.h:309]`
+- [ ] `[inc/umba/tokenizer/tokenizer_builder.h:315]`
   Проверить tokenId на вхождение в диапазон, или сделать автоопределение
 
 - [ ] `[inc/umba/tokenizer/tokenizer_log.h:163]`
@@ -50,20 +50,20 @@ Generator: Umba Brief Scanner
 - [ ] `[inc/umba/tokenizer/token_collection.h:268]`
   Надо переделать на unordered_map, чтобы можно было удалять элементы
 
-- [ ] `[inc/umba/tokenizer/token_collection.h:293]`
+- [ ] `[inc/umba/tokenizer/token_collection.h:298]`
   запретить все остальные конструкторы
 
-- [ ] `[inc/umba/tokenizer/token_collection.h:294]`
+- [ ] `[inc/umba/tokenizer/token_collection.h:299]`
   запретить копирование
 
-- [ ] `[inc/umba/tokenizer/token_collection.h:681]`
+- [ ] `[inc/umba/tokenizer/token_collection.h:751]`
   может не надо в getTokenImpl проверять доступность? Или пофик, одно условие,
   зато peekToken() упрощается
 
-- [ ] `[inc/umba/tokenizer/token_collection.h:756]`
+- [ ] `[inc/umba/tokenizer/token_collection.h:826]`
   Вот тут надо вычитать следующий токен из входного текста
 
-- [ ] `[inc/umba/tokenizer/token_collection.h:803]`
+- [ ] `[inc/umba/tokenizer/token_collection.h:873]`
   надо как-то просигналить, потому что снаружы мы генерим только ошибки
   синтаксического анализа а ошибки лексера генерируются им самим. Но раз лексер
   вернул true, то там ошибки не было, но, тем не менее, финальный токен не

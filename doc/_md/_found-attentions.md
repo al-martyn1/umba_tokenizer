@@ -59,7 +59,7 @@ Generator: Umba Brief Scanner
   Пока IdentifierData задаем как вьюшку от итераторов, но вообще идентификатор
   надо бы сохранять в буфере, чтобы корректно обрабатывать linefeed escap'ы
 
-- `[inc/umba/tokenizer/tokenizer_builder.h:217]`
+- `[inc/umba/tokenizer/tokenizer_builder.h:223]`
   Чот какая-то херня непонятная сама ф-я addTokenToKnownSet выглядит так: void
   addTokenToKnownSet(payload_type tk, const string_type &tkStr, bool
   allowExisting=false) А тут мы string_type как-то очень странно конструируем.
@@ -76,7 +76,7 @@ Generator: Umba Brief Scanner
   мелких токенов - операторов и тп но идентификаторы обычно длиннее 4х символов
   если есть коментарии или строковые литералы - то они разбавляют плотность
 
-- `[inc/umba/tokenizer/token_collection.h:487]`
+- `[inc/umba/tokenizer/token_collection.h:503]`
   Надо наверное что-то придумать с итератором конца. Или не надо? ,
   m_tokenizer(tknConfigurator(initTokenizerHandlers(std::move(tkn))))
 
@@ -116,10 +116,10 @@ Generator: Umba Brief Scanner
 
 # inc/umba/tokenizer/parsers/mermaid
 
-- `[inc/umba/tokenizer/parsers/mermaid/packet_diagram_parser.h:1461]`
+- `[inc/umba/tokenizer/parsers/mermaid/packet_diagram_parser.h:1468]`
   Тут надо делать селект - если токен не числовой внутри орга, то литеральный
   глобальный Пока только числовой делаем
 
-- `[inc/umba/tokenizer/parsers/mermaid/packet_diagram_parser.h:1483]`
+- `[inc/umba/tokenizer/parsers/mermaid/packet_diagram_parser.h:1490]`
   Надо разобраться, почему диагностика не туда пырит
 
