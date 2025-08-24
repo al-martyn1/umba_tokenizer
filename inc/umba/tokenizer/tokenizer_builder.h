@@ -70,6 +70,12 @@ protected: // fileds
 
 
 //------------------------------
+public: // ctors
+    
+    UMBA_RULE_OF_FIVE_DEFAULT(TokenizerBuilder);
+
+
+//------------------------------
 protected: // methods - helpers
 
     // Вообще-то надо бы через enable_if провить, есть ли метод resize, но пока так

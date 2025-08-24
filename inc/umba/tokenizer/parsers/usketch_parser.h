@@ -55,6 +55,7 @@ public:
     using token_parsed_data_type   = typename tokenizer_type::token_parsed_data_type;
     using shared_log_type          = umba::tokenizer::log::SharedParserErrorLog;
     using string_type              = typename BaseClass::string_type;
+    using SharedFilenameSetType    = typename BaseClass::SharedFilenameSetType   ;
 
     // using PacketDiagramItemType    = PacketDiagramItem<TokenCollectionItemType>;
     // using PacketDiagramType        = PacketDiagram<TokenCollectionItemType>;
@@ -77,8 +78,8 @@ public:
     USketchParser() {}
 
     explicit
-    USketchParser(std::shared_ptr<TokenCollectionType> tc, shared_log_type a_log)
-    : BaseClass(tc)
+    USketchParser(std::shared_ptr<TokenCollectionType> tc, SharedFilenameSetType pFilenameSet, shared_log_type a_log)
+    : BaseClass(tc, pFilenameSet)
     , log(a_log)
     {
     }

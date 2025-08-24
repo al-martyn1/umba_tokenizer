@@ -113,6 +113,8 @@ void tokenTriePrintTableGraph(const std::string &name, const ContainerType &toke
 
 
 //----------------------------------------------------------------------------
+// umba::tokenizer::utils::
+
 namespace utils {
 
 
@@ -512,6 +514,7 @@ bool tokenizeInput( const TokenizerType &tokenizer
 
 
 } // namespace utils
+// umba::tokenizer::utils::
 //----------------------------------------------------------------------------
 
 

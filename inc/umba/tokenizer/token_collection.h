@@ -68,7 +68,7 @@ public:
     static constexpr inline std::size_t invalidParsedDataIndex = std::size_t(-1);
 
     //TextPositionInfo       textPosition;
-    small_size_t           tokenLineNumber;
+    small_size_t           tokenLineNumber; // Не больше 2**32 строк
     std::size_t            tokenOffset ; // От начала файла
     super_small_size_t     textLen     ; // Токены не могут быть длиной больше 64К char'ов - это и так овердофига
     PayloadType            tokenType   ;
@@ -274,6 +274,11 @@ using TokenParsedDataCollectionList = std::vector<TokenParsedDataType>; // TODO:
 
 
 //----------------------------------------------------------------------------
+/*!
+    Хандлер, который мы предаём в токенизер, когда хотим использовать TokenCollection.
+
+ */
+
 template< typename PayloadType
         , typename InputIteratorType
         , typename TokenParsedDataType
@@ -382,6 +387,17 @@ protected:
 
 
 //----------------------------------------------------------------------------
+struct FullTokenPosition
+{
+    using file_id_type      = umba::TextPositionInfo::file_id_type;
+    using token_pos_type    = std::size_t;
+
+    token_pos_type          pos    = 0u;
+    file_id_type            fileId = (file_id_type)-1;
+};
+
+
+//----------------------------------------------------------------------------
 //! Буферизирует токены. Производит отложенную токенизацию/токенизацию по запросу.
 template<typename TokenizerType>
 class TokenCollection
@@ -389,7 +405,7 @@ class TokenCollection
 
 public:
 
-    using token_pos_type                          = std::size_t;
+    using token_pos_type                          = typename FullTokenPosition::token_pos_type; // std::size_t;
     using tokenizer_type                          = TokenizerType; // typename TokenBuilder::tokenizer_type;
     using payload_type                            = umba::tokenizer::payload_type;
     using iterator_type                           = typename tokenizer_type::iterator_type;
@@ -604,6 +620,56 @@ public:
         return tpi;
     }
 
+    const TokenCollectionItemType* getTokenBysPos(token_pos_type pos) const
+    {
+        UMBA_ASSERT(pos<m_tokenCollectionList.size());
+        if (pos>=m_tokenCollectionList.size())
+            throw std::runtime_error("TokenCollection::getTokenBysPos: invalid pos");
+
+        auto pRes = &m_tokenCollectionList[pos];
+        return pRes;
+    }
+
+    const token_parsed_data_type* getTokenParsedData(token_pos_type pos) const
+    {
+        return getTokenParsedData(getTokenBysPos(pos));
+    }
+
+    TextPositionInfo getTokenPositionInfo(token_pos_type pos) const
+    {
+        getTokenPositionInfo(getTokenBysPos(pos));
+    }
+
+    FullTokenPosition getFullTokenPosition(token_pos_type pos) const
+    {
+        UMBA_ASSERT(m_fileId!=file_id_type(-1));
+        return FullTokenPosition{pos, m_fileId};
+    }
+
+    // const TokenCollectionItemType* getToken(token_pos_type *pTokenPos=0)
+    // {
+    //     if (m_nextTokenPos<m_tokenCollectionList.size()) // Ничего вычитывать со входа не нужно
+    //     {
+    //         auto pRes = &m_tokenCollectionList[m_nextTokenPos];
+    //         if (pTokenPos)
+    //            *pTokenPos = m_nextTokenPos;
+    //  
+    //         if (pRes->isTokenFin()) // если наткнулись на финализирующий токен, то двигаться по входу дальше не надо, всегда будем возвращать FIN
+    //             return pRes;
+    //  
+    //         // Таки перемещаем позицию на следующий токен
+    //         ++m_nextTokenPos;
+    //  
+    //         return pRes;
+    //     }
+    //  
+    //     // Требуется вычитка следующего токена, поэтому вызываем "тяжелую" основную реализацию, и нам пофик, что она возвращает
+    //     // TODO: может не надо в getTokenImpl проверять доступность? Или пофик, одно условие, зато peekToken() упрощается
+    //  
+    //     return getTokenImpl(pTokenPos);
+    // }
+
+
     string_type getTokenText(const TokenCollectionItemType *ptki) const
     {
         UMBA_ASSERT(ptki);
@@ -659,25 +725,29 @@ public:
         m_inputIt.setLineNumber(tokenLineNumber);
     }
 
-    //! 
+    //! Возвращает TokenCollectionItemType, в опциональном выходном параметре возвращается текущий индекс элемента
     const TokenCollectionItemType* getToken(token_pos_type *pTokenPos=0)
     {
         if (m_nextTokenPos<m_tokenCollectionList.size()) // Ничего вычитывать со входа не нужно
         {
-            auto pRes = &m_tokenCollectionList[m_nextTokenPos];
             if (pTokenPos)
                *pTokenPos = m_nextTokenPos;
 
-            if (pRes->isTokenFin()) // если наткнулись на финализирующий токен, то двигаться по входу дальше не надо, всегда будем возвращать FIN
-                return pRes;
+            //auto pRes = &m_tokenCollectionList[m_nextTokenPos];
+            auto pRes = getTokenBysPos(m_nextTokenPos);
 
-            // Таки перемещаем позицию на следующий токен
-            ++m_nextTokenPos;
+            return pRes->isTokenFin() ? pRes : (m_nextTokenPos++, pRes);
 
-            return pRes;
+            // if (pRes->isTokenFin()) // если наткнулись на финализирующий токен, то двигаться по входу дальше не надо, всегда будем возвращать FIN
+            //     return pRes;
+            //  
+            // // Таки перемещаем позицию на следующий токен
+            // ++m_nextTokenPos;
+            //  
+            // return pRes;
         }
 
-        // Требуется вычитка следующего токена, поэтому вызываем "тяжелую" основную реализацию, и на пофик, что она возвращает
+        // Требуется вычитка следующего токена, поэтому вызываем "тяжелую" основную реализацию, и нам пофик, что она возвращает
         // TODO: может не надо в getTokenImpl проверять доступность? Или пофик, одно условие, зато peekToken() упрощается
 
         return getTokenImpl(pTokenPos);

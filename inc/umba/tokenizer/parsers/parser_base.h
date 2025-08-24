@@ -11,10 +11,17 @@
 //
 #include "umba/the.h"
 #include "umba/format_message.h"
+//
+#include "umba/filename_set.h"
+//
+//#include ""
+
 
 //
 #include <memory>
+#include <exception>
 #include <initializer_list>
+#include <stdexcept>
 
 //----------------------------------------------------------------------------
 // umba::tokenizer::
@@ -42,6 +49,12 @@ public: // types & ctors
     using string_type              = typename tokenizer_type::string_type; // Input chars string type
     using char_type                = typename string_type::value_type;
 
+    using FilenameSetType          = umba::FilenameSet<file_id_type, string_type>;
+    using SharedFilenameSetType    = std::shared_ptr<FilenameSetType>;
+
+    // using FilenameSetType               = umba:: /* Simple */ FilenameSet<std::size_t /* , std::string */ >;
+
+
 
     UMBA_RULE_OF_FIVE_COPY_DELETE(ParserBase);
     UMBA_RULE_OF_FIVE_MOVE_DEFAULT(ParserBase);
@@ -60,8 +73,9 @@ public: // types & ctors
     // }
 
     explicit
-    ParserBase(std::shared_ptr<TokenCollectionType> tc)
+    ParserBase(std::shared_ptr<TokenCollectionType> tc, SharedFilenameSetType pFilenameSet)
     : m_pTokens(tc)
+    , m_pFilenameSet(pFilenameSet)
     {
     }
 
@@ -78,6 +92,11 @@ public: // methods
     file_id_type getFileId() const
     {
         return m_pTokens->getFileId();
+    }
+
+    SharedFilenameSetType getFilenameSet() const
+    {
+        return m_pFilenameSet;
     }
 
     const token_parsed_data_type* getTokenParsedData(const TokenCollectionItemType *ptki) const
@@ -316,12 +335,63 @@ public: // methods
 protected: // fields
 
     std::shared_ptr<TokenCollectionType>  m_pTokens;
+    SharedFilenameSetType                 m_pFilenameSet; // В базе не нужен, но необходим, если необходимо парсить какие либо подключаемые файлы - include, import, etc
 
 
 }; // class ParserBase
 
+//----------------------------------------------------------------------------
 
 
+
+//----------------------------------------------------------------------------
+
+template< typename ParserType
+        , typename TokenizerBuilder
+        , typename TokenizerConfigurator
+        , typename SharedFilenameSet
+        , typename SharedLog
+        , typename TextPreparator
+        , typename ParserPreparator
+        >
+auto parserParseData( TokenizerBuilder                        tokenizerBuilder
+                    , TokenizerConfigurator                   tokenizerConfigurator
+                    , SharedFilenameSet                       sharedFilenameSet
+                    , SharedLog                               sharedLog
+                    , typename TokenizerBuilder::string_type &fileName
+                    , typename TokenizerBuilder::string_type  data
+                    , TextPreparator                          textPreparator
+                    , ParserPreparator                        parserPreparator
+                    )
+{
+    using TokenizerType                 = std::decay_t<decltype(TokenizerBuilder().makeTokenizer())>;
+    // using TokenizerPayloadType          = umba::tokenizer::payload_type;
+    // using TokenizerIteratorType         = typename TokenizerType::iterator_type;
+    // using TokenizerTokenParsedDataType  = typename TokenizerType::token_parsed_data_type;
+    using TokenCollectionType           = umba::tokenizer::TokenCollection<TokenizerType>;
+    using StringType                    = typename TokenizerBuilder::string_type;
+
+    data = utils::normalizeLineFeed<StringType>(data);
+    textPreparator(data);
+
+    auto pTokenCollection = std::make_shared<TokenCollectionType>( tokenizerBuilder.makeTokenizer()
+                                                                 , tokenizerConfigurator
+                                                                 , sharedLog
+                                                                 , data
+                                                                 , sharedFilenameSet->addFile(fileName) // Проверка, был ли обработан такой файл, производится где-то до текущего вызова
+                                                                 );
+    auto parser = ParserType(pTokenCollection, sharedFilenameSet, sharedLog);
+    parserPreparator(parser);
+
+    if (!parser.parse())
+    {
+        throw std::runtime_error("umba::tokenizer::parserParseData: got some errors");
+    }
+
+    return parser.getParsedData();
+}
+
+//----------------------------------------------------------------------------
 
 
 
@@ -329,5 +399,6 @@ protected: // fields
 
 } // namespace tokenizer
 } // namespace umba
+// umba::tokenizer::
 
 

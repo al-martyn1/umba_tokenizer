@@ -51,6 +51,8 @@ public:
     using tokenizer_type           = TokenizerType;
     using TokenCollectionType      = typename BaseClass::TokenCollectionType     ;
     using TokenCollectionItemType  = typename BaseClass::TokenCollectionItemType ;
+    using SharedFilenameSetType    = typename BaseClass::SharedFilenameSetType   ;
+    //, SharedFilenameSetType pFilenameSet
     using TokenInfoType            = typename BaseClass::TokenInfoType           ;
     using TokenPosType             = typename BaseClass::TokenPosType            ;
     using token_parsed_data_type   = typename tokenizer_type::token_parsed_data_type;
@@ -78,10 +80,15 @@ public:
     PacketDiagramParser() {}
 
     explicit
-    PacketDiagramParser(std::shared_ptr<TokenCollectionType> tc, shared_log_type a_log)
-    : BaseClass(tc)
+    PacketDiagramParser(std::shared_ptr<TokenCollectionType> tc, SharedFilenameSetType pFilenameSet, shared_log_type a_log)
+    : BaseClass(tc, pFilenameSet)
     , log(a_log)
     {
+    }
+
+    const PacketDiagramType& getParsedData() const
+    {
+        return diagram;
     }
 
 //    template<typename TVal>

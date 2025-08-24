@@ -2,151 +2,36 @@
 
 # TokenCollection
 
-```cpp
-void
-setLineNumber(
-  std::size_t lineNumber
-);
-```
+Класс `TokenCollection` хранит:
 
-```cpp
-void
-setFileId(
-  file_id_type fileId
-);
-```
-
-```cpp
-file_id_type
-getFileId() const;
-```
-
-```cpp
-tokenizer_type &
-getTokenizer();
-```
-
-```cpp
-string_type &
-getText();
-```
-
-#!prototype{}  tokenizer/token_collection.h#`char_type* getTextPointer`*-{};
-
-```cpp
-std::string
-getTokenTextLine(
-  const TokenCollectionItemType *ptki
-)
-const;
-
-std::string
-getTokenTextLine(
-  const TextPositionInfo &textPosInfo
-)
-const;
-```
-
-```cpp
-bool
-getLastTokenizeResult() const;
-```
-
-```cpp
-std::size_t
-getNumFetchedTokens() const;
-```
-
-#!prototype{}  tokenizer/token_collection.h#`token_parsed_data_type* getTokenParsedData`*-{};
-
-```cpp
-TextPositionInfo
-getTokenPositionInfo(
-  const TokenCollectionItemType *ptki
-)
-const;
-```
-
-```cpp
-string_type
-getTokenText(
-  const TokenCollectionItemType *ptki
-)
-const;
-```
-
-```cpp
-token_pos_type
-getCurTokenPos() const;
-```
-
-```cpp
-token_pos_type
-getNextTokenPos() const;
-```
-
-```cpp
-void
-setTokenPos(
-  token_pos_type pos
-);
-```
-
-```cpp
-void
-clearFetched();
-```
-
-#!prototype{}  tokenizer/token_collection.h#`TokenCollectionItemType* getToken`*-{};
-
-#!prototype{}  tokenizer/token_collection.h#`TokenCollectionItemType* peekToken`*-{};
-
-```cpp
-std::size_t
-getNumberOfTokensTotal() const;
-```
-
-```cpp
-std::size_t
-getNumberOfTokenDataTotal() const;
-```
-
-```cpp
-std::size_t
-getBytesOfTokensTotal() const;
-```
-
-```cpp
-std::size_t
-getBytesOfTokenDataTotal() const;
-```
-
-!!! Invalid tag string: '``*-{};'
-#!prototype{}  tokenizer/token_collection.h#``*-{};
-
-!!! Invalid tag string: '``*-{};'
-#!prototype{}  tokenizer/token_collection.h#``*-{};
-
-!!! Invalid tag string: '``*-{};'
-#!prototype{}  tokenizer/token_collection.h#``*-{};
-
-!!! Invalid tag string: '``*-{};'
-#!prototype{}  tokenizer/token_collection.h#``*-{};
-
-!!! Invalid tag string: '``*-{};'
-#!prototype{}  tokenizer/token_collection.h#``*-{};
-
-!!! Invalid tag string: '``*-{};'
-#!prototype{}  tokenizer/token_collection.h#``*-{};
-
-!!! Invalid tag string: '``*-{};'
-#!prototype{}  tokenizer/token_collection.h#``*-{};
-
-!!! Invalid tag string: '``*-{};'
-#!prototype{}  tokenizer/token_collection.h#``*-{};
+- список токенов `m_tokenCollectionList`;
+- список 'полезной нагрузки' из токенов, у которых она была `m_tokenParsedDataCollectionList`;
+- `shared` указатель на логгер - `m_log`;
+- исходный текст (с нормализованными переносами строки) `m_text`;
+- токенизатор `m_tokenizer` (по значению);
+- идентификатор файла `m_fileId`.
 
 
-Класс `TokenCollection` предназначен для:
+Основной функцией класса `TokenCollection` является извлечение токена функцией `getToken`, которая через
+выходной параметр возвращает также индек токена в данной коллекции, при этом происходит увеличение внутреннего указателя токена;
+также можно получить токен при помощи функции `peekToken` без увеличения внутреннего указателя токена;
+также, если изменился контекст и пользовательский код перенастроил токенизатор, то очистить ранее извлечённые
+токены из кеша можно методом `clearFetched`.
 
-1. хранит список токенов;
-2. по команде умеет очищать выбранные из лексера токены;
+Идентификатор файла `m_fileId` (его можно получить методом `getFileId`, также он хранится в информации о токене)
+является идентификатором в наборе `FilenameSet`.
+
+Если у нас обрабатывается один файл, и все сообщения об ошибках мы выводим только при разборе файла, то ничего
+дополнительно заводить не нужно - создаётся `shared_ptr<Log>`, создаётся `tokenizerBuilder`,
+создаётся `shared_ptr<TokenCollection>`, создаётся требуемый парсер, получающий всё ранее созданное, и вызывается
+метод парсера `parse()`.
+
+Если мы хотим парсить множество файлов, и сохранять данные о местоположении всех конструкций в исходном файле,
+то нам надо: а) для каждой конструкции хранить пару `{tokenPos,fileId}`, б) надо для каждого fileId хранить
+`shared_ptr<TokenCollection>`, чтобы иметь возможность по `tokenPos` восстановить полный конекст положения
+токена в исходных текстах.
+
+Структура `FullTokenPosition` содержит поля `pos` и `fileId`. Поле `fileId` ссылается на идентификатор файла в `FilenameSet`.
+`FilenameSet` для каждого файла хранит пользовательское поле, тип которого задаётся параметром шаблона. В нем можно
+хранить результаты разбора, чтобы избегать повторного разбора при ссылке на тот же файл.
+
