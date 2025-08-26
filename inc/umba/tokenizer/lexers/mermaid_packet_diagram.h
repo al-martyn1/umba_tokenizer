@@ -64,8 +64,11 @@ makeTokenizerBuilder()
                           // .addSingleLineComment(make_string<StringType>("#"), UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FIRST)
 
                           .addOperator(make_string<StringType>("-"   ), MERMAID_TOKEN_OPERATOR_RANGE             )
-                          //.addOperator(make_string<StringType>(":"   ), MERMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER  )
-                          //.addOperator(make_string<StringType>("%%#!"), MERMAID_TOKEN_OPERATOR_EXTRA             ) // Как комент, но специальный. Игнорится оригинальным mermaid'ом, но обрабатывается нами
+
+                          // Не понял, с какого-то хрена две строки ниже были закоменчены
+                          .addOperator(make_string<StringType>(":"   ), MERMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER  )
+                          .addOperator(make_string<StringType>("%%#!"), MERMAID_TOKEN_OPERATOR_EXTRA             ) // Как комент, но специальный. Игнорится оригинальным mermaid'ом, но обрабатывается нами
+
                           .addOperator(make_string<StringType>("+"   ), MERMAID_TOKEN_OPERATOR_PLUS              )
                           
                           

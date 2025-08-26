@@ -426,23 +426,73 @@ StringType normalizeLineFeed(const StringType &str)
 
     StringType res; res.reserve();
 
-    bool waitCr = false;
+    // bool waitCr = false;
+    //  
+    // for(auto ch: str)
+    // {
+    //     if (waitCr)
+    //     {
+    //         if (ch==CharType('\r'))
+    //             waitCr = false;
+    //         else
+    //             res.append(1, ch);
+    //     }
+    //     else
+    //     {
+    //         if (ch==CharType('\n'))
+    //             waitCr = true;
+    //         res.append(1, ch);
+    //     }
+    // }
 
+    // Line feed is \r\n (not a \n\r)
+
+    bool waitLf = false;
+     
     for(auto ch: str)
     {
-        if (waitCr)
+        if (waitLf)
         {
-            if (ch==CharType('\r'))
-                waitCr = false;
+            if (ch==CharType('\n'))
+            {
+                res.append(1, ch); // Проигнорили предыдущий CR
+                waitLf = false;
+            }
             else
-                res.append(1, ch);
+            {
+                // LF не пришёл, был отдельный CR - считаем его за перевод строки
+                res.append(1, CharType('\n'));
+
+                // Если текущий символ - не CR, то не ожидаем LF (сбрасываем флаг ожидания)
+                if (ch!=CharType('\r'))
+                {
+                    waitLf = false;
+                    res.append(1, ch); // добавляем текущий символ
+                }
+                else
+                {
+                    // У нас CR - ждёмс
+                }
+            }
+            
         }
         else
         {
-            if (ch==CharType('\n'))
-                waitCr = true;
-            res.append(1, ch);
+            if (ch==CharType('\r'))
+            {
+                waitLf = true; // И пропускаем пока CR
+            }
+            else
+            {
+                res.append(1, ch);
+            }
         }
+    }
+
+    if (waitLf)
+    {
+        // Ждали LF, но данные закончились - запихиваем перевод строки
+        res.append(1, CharType('\n'));
     }
 
     return res;

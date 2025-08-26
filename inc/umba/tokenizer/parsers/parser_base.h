@@ -371,10 +371,13 @@ auto parserParseData( TokenizerBuilder                        tokenizerBuilder
     using TokenCollectionType           = umba::tokenizer::TokenCollection<TokenizerType>;
     using StringType                    = typename TokenizerBuilder::string_type;
 
+    // auto dataCopy = utils::normalizeLineFeed<StringType>(data);
+    // data = dataCopy;
     data = utils::normalizeLineFeed<StringType>(data);
     textPreparator(data);
 
-    auto pTokenCollection = std::make_shared<TokenCollectionType>( tokenizerBuilder.makeTokenizer()
+    //auto tokenizer = tokenizerBuilder.makeTokenizer();
+    auto pTokenCollection = std::make_shared<TokenCollectionType>( tokenizerBuilder.makeTokenizer() // tokenizer
                                                                  , tokenizerConfigurator
                                                                  , sharedLog
                                                                  , data
