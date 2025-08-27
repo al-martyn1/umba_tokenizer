@@ -15,6 +15,8 @@
 #include <string>
 #include <vector>
 
+//
+#include "../../../undef_min_max.h"
 
 
 //----------------------------------------------------------------------------
@@ -313,7 +315,7 @@ struct TransitionSourceState
         return std::string(isExcluded() ? "!" : "") + res;
     }
 
-    int compare(const TransitionEvent &other) const
+    int compare(const TransitionSourceState&other) const
     {
         if (isAny() || other.isAny())
         {
@@ -410,7 +412,8 @@ struct TransitionSourceStates
 {
     std::vector<TransitionSourceState>  stateList;
 
-    void append( const TransitionSourceState &st) { stateList.push_back(); }
+    void append   ( const TransitionSourceState &st) { stateList.push_back(st); }
+    void push_back( const TransitionSourceState &st) { stateList.push_back(st); }
 
     // returns true if no multiple ANYs found
     bool checkForAny(bool *pHasNormalAny=0, bool *pHasExcludedAny=0) const
@@ -430,7 +433,7 @@ struct TransitionSourceStates
             if (!s.isExcluded())
                 hasNormalAny   = true;
             else
-                 = true;
+                hasExcludedAny = true;
         }
 
         if (pHasNormalAny)
@@ -448,27 +451,173 @@ struct TransitionSourceStates
     {
         auto sorted = getSortedStates();
         std::string res;
-        for(const auto s : sorted)
+        for(const auto &s : sorted)
         {
             if (!res.empty())
                 res.append(1, ',');
-            res.append(s);
+            res.append(s.getCanonicalName());
         }
 
         return res;
     }
 
-    // int compare(const TransitionEvent &other) const
-    // bool operator< (const TransitionEvent &other) const { return compare(other)<0; }
-    // bool isEqual   (const TransitionEvent &other) const { return isAny()==other.isAny() && isExcluded()==other.isExcluded() && name==other.name; }
-    // bool operator==(const TransitionEvent &other) const { return isEqual(other); }
-    // bool operator!=(const TransitionEvent &other) const { return !isEqual(other); }
+    bool isEqual(const TransitionSourceStates &other) const
+    {
+        if (stateList.size()!=other.stateList.size())
+            return false;
 
+        auto s1 = getSortedStates();
+        auto s2 = other.getSortedStates();
+
+        for(std::size_t i=0u; i!=s1.size(); ++i)
+        {
+            if (!s1[i].isEqual(s2[i]))
+                return false;
+        }
+
+        return true;
+    }
+
+    int compare(const TransitionSourceStates &other) const
+    {
+        auto s1 = getSortedStates();
+        auto s2 = other.getSortedStates();
+
+        std::size_t sz = std::min(s1.size(), s2.size());
+
+        for(std::size_t i=0u; i!=sz; ++i)
+        {
+            if (s1[i].isEqual(s2[i]))
+                continue;
+            if (s1[i].compare(s2[i])<0)
+                return -1;
+            else
+                return  1;
+        }
+
+        // общую часть прошли
+        if (s1.size()==s2.size())
+            return 0; // При равном размере вектора равны
+
+        return s1.size()<s2.size() ? -1 : 1; // Более короткая строка меньше
+    }
+
+     bool operator< (const TransitionSourceStates &other) const { return compare(other)<0; }
+     bool operator==(const TransitionSourceStates &other) const { return isEqual(other); }
+     bool operator!=(const TransitionSourceStates &other) const { return !isEqual(other); }
 
 }; // struct TransitionSourceStates
 
+//------------------------------
+struct TransitionEvents
+{
+    std::vector<TransitionEvent>  eventList;
+
+    void append   ( const TransitionEvent &st) { eventList.push_back(st); }
+    void push_back( const TransitionEvent &st) { eventList.push_back(st); }
+
+    // returns true if no multiple ANYs found
+    bool checkForAny(bool *pHasNormalAny=0, bool *pHasExcludedAny=0) const
+    {
+        bool hasNormalAny   = false;
+        bool hasExcludedAny = false;
+
+        std::size_t anyCount = 0;
+
+        for(const auto &s : eventList)
+        {
+            if (!s.isAny())
+                continue;
+
+            ++anyCount;
+
+            if (!s.isExcluded())
+                hasNormalAny   = true;
+            else
+                hasExcludedAny = true;
+        }
+
+        if (pHasNormalAny)
+           *pHasNormalAny = hasNormalAny;
+
+        if (pHasExcludedAny)
+           *pHasExcludedAny = hasExcludedAny;
+
+        return anyCount <= 1;
+    }
+
+    std::vector<TransitionEvent> getSortedEvents() const  { auto res = eventList; std::sort(res.begin(), res.end()); return res; };
+
+    std::string getCanonicalName() const
+    {
+        auto sorted = getSortedEvents();
+        std::string res;
+        for(const auto &s : sorted)
+        {
+            if (!res.empty())
+                res.append(1, ',');
+            res.append(s.getCanonicalName());
+        }
+
+        return res;
+    }
+
+    bool isEqual(const TransitionEvents &other) const
+    {
+        if (eventList.size()!=other.eventList.size())
+            return false;
+
+        auto s1 = getSortedEvents();
+        auto s2 = other.getSortedEvents();
+
+        for(std::size_t i=0u; i!=s1.size(); ++i)
+        {
+            if (!s1[i].isEqual(s2[i]))
+                return false;
+        }
+
+        return true;
+    }
+
+    int compare(const TransitionEvents &other) const
+    {
+        auto s1 = getSortedEvents();
+        auto s2 = other.getSortedEvents();
+
+        std::size_t sz = std::min(s1.size(), s2.size());
+
+        for(std::size_t i=0u; i!=sz; ++i)
+        {
+            if (s1[i].isEqual(s2[i]))
+                continue;
+            if (s1[i].compare(s2[i])<0)
+                return -1;
+            else
+                return  1;
+        }
+
+        // общую часть прошли
+        if (s1.size()==s2.size())
+            return 0; // При равном размере вектора равны
+
+        return s1.size()<s2.size() ? -1 : 1; // Более короткая строка меньше
+    }
+
+     bool operator< (const TransitionEvents &other) const { return compare(other)<0; }
+     bool operator==(const TransitionEvents &other) const { return isEqual(other); }
+     bool operator!=(const TransitionEvents &other) const { return !isEqual(other); }
+
+}; // struct TransitionEvents
+
 
 //----------------------------------------------------------------------------
+
+/*
+  Тут уже можно описать структуру TransitionDefinition, но у нас пока нет подходящего контейнера 
+
+*/
+
+
 
 //----------------------------------------------------------------------------
 
