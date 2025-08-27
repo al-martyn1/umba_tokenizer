@@ -1,9 +1,10 @@
 invalid=-1
 
 none                            = 0
-events
 actions
+events
 predicates
 states
 transitions
+
 all                             = events|actions|predicates|states|transitions

@@ -39,10 +39,13 @@ rem    %UINT32% %HEX4% -E=PacketDiagramDisplayOptions          -F=@MermaidPacket
 umba-enum-gen %GEN_OPTS% %HEX2% %TPL_OVERRIDE% %SNIPPETOPTIONS_GEN_FLAGS%                                    ^
     --namespace=umba/tokenizer/ufsm                                                                          ^
     --override-template-parameter=EnumNameFormat:$(ENAMNAME)                                                 ^
-    %UINT32% %HEX4% -E=StateActions                         -F=@StateActions.txt                             ^
+    %UINT32% %HEX4% -E=StateActionKind                      -F=@StateActionKind.txt                          ^
     %FLAGS%                                                                                                  ^
     %UINT32% %HEX4% -E=ActionFlags                          -F=@ActionFlags.txt                              ^
     %UINT32% %HEX4% -E=EventFlags                           -F=@EventFlags.txt                               ^
     %UINT32% %HEX4% -E=InheritanceOverrideFlags             -F=@InheritanceOverrideFlags.txt                 ^
+    %UINT32% %HEX4% -E=PredicateFlags                       -F=@PredicateFlags.txt                           ^
     %UINT32% %HEX4% -E=StateFlags                           -F=@StateFlags.txt                               ^
+    %UINT32% %HEX4% -E=TransitionEventFlags                 -F=@TransitionEventFlags.txt                     ^
+    %UINT32% %HEX4% -E=TransitionSourceStateFlags           -F=@TransitionSourceStateFlags.txt               ^
 ..\enums.h

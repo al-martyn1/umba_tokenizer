@@ -21,8 +21,8 @@ namespace umba{
 namespace tokenizer{
 namespace ufsm{
 
-//#!StateActions
-enum class StateActions : std::uint32_t
+//#!StateActionKind
+enum class StateActionKind : std::uint32_t
 {
     invalid     = (std::uint32_t)(-1) /*!<  */,
     none        = 0x0000 /*!<  */,
@@ -34,29 +34,29 @@ enum class StateActions : std::uint32_t
 }; // enum 
 //#!
 
-MARTY_CPP_MAKE_ENUM_IS_FLAGS_FOR_NON_FLAGS_ENUM(StateActions)
+MARTY_CPP_MAKE_ENUM_IS_FLAGS_FOR_NON_FLAGS_ENUM(StateActionKind)
 
-MARTY_CPP_ENUM_CLASS_SERIALIZE_BEGIN( StateActions, std::map, 1 )
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( StateActions::leave       , "Leave"     );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( StateActions::invalid     , "Invalid"   );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( StateActions::selfEnter   , "SelfEnter" );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( StateActions::none        , "None"      );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( StateActions::enter       , "Enter"     );
-    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( StateActions::selfLeave   , "SelfLeave" );
-MARTY_CPP_ENUM_CLASS_SERIALIZE_END( StateActions, std::map, 1 )
+MARTY_CPP_ENUM_CLASS_SERIALIZE_BEGIN( StateActionKind, std::map, 1 )
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( StateActionKind::leave       , "Leave"     );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( StateActionKind::invalid     , "Invalid"   );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( StateActionKind::selfEnter   , "SelfEnter" );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( StateActionKind::none        , "None"      );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( StateActionKind::enter       , "Enter"     );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( StateActionKind::selfLeave   , "SelfLeave" );
+MARTY_CPP_ENUM_CLASS_SERIALIZE_END( StateActionKind, std::map, 1 )
 
-MARTY_CPP_ENUM_CLASS_DESERIALIZE_BEGIN( StateActions, std::map, 1 )
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( StateActions::leave       , "leave"      );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( StateActions::invalid     , "invalid"    );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( StateActions::selfEnter   , "self-enter" );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( StateActions::selfEnter   , "self_enter" );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( StateActions::selfEnter   , "selfenter"  );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( StateActions::none        , "none"       );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( StateActions::enter       , "enter"      );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( StateActions::selfLeave   , "self-leave" );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( StateActions::selfLeave   , "self_leave" );
-    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( StateActions::selfLeave   , "selfleave"  );
-MARTY_CPP_ENUM_CLASS_DESERIALIZE_END( StateActions, std::map, 1 )
+MARTY_CPP_ENUM_CLASS_DESERIALIZE_BEGIN( StateActionKind, std::map, 1 )
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( StateActionKind::leave       , "leave"      );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( StateActionKind::invalid     , "invalid"    );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( StateActionKind::selfEnter   , "self-enter" );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( StateActionKind::selfEnter   , "self_enter" );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( StateActionKind::selfEnter   , "selfenter"  );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( StateActionKind::none        , "none"       );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( StateActionKind::enter       , "enter"      );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( StateActionKind::selfLeave   , "self-leave" );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( StateActionKind::selfLeave   , "self_leave" );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( StateActionKind::selfLeave   , "selfleave"  );
+MARTY_CPP_ENUM_CLASS_DESERIALIZE_END( StateActionKind, std::map, 1 )
 
 
 //#!ActionFlags
@@ -120,8 +120,8 @@ enum class InheritanceOverrideFlags : std::uint32_t
 {
     invalid       = (std::uint32_t)(-1) /*!<  */,
     none          = 0x0000 /*!<  */,
-    events        = 0x0001 /*!<  */,
-    actions       = 0x0002 /*!<  */,
+    actions       = 0x0001 /*!<  */,
+    events        = 0x0002 /*!<  */,
     predicates    = 0x0004 /*!<  */,
     states        = 0x0008 /*!<  */,
     transitions   = 0x0010 /*!<  */,
@@ -137,8 +137,8 @@ MARTY_CPP_ENUM_FLAGS_SERIALIZE_BEGIN( InheritanceOverrideFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( InheritanceOverrideFlags::transitions   , "Transitions" );
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( InheritanceOverrideFlags::none          , "None"        );
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( InheritanceOverrideFlags::all           , "All"         );
-    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( InheritanceOverrideFlags::actions       , "Actions"     );
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( InheritanceOverrideFlags::events        , "Events"      );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( InheritanceOverrideFlags::actions       , "Actions"     );
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( InheritanceOverrideFlags::states        , "States"      );
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( InheritanceOverrideFlags::predicates    , "Predicates"  );
 MARTY_CPP_ENUM_FLAGS_SERIALIZE_END( InheritanceOverrideFlags, std::map, 1 )
@@ -148,11 +148,41 @@ MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( InheritanceOverrideFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( InheritanceOverrideFlags::transitions   , "transitions" );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( InheritanceOverrideFlags::none          , "none"        );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( InheritanceOverrideFlags::all           , "all"         );
-    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( InheritanceOverrideFlags::actions       , "actions"     );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( InheritanceOverrideFlags::events        , "events"      );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( InheritanceOverrideFlags::actions       , "actions"     );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( InheritanceOverrideFlags::states        , "states"      );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( InheritanceOverrideFlags::predicates    , "predicates"  );
 MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( InheritanceOverrideFlags, std::map, 1 )
+
+
+//#!PredicateFlags
+enum class PredicateFlags : std::uint32_t
+{
+    invalid    = (std::uint32_t)(-1) /*!<  */,
+    none       = 0x0000 /*!<  */,
+    external   = 0x0001 /*!<  */,
+    validFor   = 0x0002 /*!< valid-for list is actual */
+
+}; // enum 
+//#!
+
+MARTY_CPP_MAKE_ENUM_FLAGS(PredicateFlags)
+
+MARTY_CPP_ENUM_FLAGS_SERIALIZE_BEGIN( PredicateFlags, std::map, 1 )
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PredicateFlags::invalid    , "Invalid"  );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PredicateFlags::none       , "None"     );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PredicateFlags::external   , "External" );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PredicateFlags::validFor   , "ValidFor" );
+MARTY_CPP_ENUM_FLAGS_SERIALIZE_END( PredicateFlags, std::map, 1 )
+
+MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( PredicateFlags, std::map, 1 )
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PredicateFlags::invalid    , "invalid"   );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PredicateFlags::none       , "none"      );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PredicateFlags::external   , "external"  );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PredicateFlags::validFor   , "valid-for" );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PredicateFlags::validFor   , "valid_for" );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PredicateFlags::validFor   , "validfor"  );
+MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( PredicateFlags, std::map, 1 )
 
 
 //#!StateFlags
@@ -181,6 +211,62 @@ MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( StateFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( StateFlags::none      , "none"    );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( StateFlags::final     , "final"   );
 MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( StateFlags, std::map, 1 )
+
+
+//#!TransitionEventFlags
+enum class TransitionEventFlags : std::uint32_t
+{
+    invalid    = (std::uint32_t)(-1) /*!<  */,
+    none       = 0x0000 /*!<  */,
+    any        = 0x0001 /*!< Applied for any source state */,
+    excluded   = 0x0002 /*!< Excluded from source states list (used only if ANY state present in source states) */
+
+}; // enum 
+//#!
+
+MARTY_CPP_MAKE_ENUM_FLAGS(TransitionEventFlags)
+
+MARTY_CPP_ENUM_FLAGS_SERIALIZE_BEGIN( TransitionEventFlags, std::map, 1 )
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( TransitionEventFlags::invalid    , "Invalid"  );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( TransitionEventFlags::none       , "None"     );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( TransitionEventFlags::any        , "Any"      );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( TransitionEventFlags::excluded   , "Excluded" );
+MARTY_CPP_ENUM_FLAGS_SERIALIZE_END( TransitionEventFlags, std::map, 1 )
+
+MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( TransitionEventFlags, std::map, 1 )
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionEventFlags::invalid    , "invalid"  );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionEventFlags::none       , "none"     );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionEventFlags::any        , "any"      );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionEventFlags::excluded   , "excluded" );
+MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( TransitionEventFlags, std::map, 1 )
+
+
+//#!TransitionSourceStateFlags
+enum class TransitionSourceStateFlags : std::uint32_t
+{
+    invalid    = (std::uint32_t)(-1) /*!<  */,
+    none       = 0x0000 /*!<  */,
+    any        = 0x0001 /*!< Applied for any source state */,
+    excluded   = 0x0002 /*!< Excluded from source states list (used only if ANY state present in source states) */
+
+}; // enum 
+//#!
+
+MARTY_CPP_MAKE_ENUM_FLAGS(TransitionSourceStateFlags)
+
+MARTY_CPP_ENUM_FLAGS_SERIALIZE_BEGIN( TransitionSourceStateFlags, std::map, 1 )
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( TransitionSourceStateFlags::invalid    , "Invalid"  );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( TransitionSourceStateFlags::none       , "None"     );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( TransitionSourceStateFlags::any        , "Any"      );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( TransitionSourceStateFlags::excluded   , "Excluded" );
+MARTY_CPP_ENUM_FLAGS_SERIALIZE_END( TransitionSourceStateFlags, std::map, 1 )
+
+MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( TransitionSourceStateFlags, std::map, 1 )
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionSourceStateFlags::invalid    , "invalid"  );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionSourceStateFlags::none       , "none"     );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionSourceStateFlags::any        , "any"      );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionSourceStateFlags::excluded   , "excluded" );
+MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( TransitionSourceStateFlags, std::map, 1 )
 
 } // namespace ufsm
 } // namespace tokenizer

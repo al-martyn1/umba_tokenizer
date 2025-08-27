@@ -1,0 +1,5 @@
+invalid=-1
+
+none                            = 0
+any                                 // Applied for any source state
+excluded                            // Excluded from source states list (used only if ANY state present in source states)

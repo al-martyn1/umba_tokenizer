@@ -16,7 +16,7 @@
 //
 #include "../utils.h"
 #include "../parser_base.h"
-#include "parser_types.h"
+#include "types.h"
 #include "umba/tokenizer/lexers/ufsm.h"
 
 //
