@@ -94,7 +94,7 @@ Generator: Umba Brief Scanner
 - `[inc/umba/tokenizer/lexers/cpp.h:147]`
   Фильтры, установленные позже, отрабатывают раньше
 
-- `[inc/umba/tokenizer/lexers/mermaid_packet_diagram.h:103]`
+- `[inc/umba/tokenizer/lexers/mermaid_packet_diagram.h:106]`
   Фильтры, установленные позже, отрабатывают раньше
 
 - `[inc/umba/tokenizer/lexers/plantuml.h:178]`
