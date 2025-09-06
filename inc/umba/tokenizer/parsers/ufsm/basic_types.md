@@ -210,8 +210,8 @@ struct PredicateDefinition
 
     PredicateFlags             flags = PredicateFlags::none; // none, external, validFor
     LogicExpression            expression  ; //!< Выражение для пользовательского (не external)  предиката
-    std::vector<std::string>   validForList; //!< Список событий, для которых предикат может быть использован. Актуален только если установлен флаг PredicateFlags::validFor
-
+    std::vector<std::string>   validForList; /*!< Список событий, для которых предикат может быть использован.
+                                                  Актуален только если установлен флаг PredicateFlags::validFor */
 
     std::string getCanonicalName() const { return name; }
 
@@ -294,7 +294,9 @@ validForList.
 state-machine TrafficLightPedestrian :
 //inherits TrafficLightBase,
 uses TrafficLightCommands,
-   TrafficLightEventsActions override {actions, events, predicates, states, transitions} // возможные коллизии молча переписываются более поздними значениями
+   TrafficLightEventsActions
+     // возможные коллизии молча переписываются более поздними значениями
+     override {actions, events, predicates, states, transitions}
 - "Pedestrian Traffic Light (Red-Green)"
 ```
 

@@ -78,8 +78,8 @@ struct PredicateDefinition
 
     PredicateFlags             flags = PredicateFlags::none; // none, external, validFor
     LogicExpression            expression  ; //!< Выражение для пользовательского (не external)  предиката
-    std::vector<std::string>   validForList; //!< Список событий, для которых предикат может быть использован. Актуален только если установлен флаг PredicateFlags::validFor
-
+    std::vector<std::string>   validForList; /*!< Список событий, для которых предикат может быть использован. 
+                                                  Актуален только если установлен флаг PredicateFlags::validFor */
 
     std::string getCanonicalName() const { return name; }
 

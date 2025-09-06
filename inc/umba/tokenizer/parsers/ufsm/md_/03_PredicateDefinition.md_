@@ -101,6 +101,8 @@ validForList.
 state-machine TrafficLightPedestrian : 
 //inherits TrafficLightBase,
 uses TrafficLightCommands, 
-   TrafficLightEventsActions override {actions, events, predicates, states, transitions} // возможные коллизии молча переписываются более поздними значениями
+   TrafficLightEventsActions 
+     // возможные коллизии молча переписываются более поздними значениями
+     override {actions, events, predicates, states, transitions} 
 - "Pedestrian Traffic Light (Red-Green)"
 ```
