@@ -21,24 +21,6 @@ namespace ufsm {
 
 
 //----------------------------------------------------------------------------
-/*
-  События могу быть внешними и составными.
-  Составные события - это список возможных событий, внешних, или также составных.
-  После обработки этот список раскрывается так, что содержит только внешние события.
-  Везде, где используется составное событие, оно в итоге будет обработано как список 
-  отдельных внешних событий.
-
-  Примеры описаний событий, внешних и составных, а также внешних генерируемых:
-
-    cmdStopTraffic : external - "The RED light (stop) mode is on";
-    tmToggleYellow : external generated;
-    evIntegralLiteral = evBoolLiteral | evIntLiteral - "Пришел интегральный литерал";
-
- */
-
- //NOTE: составное событие, хотя и записывается в виде логического выражения - конъюнкции,
- //      является не конъюнкцией, а просто списком, в котором разделителем выступает символ '|'.
-
 struct EventDefinition
 {
     PositionInfo               positionInfo;
@@ -46,8 +28,12 @@ struct EventDefinition
     std::string                description ;
 
     EventFlags                 flags = EventFlags::none; // none, external, generated
-    std::vector<std::string>   basicEvents ; //!< Список событий, составляющих данное (если событие не external - не установлен флаг EventFlags::external)
 
+    //!< Список событий, составляющих данное (если событие не external - не установлен флаг EventFlags::external)
+    std::vector<std::string>   basicEvents ; 
+
+
+public: // methods
 
     std::string getCanonicalName() const { return name; }
 
@@ -58,23 +44,6 @@ struct EventDefinition
 
 
 //----------------------------------------------------------------------------
-/*
-  Действия могу быть внешними и составными.
-  Составные действия - это список возможных действий, внешних, или также составных.
-  После обработки этот список раскрывается так, что содержит только внешние действия.
-  Везде, где используется составное действие, оно в итоге будет обработано как список 
-  отдельных внешних действий.
-
-  Примеры описаний действий, внешних и составных:
-
-    doSomething : external - "Что-то делаем";
-    startToggleGreen  : external generates tmToggleGreen; // starts periodic timer for tmToggleGreen
-    startToggleAll    : external generates { tmToggleRed, tmToggleYellow, tmToggleGreen};
-    pushStateDoSomething = { pushState; doSomething; } - "Засунули состояние на стек и что-то сделали";
-    popStateDoOther = { popState; doOther; } - "Восстановили состояние из стека и сделали что-то другое";
-
- */
-
 struct ActionDefinition
 {
     PositionInfo               positionInfo;
@@ -82,9 +51,15 @@ struct ActionDefinition
     std::string                description ;
 
     ActionFlags                flags = ActionFlags::none; // none, external, generates
-    std::vector<std::string>   basicActions; //!< Список действий, составляющих данное (если действие не external - не установлен такой флаг)
-    std::vector<std::string>   generates   ; //!< Список список событий, которые может генерировать данное действие
 
+    //! Список действий, составляющих данное действие (если действие не external - не установлен флаг ActionFlags::external)
+    std::vector<std::string>   basicActions;
+
+    //! Список список событий, которые может генерировать данное действие (флаг ActionFlags::generates)
+    std::vector<std::string>   generates   ; 
+
+
+public: // methods
 
     std::string getCanonicalName() const { return name; }
 

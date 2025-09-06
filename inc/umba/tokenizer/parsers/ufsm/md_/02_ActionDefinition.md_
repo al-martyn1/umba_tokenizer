@@ -1,0 +1,78 @@
+
+#struct ActionDefinition
+
+Определение действий, выполняемых при переходах между состояниями.
+
+                        
+#!snippet{} umba/tokenizer/parsers/ufsm/basic_types.h#`struct ActionDefinition`-{};
+
+## Поля структуры
+
+<val-list>
+
+- positionInfo
+информация о позиции выражения в исходных файлах.
+
+- name
+имя (название) действия.
+
+- description
+описание действия.
+
+- flags
+флаги (опции) действия (ActionFlags). 
+
+- basicActions
+список действий, если данное действие является составным (не установлен флаг ActionFlags::external).
+
+- generates
+список событий, которые может генерировать данное действие (флаг ActionFlags::generates). Используется или может использоваться для оптимизаций.
+
+</val-list>
+
+
+## Флаги (ActionFlags flags)
+
+<val-list>
+
+- ActionFlags::none
+флаги не заданы.
+
+- ActionFlags::external
+действие - внешнее. Иначе - внутреннее, составное.
+
+- ActionFlags::generates
+действие вызывает генерацию события (используется или может использоваться для оптимизаций).
+
+</val-list>
+
+
+## Методы
+
+<val-list>
+
+- getCanonicalName
+формирует "каноническое" имя объекта. В данном случае, возвращает просто имя объекта, которое является его полем/членом.
+
+</val-list>
+
+## Описание
+
+Действия могу быть внешними и составными.
+
+Составные действия - это список возможных действий, внешних, или также составных.
+
+После обработки этот список раскрывается так, что содержит только внешние действия.
+
+  Везде, где используется составное действие, оно в итоге будет обработано как список 
+  отдельных внешних действий.
+
+
+**Примеры описаний действий, внешних и составных:**
+```
+doSomething : external - "Что-то делаем";
+startToggleGreen  : external generates tmToggleGreen; // starts periodic timer for tmToggleGreen
+startToggleAll    : external generates { tmToggleRed, tmToggleYellow, tmToggleGreen};
+pushStateDoSomething = { pushState; doSomething; } - "Засунули состояние на стек и что-то сделали";
+popStateDoOther = { popState; doOther; } - "Восстановили состояние из стека и сделали что-то другое";
+```
