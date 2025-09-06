@@ -28,6 +28,9 @@ rem umba-brief-scanner %UBS_VERBOSE% --overwrite %RSP% --md --main-only    %BRIE
 
 rem exit 1
 
+@set ARGLIST_OPTIONS=--arg-list-title=:Значение,:Описание --arg-list-type=table --arg-list-value-style=bold
+@set VALLIST_OPTIONS=--val-list-title=:Значение,:Описание --val-list-type=table --val-list-value-style=bold
+
 @set EXCLUDE_DIRS=--batch-exclude-dir=_libs,libs,_lib,lib,tests,test,rc,_generators,_enums,conf,_distr_conf,doxy,src,_src,.msvc2019,boost,icons
 @set COMMON=--overwrite --copy-images --set-insert-options=proto-fmt=msdn
 @rem 
@@ -35,6 +38,6 @@ rem exit 1
 @rem "--graphviz-output-path=%~dp0\doc\.generated_images"
 @rem
 @rem set TEMP_OPTS=--graphviz-keep-temp-dot-files
-@set OPTIONS= %TEMP_OPTS% %COMMON% %VARS% %EXCLUDE_DIRS% %GRAPHVIZ_OPTIONS% %UMBA_MDPP_EXTRA_OPTIONS% "--batch-scan-recurse=%~dp0\."
+@set OPTIONS= %TEMP_OPTS% %COMMON% %VARS% %EXCLUDE_DIRS% %GRAPHVIZ_OPTIONS% %ARGLIST_OPTIONS% %VALLIST_OPTIONS% %UMBA_MDPP_EXTRA_OPTIONS% "--batch-scan-recurse=%~dp0\."
 umba-md-pp %OPTIONS%
 
