@@ -79,7 +79,8 @@ struct PredicateDefinition
     std::string     name        ;
     std::string     description ;
 
-    PredicateFlags  flags = PredicateFlags::none; // none, external, validFor
+    // none, external, validFor
+    PredicateFlags  flags = PredicateFlags::none;
 
     /*! Выражение для пользовательского (не external)  предиката */
     LogicExpression expression  ;
@@ -140,7 +141,8 @@ struct TransitionSourceStates
     std::vector<TransitionSourceState> getSortedStates() const;
 
     // returns true if no multiple ANYs found
-    bool checkForAny(bool *pHasNormalAny=0, bool *pHasExcludedAny=0) const;
+    bool checkForAny( bool *pHasNormalAny=0
+                    , bool *pHasExcludedAny=0) const;
 
 }; // struct TransitionSourceStates
 
@@ -188,7 +190,8 @@ struct TransitionEvents
     std::vector<TransitionEvent> getSortedEvents() const;
 
     // returns true if no multiple ANYs found
-    bool checkForAny(bool *pHasNormalAny=0, bool *pHasExcludedAny=0) const;
+    bool checkForAny( bool *pHasNormalAny=0
+                    , bool *pHasExcludedAny=0) const;
 
 }; // struct TransitionEvents
 
