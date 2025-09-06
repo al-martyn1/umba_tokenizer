@@ -45,13 +45,14 @@
 ```cpp
 struct EventDefinition
 {
-    PositionInfo               positionInfo;
-    std::string                name        ;
-    std::string                description ;
+    PositionInfo    positionInfo;
+    std::string     name        ;
+    std::string     description ;
 
-    EventFlags                 flags = EventFlags::none; // none, external, generated
+    EventFlags      flags = EventFlags::none; // none, external, generated
 
-    //!< Список событий, составляющих данное (если событие не external - не установлен флаг EventFlags::external)
+    /*! Список событий, составляющих данное (если событие не external
+        - не установлен флаг EventFlags::external) */
     std::vector<std::string>   basicEvents ;
 
 
@@ -124,16 +125,18 @@ evIntegralLiteral = evBoolLiteral | evIntLiteral - "Пришел интегра�
 ```cpp
 struct ActionDefinition
 {
-    PositionInfo               positionInfo;
-    std::string                name        ;
-    std::string                description ;
+    PositionInfo    positionInfo;
+    std::string     name        ;
+    std::string     description ;
 
-    ActionFlags                flags = ActionFlags::none; // none, external, generates
+    ActionFlags     flags = ActionFlags::none; // none, external, generates
 
-    //! Список действий, составляющих данное действие (если действие не external - не установлен флаг ActionFlags::external)
+    /*! Список действий, составляющих данное действие (если действие не
+        external - не установлен флаг ActionFlags::external) */
     std::vector<std::string>   basicActions;
 
-    //! Список список событий, которые может генерировать данное действие (флаг ActionFlags::generates)
+    /*! Список список событий, которые может генерировать данное действие
+        (флаг ActionFlags::generates) */
     std::vector<std::string>   generates   ;
 
 
@@ -204,14 +207,18 @@ popStateDoOther = { popState; doOther; } - "Восстановили состо�
 ```cpp
 struct PredicateDefinition
 {
-    PositionInfo               positionInfo;
-    std::string                name        ;
-    std::string                description ;
+    PositionInfo    positionInfo;
+    std::string     name        ;
+    std::string     description ;
 
-    PredicateFlags             flags = PredicateFlags::none; // none, external, validFor
-    LogicExpression            expression  ; //!< Выражение для пользовательского (не external)  предиката
-    std::vector<std::string>   validForList; /*!< Список событий, для которых предикат может быть использован.
-                                                  Актуален только если установлен флаг PredicateFlags::validFor */
+    PredicateFlags  flags = PredicateFlags::none; // none, external, validFor
+
+    /*! Выражение для пользовательского (не external)  предиката */
+    LogicExpression expression  ;
+
+    /*! Список событий, для которых предикат может быть использован.
+        Актуален только если установлен флаг PredicateFlags::validFor */
+    std::vector<std::string>   validForList;
 
     std::string getCanonicalName() const { return name; }
 
@@ -366,10 +373,11 @@ stopNotice : tmToggleGreen ? !greenLightIsOn -> self : greenOn;
 ```cpp
 struct TransitionSourceState
 {
-    PositionInfo               positionInfo;
-    std::string                name        ; // state name, not used if `any` flag is set
+    PositionInfo    positionInfo;
+    std::string     name; // state name, not used if `any` flag is set
 
-    TransitionSourceStateFlags flags = TransitionSourceStateFlags::none; // none, any, excluded
+    // none, any, excluded
+    TransitionSourceStateFlags flags = TransitionSourceStateFlags::none;
 
 
     std::string getCanonicalName() const;
@@ -491,10 +499,11 @@ struct TransitionSourceStates
 ```cpp
 struct TransitionEvent
 {
-    PositionInfo               positionInfo;
-    std::string                name        ; // event name, not used if `any` flag is set
+    PositionInfo    positionInfo;
+    std::string     name        ; // event name, not used if `any`
 
-    TransitionEventFlags       flags = TransitionEventFlags::none;
+    // none, any, excluded
+    TransitionEventFlags  flags = TransitionEventFlags::none;
 
 
     std::string getCanonicalName() const;
