@@ -104,6 +104,21 @@ using LogicExpressionParser = marty::expressions::SimpleBoolExpressionParser< Lo
 
 */
 
+using LogicExpressionOperatorTraits = marty::expressions::SimpleBoolExpressionOperatorTraits<umba::tokenizer::payload_type  /* OperatorTokenType */ >;
+
+inline
+LogicExpressionOperatorTraits makeLogicExpressionOperatorTraits()
+{
+    LogicExpressionOperatorTraits traits;
+    traits.openBracketOp  = UMBA_TOKENIZER_TOKEN_ROUND_BRACKET_OPEN  ;
+    traits.closeBracketOp = UMBA_TOKENIZER_TOKEN_ROUND_BRACKET_CLOSE ;
+    traits.notOp          = UMBA_TOKENIZER_TOKEN_OPERATOR_LOGICAL_NOT;
+    traits.andOp          = UMBA_TOKENIZER_TOKEN_OPERATOR_LOGICAL_AND;
+    traits.orOp           = UMBA_TOKENIZER_TOKEN_OPERATOR_LOGICAL_OR ;
+
+    return traits;
+}
+
 //----------------------------------------------------------------------------
 
 

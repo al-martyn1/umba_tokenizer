@@ -21,6 +21,13 @@ namespace ufsm {
 
 
 //----------------------------------------------------------------------------
+// struct TransitionDefinition
+// {
+//     // TransitionSourceStates
+//  
+// }; // struct TransitionDefinition
+
+// insertion_ordered_map
 
 /*
   Тут уже можно описать структуру TransitionDefinition, но у нас пока нет подходящего контейнера 
@@ -37,6 +44,8 @@ struct TransitionSourceStates
 struct TransitionEvents
 
 */
+
+
 
 //----------------------------------------------------------------------------
 

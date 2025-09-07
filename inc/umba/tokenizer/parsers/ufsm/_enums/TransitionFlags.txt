@@ -1,0 +1,4 @@
+invalid=-1
+
+none                            = 0
+conditional

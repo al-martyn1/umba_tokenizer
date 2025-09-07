@@ -14,7 +14,7 @@
     - [Флаги (PredicateFlags flags)](#флаги-predicateflags-flags)
     - [Методы](#методы-2)
     - [Описание](#описание-2)
-  - [Переходы](#переходы)
+  - [Переходы (Transitions)](#переходы-transitions)
     - [struct TransitionSourceState](#struct-transitionsourcestate)
       - [Поля структуры](#поля-структуры-3)
       - [Флаги (TransitionSourceStateFlags flags)](#флаги-transitionsourcestateflags-flags)
@@ -33,6 +33,11 @@
       - [Поля структуры](#поля-структуры-6)
       - [Методы](#методы-6)
       - [Примечание](#примечание-3)
+    - [struct TransitionDefinition](#struct-transitiondefinition)
+      - [Поля структуры](#поля-структуры-7)
+      - [Флаги (TransitionFlags flags)](#флаги-transitionflags-flags)
+      - [Методы](#методы-7)
+      - [Примечание](#примечание-4)
 
 
 # Базовые типы
@@ -309,7 +314,7 @@ uses TrafficLightCommands,
 ```
 
 
-## Переходы
+## Переходы (Transitions)
 
 Явно задаваемого имени у перехода нет.
 
@@ -387,6 +392,9 @@ struct TransitionSourceState
     bool isEqual   (const TransitionSourceState &other) const;
 
     bool operator< (const TransitionSourceState &other) const;
+    bool operator<=(const TransitionSourceState &other) const;
+    bool operator> (const TransitionSourceState &other) const;
+    bool operator>=(const TransitionSourceState &other) const;
     bool operator==(const TransitionSourceState &other) const;
     bool operator!=(const TransitionSourceState &other) const;
 
@@ -424,7 +432,7 @@ struct TransitionSourceState
 |**getCanonicalName**|формирует "каноническое" имя объекта, см "Примечание".|
 |**compare**|производит сравнение, возвращает `-1`, `0` или `1`.|
 |**isEqual**|производит проверку на равеноство, и работает эффективнее, чем `compare`.|
-|**operator<**, **operator==**, **operator!=**|опраторы отношений, реализованы на базе `compare` и `isEqual`.|
+|**operator <**, **<=**, **>**, **>=**, **==**, **!=**|опраторы отношений, реализованы на базе `compare` и `isEqual`.|
 |**isAny**|возвращает true, если состояние является `ANY`-состоянием.|
 |**isExcluded**|возвращает true, если состояние исключается из списка состояний.|
 
@@ -443,7 +451,7 @@ struct TransitionSourceState
 ```cpp
 struct TransitionSourceStates
 {
-    std::vector<TransitionSourceState>  stateList;
+    std::vector<TransitionSourceState>  list;
 
     std::string getCanonicalName() const;
 
@@ -451,6 +459,9 @@ struct TransitionSourceStates
     bool isEqual(const TransitionSourceStates &other) const;
 
     bool operator< (const TransitionSourceStates &other) const;
+    bool operator<=(const TransitionSourceStates &other) const;
+    bool operator> (const TransitionSourceStates &other) const;
+    bool operator>=(const TransitionSourceStates &other) const;
     bool operator==(const TransitionSourceStates &other) const;
     bool operator!=(const TransitionSourceStates &other) const;
 
@@ -459,7 +470,7 @@ struct TransitionSourceStates
 
     std::vector<TransitionSourceState> getSortedStates() const;
 
-    // returns true if no multiple ANYs found
+    // returns true if no one or more ANYs found
     bool checkForAny( bool *pHasNormalAny=0
                     , bool *pHasExcludedAny=0) const;
 
@@ -471,7 +482,7 @@ struct TransitionSourceStates
 
 |Значение|Описание|
 |:---|:---|
-|**stateList**|список элементарных исходных состояний.|
+|**list**|список элементарных исходных состояний.|
 
 
 #### Методы
@@ -482,11 +493,11 @@ struct TransitionSourceStates
 |**getCanonicalName**|формирует "каноническое" имя объекта, см "Примечание".|
 |**compare**|производит сравнение, возвращает `-1`, `0` или `1`.|
 |**isEqual**|производит проверку на равеноство, и работает эффективнее, чем `compare`.|
-|**operator<**, **operator==**, **operator!=**|опраторы отношений, реализованы на базе `compare` и `isEqual`.|
+|**operator <**, **<=**, **>**, **>=**, **==**, **!=**|опраторы отношений, реализованы на базе `compare` и `isEqual`.|
 |**append**|добавляет элементарное состояние в список.|
 |**push_back**|добавляет элементарное состояние в список.|
 |**getSortedStates**|возвращает отсортированный список состояний для сравнения и генерации имени.|
-|**checkForAny**|произодит проверку, есть ли в списке состояние `ANY`.|
+|**checkForAny**|произодит проверку, есть ли в списке состояние `ANY`, и если нет, возвращает `true`.|
 
 
 #### Примечание
@@ -514,6 +525,9 @@ struct TransitionEvent
     bool isEqual   (const TransitionEvent &other) const;
 
     bool operator< (const TransitionEvent &other) const;
+    bool operator<=(const TransitionEvent &other) const;
+    bool operator> (const TransitionEvent &other) const;
+    bool operator>=(const TransitionEvent &other) const;
     bool operator==(const TransitionEvent &other) const;
     bool operator!=(const TransitionEvent &other) const;
 
@@ -551,7 +565,7 @@ struct TransitionEvent
 |**getCanonicalName**|формирует "каноническое" имя объекта, см "Примечание".|
 |**compare**|производит сравнение, возвращает `-1`, `0` или `1`.|
 |**isEqual**|производит проверку на равеноство, и работает эффективнее, чем `compare`.|
-|**operator<**, **operator==**, **operator!=**|опраторы отношений, реализованы на базе `compare` и `isEqual`.|
+|**operator <**, **<=**, **>**, **>=**, **==**, **!=**|опраторы отношений, реализованы на базе `compare` и `isEqual`.|
 |**isAny**|возвращает true, если состояние является `ANY`-состоянием.|
 |**isExcluded**|возвращает true, если состояние исключается из списка состояний.|
 
@@ -570,7 +584,7 @@ struct TransitionEvent
 ```cpp
 struct TransitionEvents
 {
-    std::vector<TransitionEvent>  eventList;
+    std::vector<TransitionEvent>  list;
 
     std::string getCanonicalName() const;
 
@@ -578,6 +592,9 @@ struct TransitionEvents
     bool isEqual(const TransitionEvents &other) const;
 
     bool operator< (const TransitionEvents &other) const;
+    bool operator<=(const TransitionEvents &other) const;
+    bool operator> (const TransitionEvents &other) const;
+    bool operator>=(const TransitionEvents &other) const;
     bool operator==(const TransitionEvents &other) const;
     bool operator!=(const TransitionEvents &other) const;
 
@@ -586,7 +603,7 @@ struct TransitionEvents
 
     std::vector<TransitionEvent> getSortedEvents() const;
 
-    // returns true if no multiple ANYs found
+    // returns true if no one or more ANYs found
     bool checkForAny( bool *pHasNormalAny=0
                     , bool *pHasExcludedAny=0) const;
 
@@ -598,7 +615,7 @@ struct TransitionEvents
 
 |Значение|Описание|
 |:---|:---|
-|**eventList**|список элементарных событий.|
+|**list**|список элементарных событий.|
 
 
 #### Методы
@@ -609,15 +626,91 @@ struct TransitionEvents
 |**getCanonicalName**|формирует "каноническое" имя объекта, см "Примечание".|
 |**compare**|производит сравнение, возвращает `-1`, `0` или `1`.|
 |**isEqual**|производит проверку на равеноство, и работает эффективнее, чем `compare`.|
-|**operator<**, **operator==**, **operator!=**|опраторы отношений, реализованы на базе `compare` и `isEqual`.|
+|**operator <**, **<=**, **>**, **>=**, **==**, **!=**|опраторы отношений, реализованы на базе `compare` и `isEqual`.|
 |**append**|добавляет элементарное состояние в список.|
 |**push_back**|добавляет элементарное состояние в список.|
 |**getSortedEvents**|возвращает отсортированный список событий для сравнения и генерации имени.|
-|**checkForAny**|произодит проверку, есть ли в списке событие `ANY`.|
+|**checkForAny**|произодит проверку, есть ли в списке событие `ANY`, и если нет, возвращает `true`.|
 
 
 #### Примечание
 
 Имя списка событий формируется из предварительно отсортированного списка элементарных событий, которые разделяются запятыми.
+
+
+### struct TransitionDefinition
+
+Определение перехода (transition).
+
+```cpp
+struct TransitionDefinition
+{
+    // Проверки на ANY, на дублирование и тп пусть делает парсер
+    // Он там же выводит ошибку, и больше нам это нигде не нужно
+    TransitionSourceStates     sourceStates;
+
+    // Проверки на ANY, на дублирование и тп пусть делает парсер
+    // Он там же выводит ошибку, и больше нам это нигде не нужно
+    TransitionEvents           events      ;
+
+    TransitionFlags            flags; // none, conditional
+
+    LogicExpression            additionalCondition;
+
+
+    std::string additionalConditionAsString() const;
+
+    std::string getCanonicalName() const;
+
+    int compare(const TransitionDefinition &other) const;
+    bool isEqual(const TransitionDefinition &other) const;
+
+    bool operator< (const TransitionDefinition &other) const;
+    bool operator<=(const TransitionDefinition &other) const;
+    bool operator> (const TransitionDefinition &other) const;
+    bool operator>=(const TransitionDefinition &other) const;
+    bool operator==(const TransitionDefinition &other) const;
+    bool operator!=(const TransitionDefinition &other) const;
+
+    // Нужно ли тут проверять возможность добавления
+
+}; // struct TransitionDefinition
+```
+
+#### Поля структуры
+
+
+|Значение|Описание|
+|:---|:---|
+|**sourceStates**|список исходных состояний перехода.|
+|**events**|список событий перехода.|
+|**additionalCondition**|дополнительные условия перехода.|
+|**flags**|флаги (опции) перехода (TransitionFlags).|
+
+
+#### Флаги (TransitionFlags flags)
+
+
+|Значение|Описание|
+|:---|:---|
+|**TransitionFlags::none**|флаги не заданы.|
+|**TransitionFlags::conditional**|признак, что событие перехода ограничено дополнительными условиями, содержащимся в поле `additionalCondition`.|
+
+
+#### Методы
+
+
+|Значение|Описание|
+|:---|:---|
+|**additionalConditionAsString**|конвертирует дополнительное условие перехода в строку.|
+|**getCanonicalName**|формирует "каноническое" имя объекта, см "Примечание".|
+|**compare**|производит сравнение, возвращает `-1`, `0` или `1`.|
+|**isEqual**|производит проверку на равеноство, и работает эффективнее, чем `compare`.|
+|**operator <**, **<=**, **>**, **>=**, **==**, **!=**|опраторы отношений, реализованы на базе `compare` и `isEqual`.|
+
+
+#### Примечание
+
+Имя списка событий формируется из составного имени состояний, составного имени событий, и логического выражения с дополнительными условиями если они заданы.
 
 

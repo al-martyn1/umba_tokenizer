@@ -113,6 +113,9 @@ struct TransitionSourceState
     bool isEqual   (const TransitionSourceState &other) const;
 
     bool operator< (const TransitionSourceState &other) const;
+    bool operator<=(const TransitionSourceState &other) const;
+    bool operator> (const TransitionSourceState &other) const;
+    bool operator>=(const TransitionSourceState &other) const;
     bool operator==(const TransitionSourceState &other) const;
     bool operator!=(const TransitionSourceState &other) const;
 
@@ -124,7 +127,7 @@ struct TransitionSourceState
 //------------------------------
 struct TransitionSourceStates
 {
-    std::vector<TransitionSourceState>  stateList;
+    std::vector<TransitionSourceState>  list;
 
     std::string getCanonicalName() const;
 
@@ -132,6 +135,9 @@ struct TransitionSourceStates
     bool isEqual(const TransitionSourceStates &other) const;
 
     bool operator< (const TransitionSourceStates &other) const;
+    bool operator<=(const TransitionSourceStates &other) const;
+    bool operator> (const TransitionSourceStates &other) const;
+    bool operator>=(const TransitionSourceStates &other) const;
     bool operator==(const TransitionSourceStates &other) const;
     bool operator!=(const TransitionSourceStates &other) const;
 
@@ -140,7 +146,7 @@ struct TransitionSourceStates
 
     std::vector<TransitionSourceState> getSortedStates() const;
 
-    // returns true if no multiple ANYs found
+    // returns true if no one or more ANYs found
     bool checkForAny( bool *pHasNormalAny=0
                     , bool *pHasExcludedAny=0) const;
 
@@ -162,6 +168,9 @@ struct TransitionEvent
     bool isEqual   (const TransitionEvent &other) const;
 
     bool operator< (const TransitionEvent &other) const;
+    bool operator<=(const TransitionEvent &other) const;
+    bool operator> (const TransitionEvent &other) const;
+    bool operator>=(const TransitionEvent &other) const;
     bool operator==(const TransitionEvent &other) const;
     bool operator!=(const TransitionEvent &other) const;
 
@@ -173,7 +182,7 @@ struct TransitionEvent
 //------------------------------
 struct TransitionEvents
 {
-    std::vector<TransitionEvent>  eventList;
+    std::vector<TransitionEvent>  list;
 
     std::string getCanonicalName() const;
 
@@ -181,6 +190,9 @@ struct TransitionEvents
     bool isEqual(const TransitionEvents &other) const;
 
     bool operator< (const TransitionEvents &other) const;
+    bool operator<=(const TransitionEvents &other) const;
+    bool operator> (const TransitionEvents &other) const;
+    bool operator>=(const TransitionEvents &other) const;
     bool operator==(const TransitionEvents &other) const;
     bool operator!=(const TransitionEvents &other) const;
 
@@ -189,7 +201,7 @@ struct TransitionEvents
 
     std::vector<TransitionEvent> getSortedEvents() const;
 
-    // returns true if no multiple ANYs found
+    // returns true if no one or more ANYs found
     bool checkForAny( bool *pHasNormalAny=0
                     , bool *pHasExcludedAny=0) const;
 
@@ -198,14 +210,41 @@ struct TransitionEvents
 //----------------------------------------------------------------------------
 
 
-/*
-  Тут уже можно описать структуру TransitionDefinition, но у нас пока нет подходящего контейнера 
-
-*/
-
-
 
 //----------------------------------------------------------------------------
+
+struct TransitionDefinition
+{
+    // Проверки на ANY, на дублирование и тп пусть делает парсер
+    // Он там же выводит ошибку, и больше нам это нигде не нужно
+    TransitionSourceStates     sourceStates; 
+
+    // Проверки на ANY, на дублирование и тп пусть делает парсер
+    // Он там же выводит ошибку, и больше нам это нигде не нужно
+    TransitionEvents           events      ;
+
+    TransitionFlags            flags; // none, conditional
+
+    LogicExpression            additionalCondition;
+
+
+    std::string additionalConditionAsString() const;
+
+    std::string getCanonicalName() const;
+
+    int compare(const TransitionDefinition &other) const;
+    bool isEqual(const TransitionDefinition &other) const;
+
+    bool operator< (const TransitionDefinition &other) const;
+    bool operator<=(const TransitionDefinition &other) const;
+    bool operator> (const TransitionDefinition &other) const;
+    bool operator>=(const TransitionDefinition &other) const;
+    bool operator==(const TransitionDefinition &other) const;
+    bool operator!=(const TransitionDefinition &other) const;
+
+    // Нужно ли тут проверять возможность добавления 
+
+}; // struct TransitionDefinition
 
 
 

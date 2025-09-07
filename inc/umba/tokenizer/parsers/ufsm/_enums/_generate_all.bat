@@ -47,5 +47,6 @@ umba-enum-gen %GEN_OPTS% %HEX2% %TPL_OVERRIDE% %SNIPPETOPTIONS_GEN_FLAGS%       
     %UINT32% %HEX4% -E=PredicateFlags                       -F=@PredicateFlags.txt                           ^
     %UINT32% %HEX4% -E=StateFlags                           -F=@StateFlags.txt                               ^
     %UINT32% %HEX4% -E=TransitionEventFlags                 -F=@TransitionEventFlags.txt                     ^
+    %UINT32% %HEX4% -E=TransitionFlags                      -F=@TransitionFlags.txt                          ^
     %UINT32% %HEX4% -E=TransitionSourceStateFlags           -F=@TransitionSourceStateFlags.txt               ^
 ..\enums.h

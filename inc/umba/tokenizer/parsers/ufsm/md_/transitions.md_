@@ -1,4 +1,4 @@
-## Переходы
+## Переходы (Transitions)
 
 Явно задаваемого имени у перехода нет.
 
@@ -62,4 +62,6 @@ stopNotice : tmToggleGreen ? !greenLightIsOn -> self : greenOn;
 #!subsec 06_TransitionEvent.md_
 
 #!subsec 07_TransitionEvents.md_
+
+#!subsec 08_TransitionDefinition.md_
 

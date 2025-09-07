@@ -51,7 +51,7 @@
 - isEqual
 производит проверку на равеноство, и работает эффективнее, чем `compare`.
 
-- operator<, operator==, operator!=
+- operator <, <=, >, >=, ==, !=
 опраторы отношений, реализованы на базе `compare` и `isEqual`.
 
 - isAny

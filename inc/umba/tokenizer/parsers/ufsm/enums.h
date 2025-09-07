@@ -241,6 +241,31 @@ MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( TransitionEventFlags, std::map, 1 )
 MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( TransitionEventFlags, std::map, 1 )
 
 
+//#!TransitionFlags
+enum class TransitionFlags : std::uint32_t
+{
+    invalid       = (std::uint32_t)(-1) /*!<  */,
+    none          = 0x0000 /*!<  */,
+    conditional   = 0x0001 /*!<  */
+
+}; // enum 
+//#!
+
+MARTY_CPP_MAKE_ENUM_FLAGS(TransitionFlags)
+
+MARTY_CPP_ENUM_FLAGS_SERIALIZE_BEGIN( TransitionFlags, std::map, 1 )
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( TransitionFlags::invalid       , "Invalid"     );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( TransitionFlags::conditional   , "Conditional" );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( TransitionFlags::none          , "None"        );
+MARTY_CPP_ENUM_FLAGS_SERIALIZE_END( TransitionFlags, std::map, 1 )
+
+MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( TransitionFlags, std::map, 1 )
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionFlags::invalid       , "invalid"     );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionFlags::conditional   , "conditional" );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionFlags::none          , "none"        );
+MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( TransitionFlags, std::map, 1 )
+
+
 //#!TransitionSourceStateFlags
 enum class TransitionSourceStateFlags : std::uint32_t
 {

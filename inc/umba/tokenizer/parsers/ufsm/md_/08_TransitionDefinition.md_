@@ -1,0 +1,64 @@
+
+#struct TransitionDefinition
+
+Определение перехода (transition).
+                        
+#!snippet{} umba/tokenizer/parsers/ufsm/basic_types.h#`struct TransitionDefinition`-{};
+
+## Поля структуры
+
+<val-list>
+
+- sourceStates
+список исходных состояний перехода.
+
+- events
+список событий перехода.
+
+- additionalCondition
+дополнительные условия перехода.
+
+- flags
+флаги (опции) перехода (TransitionFlags).
+
+</val-list>
+
+
+## Флаги (TransitionFlags flags)
+
+<val-list>
+
+- TransitionFlags::none
+флаги не заданы.
+
+- TransitionFlags::conditional
+признак, что событие перехода ограничено дополнительными условиями, содержащимся в поле `additionalCondition`.
+
+</val-list>
+
+
+## Методы
+
+<val-list>
+
+- additionalConditionAsString
+конвертирует дополнительное условие перехода в строку.
+
+- getCanonicalName
+формирует "каноническое" имя объекта, см "Примечание". 
+
+- compare
+производит сравнение, возвращает `-1`, `0` или `1`.
+
+- isEqual
+производит проверку на равеноство, и работает эффективнее, чем `compare`.
+
+- operator <, <=, >, >=, ==, !=
+опраторы отношений, реализованы на базе `compare` и `isEqual`.
+
+</val-list>
+
+
+## Примечание
+
+Имя списка событий формируется из составного имени состояний, составного имени событий, и логического выражения с дополнительными условиями если они заданы.

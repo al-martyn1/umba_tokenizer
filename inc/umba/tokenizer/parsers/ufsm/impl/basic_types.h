@@ -58,8 +58,12 @@ int TransitionSourceState::compare(const TransitionSourceState&other) const
     }
 }
 
-inline bool TransitionSourceState::operator< (const TransitionSourceState &other) const { return compare(other)<0; }
 inline bool TransitionSourceState::isEqual   (const TransitionSourceState &other) const { return isAny()==other.isAny() && isExcluded()==other.isExcluded() && name==other.name; }
+
+inline bool TransitionSourceState::operator< (const TransitionSourceState &other) const { return compare(other)< 0; }
+inline bool TransitionSourceState::operator<=(const TransitionSourceState &other) const { return compare(other)<=0; }
+inline bool TransitionSourceState::operator> (const TransitionSourceState &other) const { return compare(other)> 0; }
+inline bool TransitionSourceState::operator>=(const TransitionSourceState &other) const { return compare(other)>=0; }
 inline bool TransitionSourceState::operator==(const TransitionSourceState &other) const { return isEqual(other); }
 inline bool TransitionSourceState::operator!=(const TransitionSourceState &other) const { return !isEqual(other); }
 
@@ -109,8 +113,12 @@ int TransitionEvent::compare(const TransitionEvent &other) const
     }
 }
 
-inline bool TransitionEvent::operator< (const TransitionEvent &other) const { return compare(other)<0; }
 inline bool TransitionEvent::isEqual   (const TransitionEvent &other) const { return isAny()==other.isAny() && isExcluded()==other.isExcluded() && name==other.name; }
+
+inline bool TransitionEvent::operator< (const TransitionEvent &other) const { return compare(other)< 0; }
+inline bool TransitionEvent::operator<=(const TransitionEvent &other) const { return compare(other)<=0; }
+inline bool TransitionEvent::operator> (const TransitionEvent &other) const { return compare(other)> 0; }
+inline bool TransitionEvent::operator>=(const TransitionEvent &other) const { return compare(other)>=0; }
 inline bool TransitionEvent::operator==(const TransitionEvent &other) const { return isEqual(other); }
 inline bool TransitionEvent::operator!=(const TransitionEvent &other) const { return !isEqual(other); }
 
@@ -119,9 +127,9 @@ inline bool TransitionEvent::operator!=(const TransitionEvent &other) const { re
 
 
 //----------------------------------------------------------------------------
-inline void TransitionSourceStates::append   ( const TransitionSourceState &st) { stateList.push_back(st); }
+inline void TransitionSourceStates::append   ( const TransitionSourceState &st) { list.push_back(st); }
 
-inline void TransitionSourceStates::push_back( const TransitionSourceState &st) { stateList.push_back(st); }
+inline void TransitionSourceStates::push_back( const TransitionSourceState &st) { list.push_back(st); }
 
 inline
 bool TransitionSourceStates::checkForAny(bool *pHasNormalAny, bool *pHasExcludedAny) const
@@ -131,7 +139,7 @@ bool TransitionSourceStates::checkForAny(bool *pHasNormalAny, bool *pHasExcluded
 
     std::size_t anyCount = 0;
 
-    for(const auto &s : stateList)
+    for(const auto &s : list)
     {
         if (!s.isAny())
             continue;
@@ -153,7 +161,7 @@ bool TransitionSourceStates::checkForAny(bool *pHasNormalAny, bool *pHasExcluded
     return anyCount <= 1;
 }
 
-inline std::vector<TransitionSourceState> TransitionSourceStates::getSortedStates() const  { auto res = stateList; std::sort(res.begin(), res.end()); return res; };
+inline std::vector<TransitionSourceState> TransitionSourceStates::getSortedStates() const  { auto res = list; std::sort(res.begin(), res.end()); return res; };
 
 inline
 std::string TransitionSourceStates::getCanonicalName() const
@@ -173,7 +181,7 @@ std::string TransitionSourceStates::getCanonicalName() const
 inline
 bool TransitionSourceStates::isEqual(const TransitionSourceStates &other) const
 {
-    if (stateList.size()!=other.stateList.size())
+    if (list.size()!=other.list.size())
         return false;
 
     auto s1 = getSortedStates();
@@ -213,7 +221,10 @@ int TransitionSourceStates::compare(const TransitionSourceStates &other) const
     return s1.size()<s2.size() ? -1 : 1; // Более короткая строка меньше
 }
 
-inline bool TransitionSourceStates::operator< (const TransitionSourceStates &other) const { return compare(other)<0; }
+inline bool TransitionSourceStates::operator< (const TransitionSourceStates &other) const { return compare(other)< 0; }
+inline bool TransitionSourceStates::operator<=(const TransitionSourceStates &other) const { return compare(other)<=0; }
+inline bool TransitionSourceStates::operator> (const TransitionSourceStates &other) const { return compare(other)> 0; }
+inline bool TransitionSourceStates::operator>=(const TransitionSourceStates &other) const { return compare(other)>=0; }
 inline bool TransitionSourceStates::operator==(const TransitionSourceStates &other) const { return isEqual(other); }
 inline bool TransitionSourceStates::operator!=(const TransitionSourceStates &other) const { return !isEqual(other); }
 
@@ -224,18 +235,18 @@ inline bool TransitionSourceStates::operator!=(const TransitionSourceStates &oth
 //----------------------------------------------------------------------------
 //struct TransitionEvents
 
-inline void TransitionEvents::append   ( const TransitionEvent &st) { eventList.push_back(st); }
-inline void TransitionEvents::push_back( const TransitionEvent &st) { eventList.push_back(st); }
+inline void TransitionEvents::append   ( const TransitionEvent &st) { list.push_back(st); }
+inline void TransitionEvents::push_back( const TransitionEvent &st) { list.push_back(st); }
 
 inline
-bool TransitionEvents::checkForAny(bool *pHasNormalAny=0, bool *pHasExcludedAny=0) const
+bool TransitionEvents::checkForAny(bool *pHasNormalAny, bool *pHasExcludedAny) const
 {
     bool hasNormalAny   = false;
     bool hasExcludedAny = false;
  
     std::size_t anyCount = 0;
  
-    for(const auto &s : eventList)
+    for(const auto &s : list)
     {
         if (!s.isAny())
             continue;
@@ -258,7 +269,7 @@ bool TransitionEvents::checkForAny(bool *pHasNormalAny=0, bool *pHasExcludedAny=
 }
 
 inline
-std::vector<TransitionEvent> TransitionEvents::getSortedEvents() const  { auto res = eventList; std::sort(res.begin(), res.end()); return res; };
+std::vector<TransitionEvent> TransitionEvents::getSortedEvents() const  { auto res = list; std::sort(res.begin(), res.end()); return res; };
 
 inline
 std::string TransitionEvents::getCanonicalName() const
@@ -278,7 +289,7 @@ std::string TransitionEvents::getCanonicalName() const
 inline
 bool TransitionEvents::isEqual(const TransitionEvents &other) const
 {
-    if (eventList.size()!=other.eventList.size())
+    if (list.size()!=other.list.size())
         return false;
  
     auto s1 = getSortedEvents();
@@ -318,7 +329,10 @@ int TransitionEvents::compare(const TransitionEvents &other) const
     return s1.size()<s2.size() ? -1 : 1; // Более короткая строка меньше
 }
 
-inline bool TransitionEvents::operator< (const TransitionEvents &other) const { return compare(other)<0; }
+inline bool TransitionEvents::operator< (const TransitionEvents &other) const { return compare(other)< 0; }
+inline bool TransitionEvents::operator<=(const TransitionEvents &other) const { return compare(other)<=0; }
+inline bool TransitionEvents::operator> (const TransitionEvents &other) const { return compare(other)> 0; }
+inline bool TransitionEvents::operator>=(const TransitionEvents &other) const { return compare(other)>=0; }
 inline bool TransitionEvents::operator==(const TransitionEvents &other) const { return isEqual(other); }
 inline bool TransitionEvents::operator!=(const TransitionEvents &other) const { return !isEqual(other); }
 
@@ -327,9 +341,65 @@ inline bool TransitionEvents::operator!=(const TransitionEvents &other) const { 
 
 
 //----------------------------------------------------------------------------
+inline
+std::string TransitionDefinition::additionalConditionAsString() const
+{
+    // Хотя данный флаг обычно должен проверяться до вызова additionalConditionAsString
+    // на всякий случай вернём пустую строку, если он не установлен
+    // Чтобы избежать преобразования в строку пустого выражения (а то мало ли что)
+    if ((flags&TransitionFlags::conditional)!=0)
+        return std::string();
+    return LogicExpressionEvaluator(makeLogicExpressionOperatorTraits()).toString(additionalCondition);
+}
+
+inline
+std::string TransitionDefinition::getCanonicalName() const
+{
+    std::string name = sourceStates.getCanonicalName() + std::string(":") + events.getCanonicalName();
+
+    if ((flags&TransitionFlags::conditional)!=0)
+    {
+        name.append(1,'?');
+        name.append(additionalConditionAsString());
+    }
+
+    return name;
+}
+
+int  TransitionDefinition::compare(const TransitionDefinition &other) const
+{
+    int cmp = sourceStates.compare(other.sourceStates);
+    if (cmp!=0)
+        return cmp;
+
+    cmp = events.compare(other.events);
+    if (cmp!=0)
+        return cmp;
+
+    if ((flags&TransitionFlags::conditional)==0) // флаг не установлен - не участвует в сравнении
+        return cmp;
+
+    return additionalConditionAsString().compare(other.additionalConditionAsString());
+}
+
+bool TransitionDefinition::isEqual(const TransitionDefinition &other) const
+{
+    return !(!sourceStates.isEqual(other.sourceStates)
+          || !events.isEqual(other.events)
+          || additionalConditionAsString().compare(other.additionalConditionAsString())!=0
+            );
+}
+
+inline bool TransitionDefinition::operator< (const TransitionDefinition &other) const { return compare(other)< 0; }
+inline bool TransitionDefinition::operator<=(const TransitionDefinition &other) const { return compare(other)<=0; }
+inline bool TransitionDefinition::operator> (const TransitionDefinition &other) const { return compare(other)> 0; }
+inline bool TransitionDefinition::operator>=(const TransitionDefinition &other) const { return compare(other)>=0; }
+
+
+
+//----------------------------------------------------------------------------
 } // namespace ufsm
 } // namespace tokenizer
 } // namespace umba
 // umba::tokenizer::ufsm::
-
 
