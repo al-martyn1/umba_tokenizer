@@ -1,5 +1,7 @@
 invalid=-1
 
 none                            = 0
+inherited                            // Set when the state is inherited
+override                             // Set when the state overrides inherited
 initial
 final

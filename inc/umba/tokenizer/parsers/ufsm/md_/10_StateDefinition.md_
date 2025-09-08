@@ -1,0 +1,82 @@
+#struct StateDefinition
+
+Определение состояния
+                        
+#!snippet{} umba/tokenizer/parsers/ufsm/basic_types.h#`struct StateDefinition`-{};
+
+## Поля структуры
+
+<val-list>
+
+- positionInfo
+информация о позиции выражения в исходных файлах.
+
+- name
+имя (название) состояния.
+
+- description
+описание состояния.
+
+- flags
+флаги (опции) состояния (StateFlags).
+
+- actionRefs
+списки действий по типам.
+
+</val-list>
+
+
+## Флаги (StateFlags flags)
+
+<val-list>
+
+- StateFlags::none
+флаги не заданы.
+
+- StateFlags::inherited
+устанавливается при наследовании.
+
+- StateFlags::override
+устанавливается, если разрешено переопределить ранее определенный в базовых дефинициях переход.
+
+- StateFlags::initial
+начальное состояние.
+
+- StateFlags::final
+конечное состояние.
+
+</val-list>
+
+
+## Методы
+
+<val-list>
+
+- getCanonicalName
+формирует "каноническое" имя объекта. В данном случае, возвращает просто имя объекта, которое является его полем/членом.
+
+- addActionRef
+добавляет действие в список соответствующего типа.
+
+</val-list>
+
+
+## Типы действий (StateActionKind)
+
+<val-list>
+
+- stateEnter
+действия по переходу в данное состояние.
+
+- stateLeave
+действия по переходу из данного состояния.
+
+- selfEnter
+действия по входу в состояние при переходе в само себя.
+
+- selfLeave
+действия по выходу из состояния при переходе в само себя.
+
+</val-list>
+
+

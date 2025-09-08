@@ -16,6 +16,63 @@ namespace ufsm {
 
 
 //----------------------------------------------------------------------------
+inline
+TypeValueInfo makeTypeValueInfo(const EventDefinition &d)
+{
+    return TypeValueInfo{ d.positionInfo, d.name, std::string("event") };
+}
+
+inline
+TypeValueInfo makeTypeValueInfo(const ActionDefinition &d)
+{
+    return TypeValueInfo{ d.positionInfo, d.name, std::string("action") };
+}
+
+inline
+TypeValueInfo makeTypeValueInfo(const PredicateDefinition &d)
+{
+    return TypeValueInfo{ d.positionInfo, d.name, std::string("predicate") };
+}
+
+inline
+TypeValueInfo makeTypeValueInfo(const TransitionSourceState &d)
+{
+    return TypeValueInfo{ d.positionInfo, d.getCanonicalName(), std::string("transition source states list element") };
+}
+
+inline
+TypeValueInfo makeTypeValueInfo(const TransitionEvent &d)
+{
+    return TypeValueInfo{ d.positionInfo, d.name, std::string("transition events list element") };
+}
+
+inline
+TypeValueInfo makeTypeValueInfo(const TransitionSourceStates &d)
+{
+    // Обычно у нас вызывается makeTypeValueInfo для данного списка только в тех случаях, когда хоть один элемент уже есть
+    return TypeValueInfo{ d.list[0].positionInfo, d.getCanonicalName(), std::string("transition source states") };
+}
+
+inline
+TypeValueInfo makeTypeValueInfo(const TransitionEvents &d)
+{
+    // Обычно у нас вызывается makeTypeValueInfo для данного списка только в тех случаях, когда хоть один элемент уже есть
+    return TypeValueInfo{ d.list[0].positionInfo, d.getCanonicalName(), std::string("transition events") };
+}
+
+//----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
+inline
+bool TransitionSourceState::isNameEqual(const TransitionSourceState &other) const
+{
+    if (isAny() && other.isAny())
+        return true;
+    return name==name;
+}
+
 inline bool TransitionSourceState::isAny() const      { return (flags & TransitionSourceStateFlags::any)!=0; }
 
 inline bool TransitionSourceState::isExcluded() const { return (flags & TransitionSourceStateFlags::excluded)!=0; }
@@ -72,6 +129,14 @@ inline bool TransitionSourceState::operator!=(const TransitionSourceState &other
 
 
 //----------------------------------------------------------------------------
+inline
+bool TransitionEvent::isNameEqual(const TransitionEvent &other) const
+{
+    if (isAny() && other.isAny())
+        return true;
+    return name==name;
+}
+
 inline bool TransitionEvent::isAny() const      { return (flags & TransitionEventFlags::any)!=0; }
 inline bool TransitionEvent::isExcluded() const { return (flags & TransitionEventFlags::excluded)!=0; }
 
@@ -159,6 +224,19 @@ bool TransitionSourceStates::checkForAny(bool *pHasNormalAny, bool *pHasExcluded
        *pHasExcludedAny = hasExcludedAny;
 
     return anyCount <= 1;
+}
+
+inline
+std::size_t TransitionSourceStates::getAnyIndex() const
+{
+    for(std::size_t idx=0; idx!=list.size(); ++idx)
+    {
+        if (!list[idx].isAny())
+            continue;
+        return idx;
+    }
+
+    return std::size_t(-1);
 }
 
 inline std::vector<TransitionSourceState> TransitionSourceStates::getSortedStates() const  { auto res = list; std::sort(res.begin(), res.end()); return res; };
@@ -266,6 +344,19 @@ bool TransitionEvents::checkForAny(bool *pHasNormalAny, bool *pHasExcludedAny) c
        *pHasExcludedAny = hasExcludedAny;
  
     return anyCount <= 1;
+}
+
+inline
+std::size_t TransitionEvents::getAnyIndex() const
+{
+    for(std::size_t idx=0; idx!=list.size(); ++idx)
+    {
+        if (!list[idx].isAny())
+            continue;
+        return idx;
+    }
+
+    return std::size_t(-1);
 }
 
 inline
@@ -394,6 +485,71 @@ inline bool TransitionDefinition::operator< (const TransitionDefinition &other) 
 inline bool TransitionDefinition::operator<=(const TransitionDefinition &other) const { return compare(other)<=0; }
 inline bool TransitionDefinition::operator> (const TransitionDefinition &other) const { return compare(other)> 0; }
 inline bool TransitionDefinition::operator>=(const TransitionDefinition &other) const { return compare(other)>=0; }
+
+inline
+void TransitionDefinition::appendImpl(const TransitionSourceState &st)
+{
+    for(const auto &v : sourceStates.list)
+    {
+        if (v.isNameEqual(st))
+            throw already_declared_error(makeTypeValueInfo(v), makeTypeValueInfo(st));
+    }
+
+    sourceStates.append(st);
+}
+
+inline
+void TransitionDefinition::appendImpl(const TransitionEvent &te)
+{
+    for(const auto &v : events.list)
+    {
+        if (v.isNameEqual(te))
+            throw already_declared_error(makeTypeValueInfo(v), makeTypeValueInfo(te));
+    }
+
+    events.append(te);
+}
+
+inline void TransitionDefinition::append   ( const TransitionSourceState &st) { appendImpl(st); }
+inline void TransitionDefinition::push_back( const TransitionSourceState &st) { appendImpl(st); }
+
+inline void TransitionDefinition::append   ( const TransitionEvent &te) { appendImpl(te); }
+inline void TransitionDefinition::push_back( const TransitionEvent &te) { appendImpl(te); }
+
+//----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
+inline
+bool StateActionRefs::appendImpl(const std::string &actionName)
+{
+    for(const auto &st: list)
+    {
+        if (st==actionName)
+            return false;
+    }
+
+    list.emplace_back(actionName);
+    return true;
+}
+
+inline bool StateActionRefs::append   ( const std::string &actionName) { return appendImpl(actionName); }
+inline bool StateActionRefs::push_back( const std::string &actionName) { return appendImpl(actionName); }
+
+//----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
+bool StateDefinition::addActionRef(StateActionKind ak, const std::string &actionName)
+{
+    return actionRefs[ak].append(actionName);
+}
+
+//----------------------------------------------------------------------------
+
+
 
 
 

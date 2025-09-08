@@ -1,5 +1,7 @@
 invalid=-1
 
 none                            = 0
+inherited                            // Set when the action is inherited
+override                             // Set when the action overrides inherited
 external
 generates

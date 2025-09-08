@@ -38,10 +38,16 @@
       - [Флаги (TransitionFlags flags)](#флаги-transitionflags-flags)
       - [Методы](#методы-7)
       - [Примечание](#примечание-4)
+  - [struct StateActionRefs](#struct-stateactionrefs)
+    - [Методы](#методы-8)
+  - [struct StateDefinition](#struct-statedefinition)
+    - [Поля структуры](#поля-структуры-8)
+    - [Флаги (StateFlags flags)](#флаги-stateflags-flags)
+    - [Методы](#методы-9)
+    - [Типы действий (StateActionKind)](#типы-действий-stateactionkind)
 
 
 # Базовые типы
-
 
 ## struct EventDefinition
 
@@ -54,7 +60,7 @@ struct EventDefinition
     std::string     name        ;
     std::string     description ;
 
-    EventFlags      flags = EventFlags::none; // none, external, generated
+    EventFlags      flags = EventFlags::none;
 
     /*! Список событий, составляющих данное (если событие не external
         - не установлен флаг EventFlags::external) */
@@ -86,6 +92,8 @@ public: // methods
 |Значение|Описание|
 |:---|:---|
 |**EventFlags::none**|флаги не заданы.|
+|**EventFlags::inherited**|устанавливается при наследовании.|
+|**EventFlags::override**|устанавливается, если разрешено переопределить ранее определенное в базовых дефинициях событие.|
 |**EventFlags::external**|Событие является внешним, если установлен данный флаг. В противном случае событие является составным, и вектор `basicEvents` содержит имена базовых событий (базовых для данного, они, в свою очередь, также могут быть составными).|
 |**EventFlags::generated**|событие является генерируемым (внешними действиями/actions). Дынный флаг используется для проверок и оптимизаций.|
 
@@ -134,7 +142,7 @@ struct ActionDefinition
     std::string     name        ;
     std::string     description ;
 
-    ActionFlags     flags = ActionFlags::none; // none, external, generates
+    ActionFlags     flags = ActionFlags::none;
 
     /*! Список действий, составляющих данное действие (если действие не
         external - не установлен флаг ActionFlags::external) */
@@ -171,6 +179,8 @@ public: // methods
 |Значение|Описание|
 |:---|:---|
 |**ActionFlags::none**|флаги не заданы.|
+|**ActionFlags::inherited**|устанавливается при наследовании.|
+|**ActionFlags::override**|устанавливается, если разрешено переопределить ранее определенное в базовых дефинициях действие.|
 |**ActionFlags::external**|действие - внешнее. Иначе - внутреннее, составное.|
 |**ActionFlags::generates**|действие вызывает генерацию события (используется или может использоваться для оптимизаций).|
 
@@ -216,7 +226,6 @@ struct PredicateDefinition
     std::string     name        ;
     std::string     description ;
 
-    // none, external, validFor
     PredicateFlags  flags = PredicateFlags::none;
 
     /*! Выражение для пользовательского (не external)  предиката */
@@ -250,7 +259,9 @@ struct PredicateDefinition
 |Значение|Описание|
 |:---|:---|
 |**PredicateFlags::none**|флаги не заданы.|
-|**PredicateFlags::external**|Преликат является внешним, если установлен данный флаг. В противном случае предикат является составным, и `expression` содержит валидное логическое выражение.|
+|**PredicateFlags::inherited**|устанавливается при наследовании.|
+|**PredicateFlags::override**|устанавливается, если разрешено переопределить ранее определенный в базовых дефинициях предикат.|
+|**PredicateFlags::external**|Предикат является внешним, если установлен данный флаг. В противном случае предикат является составным, и `expression` содержит валидное логическое выражение.|
 |**PredicateFlags::validFor**|предикат содержит список событий в векторе `validForList`, для которых данный предикат может исползоваться. Используется для проверок и оптимизаций.|
 
 
@@ -371,7 +382,6 @@ stopNotice : tmToggleGreen ? !greenLightIsOn -> self : greenOn;
  2. проверка всех предикатов на предмет допустимости использования
  с обрабатываемым событием (`valid-for`).
 
-
 ### struct TransitionSourceState
 
 Определение исходного состояния для перехода.
@@ -382,7 +392,6 @@ struct TransitionSourceState
     PositionInfo    positionInfo;
     std::string     name; // state name, not used if `any` flag is set
 
-    // none, any, excluded
     TransitionSourceStateFlags flags = TransitionSourceStateFlags::none;
 
 
@@ -398,6 +407,7 @@ struct TransitionSourceState
     bool operator==(const TransitionSourceState &other) const;
     bool operator!=(const TransitionSourceState &other) const;
 
+    bool isNameEqual(const TransitionSourceState &other) const;
     bool isAny() const;
     bool isExcluded() const;
 
@@ -433,6 +443,7 @@ struct TransitionSourceState
 |**compare**|производит сравнение, возвращает `-1`, `0` или `1`.|
 |**isEqual**|производит проверку на равеноство, и работает эффективнее, чем `compare`.|
 |**operator <**, **<=**, **>**, **>=**, **==**, **!=**|опраторы отношений, реализованы на базе `compare` и `isEqual`.|
+|**isNameEqual**|сравнивает имена состояний, игнорируя признак `excluded`;|
 |**isAny**|возвращает true, если состояние является `ANY`-состоянием.|
 |**isExcluded**|возвращает true, если состояние исключается из списка состояний.|
 
@@ -474,6 +485,8 @@ struct TransitionSourceStates
     bool checkForAny( bool *pHasNormalAny=0
                     , bool *pHasExcludedAny=0) const;
 
+    std::size_t getAnyIndex() const;
+
 }; // struct TransitionSourceStates
 ```
 
@@ -498,6 +511,7 @@ struct TransitionSourceStates
 |**push_back**|добавляет элементарное состояние в список.|
 |**getSortedStates**|возвращает отсортированный список состояний для сравнения и генерации имени.|
 |**checkForAny**|произодит проверку, есть ли в списке состояние `ANY`, и если нет, возвращает `true`.|
+|**getAnyIndex**|возвращает индекс состояния `ANY` в списке, если есть, или size_t(-1) - в противном случае.|
 
 
 #### Примечание
@@ -515,7 +529,6 @@ struct TransitionEvent
     PositionInfo    positionInfo;
     std::string     name        ; // event name, not used if `any`
 
-    // none, any, excluded
     TransitionEventFlags  flags = TransitionEventFlags::none;
 
 
@@ -531,6 +544,7 @@ struct TransitionEvent
     bool operator==(const TransitionEvent &other) const;
     bool operator!=(const TransitionEvent &other) const;
 
+    bool isNameEqual(const TransitionEvent &other) const;
     bool isAny() const;
     bool isExcluded() const;
 
@@ -566,6 +580,7 @@ struct TransitionEvent
 |**compare**|производит сравнение, возвращает `-1`, `0` или `1`.|
 |**isEqual**|производит проверку на равеноство, и работает эффективнее, чем `compare`.|
 |**operator <**, **<=**, **>**, **>=**, **==**, **!=**|опраторы отношений, реализованы на базе `compare` и `isEqual`.|
+|**isNameEqual**|сравнивает имена собыий, игнорируя признак `excluded`;|
 |**isAny**|возвращает true, если состояние является `ANY`-состоянием.|
 |**isExcluded**|возвращает true, если состояние исключается из списка состояний.|
 
@@ -607,6 +622,8 @@ struct TransitionEvents
     bool checkForAny( bool *pHasNormalAny=0
                     , bool *pHasExcludedAny=0) const;
 
+    std::size_t getAnyIndex() const;
+
 }; // struct TransitionEvents
 ```
 
@@ -631,6 +648,7 @@ struct TransitionEvents
 |**push_back**|добавляет элементарное состояние в список.|
 |**getSortedEvents**|возвращает отсортированный список событий для сравнения и генерации имени.|
 |**checkForAny**|произодит проверку, есть ли в списке событие `ANY`, и если нет, возвращает `true`.|
+|**getAnyIndex**|возвращает индекс состояния `ANY` в списке, если есть, или size_t(-1) - в противном случае.|
 
 
 #### Примечание
@@ -645,16 +663,9 @@ struct TransitionEvents
 ```cpp
 struct TransitionDefinition
 {
-    // Проверки на ANY, на дублирование и тп пусть делает парсер
-    // Он там же выводит ошибку, и больше нам это нигде не нужно
     TransitionSourceStates     sourceStates;
-
-    // Проверки на ANY, на дублирование и тп пусть делает парсер
-    // Он там же выводит ошибку, и больше нам это нигде не нужно
     TransitionEvents           events      ;
-
-    TransitionFlags            flags; // none, conditional
-
+    TransitionFlags            flags;
     LogicExpression            additionalCondition;
 
 
@@ -672,7 +683,14 @@ struct TransitionDefinition
     bool operator==(const TransitionDefinition &other) const;
     bool operator!=(const TransitionDefinition &other) const;
 
-    // Нужно ли тут проверять возможность добавления
+    void appendImpl(const TransitionSourceState &st);
+    void appendImpl(const TransitionEvent &te);
+
+    void append   ( const TransitionSourceState &st);
+    void push_back( const TransitionSourceState &st);
+
+    void append   ( const TransitionEvent &te);
+    void push_back( const TransitionEvent &te);
 
 }; // struct TransitionDefinition
 ```
@@ -694,6 +712,8 @@ struct TransitionDefinition
 |Значение|Описание|
 |:---|:---|
 |**TransitionFlags::none**|флаги не заданы.|
+|**TransitionFlags::inherited**|устанавливается при наследовании.|
+|**TransitionFlags::override**|устанавливается, если разрешено переопределить ранее определенный в базовых дефинициях переход.|
 |**TransitionFlags::conditional**|признак, что событие перехода ограничено дополнительными условиями, содержащимся в поле `additionalCondition`.|
 
 
@@ -707,10 +727,111 @@ struct TransitionDefinition
 |**compare**|производит сравнение, возвращает `-1`, `0` или `1`.|
 |**isEqual**|производит проверку на равеноство, и работает эффективнее, чем `compare`.|
 |**operator <**, **<=**, **>**, **>=**, **==**, **!=**|опраторы отношений, реализованы на базе `compare` и `isEqual`.|
+|**append**, **push_back(const TransitionSourceState &)**|добавляет исходное состояние, выбрасывает исключение, если такое состояние уже существует.|
+|**append**, **push_back(const TransitionEvent &)**|добавляет событие перехода, выбрасывает исключение, если такое событие уже существует.|
 
 
 #### Примечание
 
 Имя списка событий формируется из составного имени состояний, составного имени событий, и логического выражения с дополнительными условиями если они заданы.
+
+
+## struct StateActionRefs
+
+Список имен - ссылок на действия.
+
+```cpp
+struct StateActionRefs
+{
+    std::vector<std::string>    list;
+
+    bool appendImpl(const std::string &actionName);
+    bool append    (const std::string &actionName);
+    bool push_back (const std::string &actionName);
+
+}; // struct StateActionRefs
+```
+
+
+|Значение|Описание|
+|:---|:---|
+|**list**|список имён действий.|
+
+
+### Методы
+
+
+|Значение|Описание|
+|:---|:---|
+|**append**, **push_back**|добавляет имя действия в список, если оно ещё не было добавлено, и возвращает `true`. Если действие уже имеется в списке, повторного добавления не происходит, и возвращается `false`.|
+
+
+## struct StateDefinition
+
+Определение состояния
+
+```cpp
+struct StateDefinition
+{
+    PositionInfo    positionInfo;
+    std::string     name        ;
+    std::string     description ;
+
+    StateFlags      flags = StateFlags::none;
+
+    std::unordered_map<StateActionKind, StateActionRefs>   actionRefs;
+
+
+public: // methods
+
+    std::string getCanonicalName() const { return name; }
+
+    bool addActionRef(StateActionKind ak, const std::string &actionName);
+
+}; // struct StateDefinition
+```
+
+### Поля структуры
+
+
+|Значение|Описание|
+|:---|:---|
+|**positionInfo**|информация о позиции выражения в исходных файлах.|
+|**name**|имя (название) состояния.|
+|**description**|описание состояния.|
+|**flags**|флаги (опции) состояния (StateFlags).|
+|**actionRefs**|списки действий по типам.|
+
+
+### Флаги (StateFlags flags)
+
+
+|Значение|Описание|
+|:---|:---|
+|**StateFlags::none**|флаги не заданы.|
+|**StateFlags::inherited**|устанавливается при наследовании.|
+|**StateFlags::override**|устанавливается, если разрешено переопределить ранее определенный в базовых дефинициях переход.|
+|**StateFlags::initial**|начальное состояние.|
+|**StateFlags::final**|конечное состояние.|
+
+
+### Методы
+
+
+|Значение|Описание|
+|:---|:---|
+|**getCanonicalName**|формирует "каноническое" имя объекта. В данном случае, возвращает просто имя объекта, которое является его полем/членом.|
+|**addActionRef**|добавляет действие в список соответствующего типа.|
+
+
+### Типы действий (StateActionKind)
+
+
+|Значение|Описание|
+|:---|:---|
+|**stateEnter**|действия по переходу в данное состояние.|
+|**stateLeave**|действия по переходу из данного состояния.|
+|**selfEnter**|действия по входу в состояние при переходе в само себя.|
+|**selfLeave**|действия по выходу из состояния при переходе в само себя.|
 
 

@@ -1,5 +1,7 @@
 invalid=-1
 
 none                            = 0
+inherited                            // Set when the predicate is inherited
+override                             // Set when the predicate overrides inherited
 external
-validFor                            // valid-for list is actual
+validFor                             // valid-for list is actual

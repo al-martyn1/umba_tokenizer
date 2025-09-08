@@ -1,5 +1,7 @@
 invalid=-1
 
 none                            = 0
+inherited                            // Set when the event is inherited
+override                             // Set when the event overrides inherited
 external
 generated

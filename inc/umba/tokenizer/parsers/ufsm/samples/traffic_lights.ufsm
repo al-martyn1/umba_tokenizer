@@ -164,7 +164,7 @@ uses TrafficLightCommands,
 
     events{ }
 
-    actions
+    actions : override // Перезаписывает то, что было определено в базе, но не в текущем автомате
     {
         // Включение/выключение сигналов
         greenOn   : external - "Turns the GREEN light On";
@@ -189,7 +189,7 @@ uses TrafficLightCommands,
 
     }
 
-    predicates
+    predicates : override // Перезаписывает то, что было определено в базе, но не в текущем автомате
     {
         // Для инвертирования зелёного сигнала
         greenLightIsOn : external - "Checks the GREEN light is ON"; // valid-for {toggleGreen}
@@ -213,7 +213,7 @@ uses TrafficLightCommands,
         enter-событие для стартового состояния означает, что при инициализации автомата 
         вызываются действия этого события
     */
-    states 
+    states : override // Перезаписывает то, что было определено в базе, но не в текущем автомате
     {
 
         turnedOff : initial - "Traffic Light is turned OFF"
@@ -233,7 +233,7 @@ uses TrafficLightCommands,
 
     }
 
-    transitions
+    transitions : override // Перезаписывает то, что было определено в базе, но не в текущем автомате
     {
         /*
             Примеры описаний переходов

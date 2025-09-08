@@ -38,10 +38,7 @@ namespace ufsm {
 struct EventDefinition
 struct ActionDefinition
 struct PredicateDefinition
-struct TransitionSourceState
-struct TransitionEvent
-struct TransitionSourceStates
-struct TransitionEvents
+struct TransitionDefinition
 
 */
 

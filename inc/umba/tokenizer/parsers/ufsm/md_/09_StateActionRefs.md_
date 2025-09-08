@@ -1,0 +1,24 @@
+#struct StateActionRefs
+
+Список имен - ссылок на действия.
+                        
+#!snippet{} umba/tokenizer/parsers/ufsm/basic_types.h#`struct StateActionRefs`-{};
+
+<val-list>
+
+- list
+список имён действий.
+
+</val-list>
+
+
+## Методы
+
+<val-list>
+
+- append, push_back
+добавляет имя действия в список, если оно ещё не было добавлено, и возвращает `true`.
+Если действие уже имеется в списке, повторного добавления не происходит, и возвращается `false`.
+
+</val-list>
+
