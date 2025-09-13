@@ -1,0 +1,4 @@
+invalid=-1
+
+nsDefinition        = 0
+fsmDefinition

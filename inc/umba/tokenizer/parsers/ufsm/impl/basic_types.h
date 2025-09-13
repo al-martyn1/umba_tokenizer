@@ -17,6 +17,18 @@ namespace ufsm {
 
 //----------------------------------------------------------------------------
 inline
+TypeValueInfo makeTypeValueInfo(const FullQualifiedName &d)
+{
+    return TypeValueInfo{ d.positionInfo, d.getCanonicalName(), std::string("name") };
+}
+
+inline
+TypeValueInfo makeTypeValueInfo(const ParentListEntry &d)
+{
+    return TypeValueInfo{ d.positionInfo, d.getCanonicalName(), std::string("parent list entry") };
+}
+
+inline
 TypeValueInfo makeTypeValueInfo(const EventDefinition &d)
 {
     return TypeValueInfo{ d.positionInfo, d.name, std::string("event") };
@@ -60,6 +72,99 @@ TypeValueInfo makeTypeValueInfo(const TransitionEvents &d)
     return TypeValueInfo{ d.list[0].positionInfo, d.getCanonicalName(), std::string("transition events") };
 }
 
+inline
+TypeValueInfo makeTypeValueInfo(const TransitionDefinition &d)
+{
+    return TypeValueInfo{ d.positionInfo, d.getCanonicalName(), std::string("transition") };
+}
+
+// struct TransitionDefinition
+// {
+//     PositionInfo               positionInfo;
+//     TransitionSourceStates     sourceStates; 
+//     TransitionEvents           events      ;
+//     TransitionFlags            flags;
+//     LogicExpression            additionalCondition;
+//  
+//  
+//     std::string additionalConditionAsString() const;
+//  
+//     std::string getCanonicalName() const;
+
+
+// inline
+// TypeValueInfo makeTypeValueInfo(const StateActionRefs &d)
+// {
+//  
+// }
+
+inline
+TypeValueInfo makeTypeValueInfo(const StateDefinition &d)
+{
+    return TypeValueInfo{ d.positionInfo, d.name, std::string("state") };
+}
+
+//----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
+inline bool FullQualifiedName::isAbsolute() const { return (flags&FullQualifiedNameFlags::absolute)!=0; }
+
+inline
+std::string FullQualifiedName::getCanonicalName() const
+{
+    static const std::string sep = "::";
+    std::string resName;
+
+    // Делаем всегда полностью квалифицированное имя от корня
+    for(const auto &n : name)
+    {
+        resName.append(sep);
+        resName.append(n);
+    }
+
+    // Если имя не абсолютное, и в начале лежит scope access
+    // второй символ не сравниваем, потому что не факт, что он есть, правильно вообще сделать startsWidth
+    if (!isAbsolute() && resName.size()>2 && resName[0]==sep[0]) 
+    {
+        resName.erase(0, sep.size());
+    }
+
+    return resName;
+}
+
+inline
+FullQualifiedName FullQualifiedName::toRelative() const
+{
+    FullQualifiedName res;
+    res.flags &= ~FullQualifiedNameFlags::absolute;
+    return res;
+}
+
+inline
+FullQualifiedName FullQualifiedName::getTail() const
+{
+    if (empty())
+        throw std::runtime_error("umba::tokenizer::ufsm::FullQualifiedName::getTail: can't get tail from empty name");
+
+    FullQualifiedName res;
+    res.positionInfo = positionInfo;
+    res.flags = flags & ~FullQualifiedNameFlags::absolute;
+    res.name.insert(res.name.end(), name.begin(), name.end());
+    return res;
+}
+
+//----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
+inline
+std::string ParentListEntry::getCanonicalName() const
+{
+    return name.getCanonicalName();
+}
 //----------------------------------------------------------------------------
 
 
@@ -457,6 +562,7 @@ std::string TransitionDefinition::getCanonicalName() const
     return name;
 }
 
+inline
 int  TransitionDefinition::compare(const TransitionDefinition &other) const
 {
     int cmp = sourceStates.compare(other.sourceStates);
@@ -473,6 +579,7 @@ int  TransitionDefinition::compare(const TransitionDefinition &other) const
     return additionalConditionAsString().compare(other.additionalConditionAsString());
 }
 
+inline
 bool TransitionDefinition::isEqual(const TransitionDefinition &other) const
 {
     return !(!sourceStates.isEqual(other.sourceStates)

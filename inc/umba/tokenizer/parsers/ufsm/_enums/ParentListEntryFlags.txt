@@ -1,0 +1,5 @@
+invalid=-1
+
+none                            = 0
+uses                                // Not inherits state machine, only uses it - can be used for definitions to convert FSM to defs
+inherits                            // Inherits state machine, can't inherit `definition`s.

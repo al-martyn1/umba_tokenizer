@@ -37,6 +37,7 @@ struct TypeValueInfo
 
 
 
+//----------------------------------------------------------------------------
 #define UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_BEGIN(cls, clsBase)    \
              class cls : public clsBase                                           \
              {                                                                    \
@@ -51,42 +52,68 @@ struct TypeValueInfo
 #define UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_END(cls, clsBase)      \
              };
 
+//----------------------------------------------------------------------------
 
+
+
+//----------------------------------------------------------------------------
 UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_BEGIN(base_error, std::runtime_error)
-    void assignExtra(const base_error &) {}
-UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_END(base_error, std::runtime_error)
-
-
-UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_BEGIN(already_declared_error, base_error)
 
     void assignExtra(const base_error &) {}
 
     static std::string makeSimpleDeclInfoString(const TypeValueInfo &declInfo, const std::string &strExtra)
     {
-        std::string res = declInfo.typeName + " '" + declInfo.name + "' already declared";
+        std::string res = declInfo.typeName + " '" + declInfo.name + "'";
         if (!strExtra.empty())
-            res += " " + strExtra; // As sample: "in..."
+            res += " " + strExtra;
         return res;
     }
 
-    already_declared_error(const TypeValueInfo &prevDeclInfo_, const TypeValueInfo &curDeclInfo_, const std::string &strExtra_=std::string())
-    : base_error(makeSimpleDeclInfoString(curDeclInfo_, strExtra_))
-    , prevDeclInfo(prevDeclInfo_)
-    , curDeclInfo (curDeclInfo_ )
-    , strExtra    (strExtra_)
+UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_END(base_error, std::runtime_error)
+
+//----------------------------------------------------------------------------
+UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_BEGIN(already_error_base, base_error)
+
+    void assignExtra(const already_error_base &e)
+    {
+        declInfoPrev = e.declInfoPrev;
+        declInfoCur  = e.declInfoCur ;
+    }
+
+    already_error_base(const TypeValueInfo &prevDeclInfo_, const TypeValueInfo &curDeclInfo_, const std::string &strExtra_=std::string())
+    : base_error(makeSimpleDeclInfoString(curDeclInfo_, strExtra))
+    , declInfoPrev(prevDeclInfo_)
+    , declInfoCur (curDeclInfo_ )
     {}
 
-    TypeValueInfo  prevDeclInfo;
-    TypeValueInfo  curDeclInfo ;
-    std::string    strExtra    ;
+    TypeValueInfo  declInfoPrev;
+    TypeValueInfo  declInfoCur ;
 
+UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_END(already_error_base, base_error)
 
-UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_END(already_declared_error, base_error)
+//----------------------------------------------------------------------------
+UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_BEGIN(already_declared_error, already_error_base)
 
+    void assignExtra(const base_error &) {}
 
+    already_declared_error(const TypeValueInfo &prevDeclInfo_, const TypeValueInfo &curDeclInfo_)
+    : already_error_base(prevDeclInfo_, curDeclInfo_, "already declared"))
+    {}
 
+UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_END(already_declared_error, already_error_base)
 
+//----------------------------------------------------------------------------
+UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_BEGIN(already_used_error, already_error_base)
 
+    void assignExtra(const base_error &) {}
+
+    already_used_error(const TypeValueInfo &prevDeclInfo_, const TypeValueInfo &curDeclInfo_, const std::string &strExtra_=std::string())
+    : already_error_base(prevDeclInfo_, curDeclInfo_, "already declared"))
+    {}
+
+UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_END(already_used_error, already_error_base)
+
+//----------------------------------------------------------------------------
 
 
 

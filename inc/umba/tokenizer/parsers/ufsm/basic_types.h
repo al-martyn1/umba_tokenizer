@@ -11,6 +11,10 @@
 
 #include "../../../undef_min_max.h"
 
+//
+#include <exception>
+#include <stdexcept>
+
 
 //----------------------------------------------------------------------------
 // umba::tokenizer::ufsm::
@@ -18,6 +22,49 @@ namespace umba {
 namespace tokenizer {
 namespace ufsm {
 
+//----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
+struct FullQualifiedName
+{
+    PositionInfo               positionInfo;
+
+    FullQualifiedNameFlags     flags = FullQualifiedNameFlags::none;
+    std::vector<std::string>   name; 
+
+public: // methods
+
+    bool isAbsolute() const;
+    bool size() const  { return name.size (); }
+    bool empty() const { return name.empty(); }
+    std::string& front() { return name.front(); }
+    const std::string& front() const { return name.front(); }
+
+    FullQualifiedName toRelative() const;
+    FullQualifiedName getTail   () const;
+    std::string getCanonicalName() const;
+
+}; // struct FullQualifiedName
+//----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
+struct ParentListEntry
+{
+    PositionInfo               positionInfo;
+    FullQualifiedName          name;
+
+    ParentListEntryFlags       flags = ParentListEntryFlags::none;
+    InheritanceOverrideFlags   overrideFlags = InheritanceOverrideFlags::none;
+
+public: // methods
+
+    std::string getCanonicalName() const;
+
+}; // struct ParentListEntry
 //----------------------------------------------------------------------------
 
 
@@ -219,6 +266,7 @@ struct TransitionEvents
 //----------------------------------------------------------------------------
 struct TransitionDefinition
 {
+    PositionInfo               positionInfo;
     TransitionSourceStates     sourceStates; 
     TransitionEvents           events      ;
     TransitionFlags            flags;
@@ -320,6 +368,8 @@ public: // methods
 
 
 //----------------------------------------------------------------------------
+TypeValueInfo makeTypeValueInfo(const FullQualifiedName &d);
+TypeValueInfo makeTypeValueInfo(const ParentListEntry &d);
 TypeValueInfo makeTypeValueInfo(const EventDefinition &d);
 TypeValueInfo makeTypeValueInfo(const ActionDefinition &d);
 TypeValueInfo makeTypeValueInfo(const PredicateDefinition &d);
@@ -327,6 +377,9 @@ TypeValueInfo makeTypeValueInfo(const TransitionSourceState &d);
 TypeValueInfo makeTypeValueInfo(const TransitionEvent &d);
 TypeValueInfo makeTypeValueInfo(const TransitionSourceStates &d);
 TypeValueInfo makeTypeValueInfo(const TransitionEvents &d);
+TypeValueInfo makeTypeValueInfo(const TransitionDefinition &d);
+// TypeValueInfo makeTypeValueInfo(const StateActionRefs &d);
+TypeValueInfo makeTypeValueInfo(const StateDefinition &d);
 //----------------------------------------------------------------------------
 
 

@@ -40,12 +40,16 @@ umba-enum-gen %GEN_OPTS% %HEX2% %TPL_OVERRIDE% %SNIPPETOPTIONS_GEN_FLAGS%       
     --namespace=umba/tokenizer/ufsm                                                                          ^
     --override-template-parameter=EnumNameFormat:$(ENAMNAME)                                                 ^
     %UINT32% %HEX4% -E=StateActionKind                      -F=@StateActionKind.txt                          ^
+    %UINT32% %HEX4% -E=NamespaceEntryKind                   -F=@NamespaceEntryKind.txt                       ^
     %FLAGS%                                                                                                  ^
     %UINT32% %HEX4% -E=ActionFlags                          -F=@ActionFlags.txt                              ^
     %UINT32% %HEX4% -E=EventFlags                           -F=@EventFlags.txt                               ^
+    %UINT32% %HEX4% -E=FullQualifiedNameFlags               -F=@FullQualifiedNameFlags.txt                   ^
     %UINT32% %HEX4% -E=InheritanceOverrideFlags             -F=@InheritanceOverrideFlags.txt                 ^
+    %UINT32% %HEX4% -E=ParentListEntryFlags                 -F=@ParentListEntryFlags.txt                     ^
     %UINT32% %HEX4% -E=PredicateFlags                       -F=@PredicateFlags.txt                           ^
     %UINT32% %HEX4% -E=StateFlags                           -F=@StateFlags.txt                               ^
+    %UINT32% %HEX4% -E=StateMachineFlags                    -F=@StateMachineFlags.txt                        ^
     %UINT32% %HEX4% -E=TransitionEventFlags                 -F=@TransitionEventFlags.txt                     ^
     %UINT32% %HEX4% -E=TransitionFlags                      -F=@TransitionFlags.txt                          ^
     %UINT32% %HEX4% -E=TransitionSourceStateFlags           -F=@TransitionSourceStateFlags.txt               ^

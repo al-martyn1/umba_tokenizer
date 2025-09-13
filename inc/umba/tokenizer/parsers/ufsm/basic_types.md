@@ -1,4 +1,4 @@
-- [Базовые типы](#базовые-типы)
+- [Базовые типы примитивов КА](#базовые-типы-примитивов-ка)
   - [struct EventDefinition](#struct-eventdefinition)
     - [Поля структуры](#поля-структуры)
     - [Флаги (EventFlags flags)](#флаги-eventflags-flags)
@@ -47,7 +47,7 @@
     - [Типы действий (StateActionKind)](#типы-действий-stateactionkind)
 
 
-# Базовые типы
+# Базовые типы примитивов КА
 
 ## struct EventDefinition
 
