@@ -34,16 +34,32 @@ struct FullQualifiedName
     FullQualifiedNameFlags     flags = FullQualifiedNameFlags::none;
     std::vector<std::string>   name; 
 
+    using iterator        = typename std::vector<std::string>::iterator      ;
+    using const_iterator  = typename std::vector<std::string>::const_iterator;
+
+
 public: // methods
 
-    bool isAbsolute() const;
-    bool size() const  { return name.size (); }
+    std::size_t size() const  { return name.size(); }
     bool empty() const { return name.empty(); }
     std::string& front() { return name.front(); }
     const std::string& front() const { return name.front(); }
 
+    iterator        begin()       { return name.begin (); }
+    iterator        end  ()       { return name.end   (); }
+    const_iterator  begin() const { return name.begin (); }
+    const_iterator  end  () const { return name.end   (); }
+    const_iterator cbegin() const { return name.cbegin(); }
+    const_iterator cend  () const { return name.cend  (); }
+
+    bool isAbsolute() const;
     FullQualifiedName toRelative() const;
     FullQualifiedName getTail   () const;
+    void tailRemove(std::size_t nItems);
+    void clear();
+    void append(const std::string &n);
+    void append(const FullQualifiedName &n);
+
     std::string getCanonicalName() const;
 
 }; // struct FullQualifiedName

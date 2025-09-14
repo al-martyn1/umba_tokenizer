@@ -41,6 +41,45 @@ namespace ufsm {
 
 
 
+struct ParsingContext
+{
+    NamespaceDefinition       rootNs   ;
+
+    FullQualifiedName         curNsName;
+
+    // При открытии NS может использоваться сразу пачка имён, 
+    // `namespace aa::bb::cc`, и нам надо знать, сколько имён
+    // удалять из текущего имени
+    std::vector<std::size_t>  nsOpenLevels;
+
+    FullTokenPosition         lastNsPos;
+
+
+    ParsingContext()
+    {
+        curNsName.flags |= FullQualifiedNameFlags::absolute;
+    }
+
+    void appendCurNsName(const FullQualifiedName &n)
+    {
+        nsOpenLevels.emplace_back(n.size());
+        curNsName.append(n);
+    }
+
+}; // struct ParsingContext
+
+//----------------------------------------------------------------------------
+
+
+
+
+//----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
+
+
 //----------------------------------------------------------------------------
 template<typename TokenizerType>
 class Parser : public umba::tokenizer::ParserBase<TokenizerType>
@@ -68,8 +107,9 @@ public:
 
 protected:
 
-    // PacketDiagramType              diagram;
-    // std::size_t                    orgCounter = 0;
+    ParsingContext                 ctx;
+    const TokenInfoType            *m_pTokenInfo = 0;
+    TokenPosType                   m_tokenPos;
 
 
 public:
@@ -83,13 +123,27 @@ public:
     Parser(std::shared_ptr<TokenCollectionType> tc, SharedFilenameSetType pFilenameSet, shared_log_type a_log)
     : BaseClass(tc, pFilenameSet)
     , log(a_log)
+    , ctx()
     {
     }
 
-    int getParsedData() const
+    NamespaceDefinition getParsedData() const
     {
-        return 0;
+        return ctx.rootNs;
     }
+
+    std::string extractIdentifierName(const TokenInfoType *pTokenInfo)
+    {
+        auto pTokenParsedData = BaseClass::getTokenParsedData(pTokenInfo);
+        auto identifierData = std::get<typename TokenizerType::IdentifierDataHolder>(*pTokenParsedData);
+        return identifierData.pData->value;
+    }
+
+    FullTokenPosition getFullPos(TokenPosType pos) const  { return BaseClass::getFullTokenPosition(pos); }
+    FullTokenPosition getFullPos() const                  { return getFullPos(m_tokenPos); }
+
+
+
 
 //    template<typename TVal>
 //    using TheVal = umba::TheValue<TVal>;
@@ -426,9 +480,18 @@ public:
     static
     std::string getTokenIdStr(umba::tokenizer::payload_type tk)
     {
-        #if 0
         switch(tk)
         {
+            case UFSM_TOKEN_KWD_NAMESPACE        : return "namespace";
+            case UFSM_TOKEN_KWD_FSM              : return "state-machine";
+            case UFSM_TOKEN_KWD_DEFINITIONS      : return "definitions";
+            case UFSM_TOKEN_OP_SCOPE             : return "scope resolution operator";
+            case UFSM_TOKEN_BRACKET_SCOPE_OPEN   : return "scope open bracket";
+            case UFSM_TOKEN_BRACKET_SCOPE_CLOSE  : return "scope close bracket";
+
+            case UMBA_TOKENIZER_TOKEN_IDENTIFIER : return "identifier";
+
+
             /*
             case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR  : return "type"; // return "char"  ; 
             case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8  : return "type"; // return "int8"  ; 
@@ -441,7 +504,7 @@ public:
             case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64: return "type"; // return "uint64"; 
             */
 
-            
+            #if 0
             case UMBA_TOKENIZER_TOKEN_RAW_DATA           : return "raw-data";
             case UMBA_TOKENIZER_TOKEN_IDENTIFIER         : return "identifier";
             case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_BIN: return "number";
@@ -471,8 +534,10 @@ public:
             // case : return "";
             // case : return "";
             // case : return "";
+            #endif
 
             default: 
+                 #if 0
                  if (tk>=MERMAID_TOKEN_SET_DIRECTIVES_FIRST && tk<=MERMAID_TOKEN_SET_DIRECTIVES_LAST)
                      return "directive";
 
@@ -484,12 +549,10 @@ public:
 
                  if (tk>=MERMAID_TOKEN_SET_ATTRS_FIRST && tk<=MERMAID_TOKEN_SET_ATTRS_LAST )
                      return "attribute/option";
+                 #endif
 
                  return "unknown_" + std::to_string(tk);
         }
-        #endif
-
-        return "unknown_" + std::to_string(tk);
     }
 
     bool checkNotNul(const TokenInfoType *pTokenInfo) const
@@ -1548,22 +1611,193 @@ public:
 //         return returnCheckUpdateOptions();
 //     }
 
+    // definitions TrafficLightCommands - "Defines commands for Traffic Light"
 
-    bool parse()
+    // definitions TrafficLightEventsActions
+    // // : inherits TrafficLightCommands 
+    // - "Defines internal events and actions for Traffic Light automato"
+
+    // state-machine TrafficLightPedestrian : 
+    // //inherits TrafficLightBase,
+    // uses TrafficLightCommands, 
+    //      TrafficLightEventsActions override // возможные коллизии молча переписываются более поздними значениями
+    // - "Pedestrian Traffic Light (Red-Green)"
+
+    // state-machine TrafficLightRoad :
+    // uses TrafficLightCommands, 
+    //      TrafficLightEventsActions override // возможные коллизии молча переписываются более поздними значениями
+    // - "Three-lights traffic light (Reg-Yellow-Green)"
+
+
+
+    bool parseStateMachine(StateMachineDefinition &sm, InheritanceListMode inheritanceListMode)
     {
-        TokenPosType tokenPos;
+        UMBA_USED(sm);
+        UMBA_USED(inheritanceListMode);
+
+        m_pTokenInfo = BaseClass::waitForSignificantToken( &m_tokenPos, ParserWaitForTokenFlags::none);
+        if (!checkNotNul(m_pTokenInfo))
+            return false;
+
+        if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ ))
+            return false;
+
+        sm.name = extractIdentifierName(m_pTokenInfo);
+
+        return false;
+    }
+
+    bool parseDefinitions()
+    {
+        StateMachineDefinition sm;
+        sm.positionInfo = getFullPos();
+        sm.flags        = StateMachineFlags::none;
+
+        if (!parseStateMachine(sm, InheritanceListMode::uses))
+            return false;
+
+        NamespaceDefinition* pNs = ctx.rootNs.getNamespace(ctx.curNsName, &ctx.rootNs, ctx.lastNsPos);
+        if (!pNs)
+            throw std::runtime_error("Something goes wrong");
+
+        pNs->addDefinition(sm);
+
+        return true;
+    }
+
+    bool parseStateMachine()
+    {
+        StateMachineDefinition sm;
+        sm.positionInfo = getFullPos();
+        sm.flags        = StateMachineFlags::stateMachine;
+
+        if (!parseStateMachine(sm, InheritanceListMode::inherits))
+            return false;
+
+        NamespaceDefinition* pNs = ctx.rootNs.getNamespace(ctx.curNsName, &ctx.rootNs, ctx.lastNsPos);
+        if (!pNs)
+            throw std::runtime_error("Something goes wrong");
+
+        pNs->addDefinition(sm);
+
+        return true;
+    }
+
+    bool parseNamespaceBody()
+    {
+        return parseImpl();
+    }
+
+    bool parseNamespace()
+    {
+        FullQualifiedName nsName;
+        bool waitSep = false;
 
         while(true)
         {
-            const TokenInfoType *pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-            if (!checkNotNul(pTokenInfo))
+            m_pTokenInfo = BaseClass::waitForSignificantToken( &m_tokenPos, ParserWaitForTokenFlags::none);
+            if (!checkNotNul(m_pTokenInfo))
                 return false;
 
-            if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_LINEFEED)
+            if (!waitSep) // wait for name
+            {
+                if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ ))
+                    return false;
+
+                nsName.append(extractIdentifierName(m_pTokenInfo));
+                waitSep = true;
+                continue;
+            }
+            else // wait for name sep or open curly
+            {
+                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SCOPE, UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+                    return false;
+
+                if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_SCOPE) // ::
+                {
+                    waitSep = false; // переходим к ожиданию слдующего имени NS
+                    continue;
+                }
+                else // {
+                {
+                    ctx.appendCurNsName(nsName);
+                    // Просто создаём namespace
+                    ctx.rootNs.getNamespace(ctx.curNsName, &ctx.rootNs, ctx.lastNsPos); // PositionInfo is not the same as TokenPosType
+                    return parseNamespaceBody();
+                }
+            }
+
+        }
+    }
+
+    bool parseImpl()
+    {
+        //TokenPosType tokenPos;
+
+        while(true)
+        {
+            //const TokenInfoType *pTokenInfo
+            m_pTokenInfo = BaseClass::waitForSignificantToken( &m_tokenPos, ParserWaitForTokenFlags::none);
+            if (!checkNotNul(m_pTokenInfo))
+                return false;
+
+            if (m_pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_LINEFEED)
                 continue;
 
-            if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
+            if (m_pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
                 return true; // normal stop
+
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_NAMESPACE)
+            {
+                ctx.lastNsPos = getFullPos(m_tokenPos);
+                if (!parseNamespace())
+                    return false;
+            }
+            else if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_FSM)
+            {
+                if (!parseStateMachine())
+                    return false;
+            }
+            else if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_DEFINITIONS)
+            {
+                if (!parseDefinitions())
+                    return false;
+            }
+            else if (m_pTokenInfo->tokenType==UFSM_TOKEN_BRACKET_SCOPE_CLOSE)
+            {
+                std::size_t nsPopCount = 0;
+                if (!ctx.nsOpenLevels.empty())
+                {
+                    nsPopCount = ctx.nsOpenLevels.back();
+                    ctx.nsOpenLevels.pop_back();
+                }
+                else
+                {
+                    BaseClass::logSimpleUnexpected( m_pTokenInfo, [&](umba::tokenizer::payload_type tk) { return getTokenIdStr(tk); } );
+                    return false;
+                }
+
+                if (nsPopCount>ctx.curNsName.size())
+                {
+                    throw std::runtime_error("Too many closing curly bracket to pop");
+                }
+
+                ctx.curNsName.tailRemove(nsPopCount);
+
+                // expectedReachedMsg(m_pTokenInfo, { UFSM_TOKEN_KWD_NAMESPACE, UFSM_TOKEN_KWD_FSM, UFSM_TOKEN_KWD_DEFINITIONS } /* , msg */ );
+                // return false;
+
+
+    // FullQualifiedName         curNsName;
+    //  
+    // // При открытии NS может использоваться сразу пачка имён, 
+    // // `namespace aa::bb::cc`, и нам надо знать, сколько имён
+    // // удалять из текущего имени
+    // std::vector<std::size_t>  nsOpenLevels;
+
+            }
+
+            //UFSM_TOKEN_KWD_FSM, UFSM_TOKEN_KWD_DEFINITIONS
 
 
             // if (isAnyNumber(pTokenInfo->tokenType) || isAnyType(pTokenInfo->tokenType))
@@ -1678,27 +1912,45 @@ public:
             //     // const TokenInfoType* parseOrgDirective(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, PacketDiagramItemType &item) 
             // }
             //  
-            // else
-            // {
-            //     expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, MERMAID_TOKEN_SET_TYPES_FIRST, MERMAID_TOKEN_DIRECTIVE_PACKET_BETA, MERMAID_TOKEN_OPERATOR_EXTRA /* , MERMAID_TOKEN_DIRECTIVE_TITLE */ } /* , msg */ );
-            //     return false;
-            // }
-
-            if (!pTokenInfo)
-                return false;
-    
-            // FIN может быть и в конце выражения, если последняя строка не заканчивается переводом строки, это нормально
-            if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
-                return true; // normal stop
-
-            if (pTokenInfo->tokenType!=UMBA_TOKENIZER_TOKEN_LINEFEED) // Разбор выражения закончился не строкой?
+            else
             {
-                expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_LINEFEED} /* , msg */ );
+                expectedReachedMsg(m_pTokenInfo, { UFSM_TOKEN_KWD_NAMESPACE, UFSM_TOKEN_KWD_FSM, UFSM_TOKEN_KWD_DEFINITIONS } /* , msg */ );
                 return false;
             }
+
+            if (!m_pTokenInfo)
+                return false;
+    
+            // // FIN может быть и в конце выражения, если последняя строка не заканчивается переводом строки, это нормально
+            // if (m_pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
+            //     return true; // normal stop
+            //  
+            // if (m_pTokenInfo->tokenType!=UMBA_TOKENIZER_TOKEN_LINEFEED) // Разбор выражения закончился не строкой?
+            // {
+            //     expectedReachedMsg(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_LINEFEED} /* , msg */ );
+            //     return false;
+            // }
         }
 
         return false;
+    }
+
+    bool parse()
+    {
+        try
+        {
+            return parseImpl();
+        }
+        catch(const std::exception &e) // e
+        {
+            return BaseClass::logMessage( m_pTokenInfo, "generic-error", e.what() ), false;
+        }
+        catch(...)
+        {
+            return BaseClass::logMessage( m_pTokenInfo, "generic-error", "unknown error" ), false;
+        }
+
+        //return false;
     }
 
 

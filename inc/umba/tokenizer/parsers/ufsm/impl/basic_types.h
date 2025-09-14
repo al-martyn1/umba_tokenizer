@@ -137,7 +137,7 @@ std::string FullQualifiedName::getCanonicalName() const
 inline
 FullQualifiedName FullQualifiedName::toRelative() const
 {
-    FullQualifiedName res;
+    FullQualifiedName res = *this;
     res.flags &= ~FullQualifiedNameFlags::absolute;
     return res;
 }
@@ -151,9 +151,31 @@ FullQualifiedName FullQualifiedName::getTail() const
     FullQualifiedName res;
     res.positionInfo = positionInfo;
     res.flags = flags & ~FullQualifiedNameFlags::absolute;
-    res.name.insert(res.name.end(), name.begin(), name.end());
+    auto fromIt = name.begin(); ++fromIt;
+    res.name.insert(res.name.end(), fromIt, name.end());
     return res;
 }
+
+inline
+void FullQualifiedName::tailRemove(std::size_t nItems)
+{
+    if (nItems==std::size_t(-1))
+    {
+        name.clear();
+        return;
+    }
+
+    if (nItems>name.size())
+        throw std::runtime_error("umba::tokenizer::ufsm::FullQualifiedName::tailRemove: too many items to remove");
+
+    for(std::size_t i=0; i!=nItems; ++i)
+        name.pop_back();
+}
+
+inline void FullQualifiedName::clear() { tailRemove(std::size_t(-1)); }
+inline void FullQualifiedName::append(const std::string &n) { name.emplace_back(n); }
+inline void FullQualifiedName::append(const FullQualifiedName &n) { for(auto &&nm : n) append(nm); }
+
 
 //----------------------------------------------------------------------------
 

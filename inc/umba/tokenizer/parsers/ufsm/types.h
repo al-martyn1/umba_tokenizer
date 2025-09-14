@@ -88,12 +88,12 @@ public: // methods
     // Тут проблема только в том, что мы сначала читаем определение, разбираем в нём ошибки,
     // а потом - добавляем, и у нас может выскочить ошибка, что такое определение уже есть.
     // Т.е. мы сначала вылижем определение, а потом окажется, что оно уже есть.
-    void addDefinition(const ParentListEntry      &v) { addDefinitionImpl<already_used_error    >(v, parents    ); }
-    void addDefinition(const EventDefinition      &v) { addDefinitionImpl<already_declared_error>(v, events     ); }
-    void addDefinition(const ActionDefinition     &v) { addDefinitionImpl<already_declared_error>(v, actions    ); }
-    void addDefinition(const PredicateDefinition  &v) { addDefinitionImpl<already_declared_error>(v, predicates ); }
-    void addDefinition(const TransitionDefinition &v) { addDefinitionImpl<already_declared_error>(v, transitions); }
-    void addDefinition(const StateDefinition      &v) { addDefinitionImpl<already_declared_error>(v, states     ); }
+    void addDefinition(const ParentListEntry      &v) { addDefinitionImpl<already_inherited_error>(v, parents    ); }
+    void addDefinition(const EventDefinition      &v) { addDefinitionImpl<already_declared_error >(v, events     ); }
+    void addDefinition(const ActionDefinition     &v) { addDefinitionImpl<already_declared_error >(v, actions    ); }
+    void addDefinition(const PredicateDefinition  &v) { addDefinitionImpl<already_declared_error >(v, predicates ); }
+    void addDefinition(const TransitionDefinition &v) { addDefinitionImpl<already_declared_error >(v, transitions); }
+    void addDefinition(const StateDefinition      &v) { addDefinitionImpl<already_declared_error >(v, states     ); }
 
     // Ещё нам надо будет потом мержить и наследовать
 
@@ -112,10 +112,16 @@ struct NamespaceDefinition;
 
 //----------------------------------------------------------------------------
 using NamespaceEntry = std::variant<NamespaceDefinition, StateMachineDefinition>;
+TypeValueInfo makeTypeValueInfo(const NamespaceEntry &d);
 
 //------------------------------
 std::string getNamespaceEntryName(const NamespaceEntry &e);
 NamespaceEntryKind getNamespaceEntryKind(const NamespaceEntry &e);
+std::string getNamespaceEntryKindString(NamespaceEntryKind k, StateMachineFlags flags);
+std::string getNamespaceEntryKindString(NamespaceEntryKind k);
+std::string getNamespaceEntryKindString(const NamespaceEntry &e);
+PositionInfo getNamespaceEntryPositionInfo(const NamespaceEntry &e);
+StateMachineFlags getNamespaceEntryStateMachineFlags(const NamespaceEntry &e);
 
 //----------------------------------------------------------------------------
 
@@ -135,6 +141,54 @@ struct NamespaceDefinition
 
 public: // methods
 
+    iterator find(const std::string &n)
+    {
+        return members.find(n);
+    }
+
+    const_iterator find(const std::string &n) const
+    {
+        return members.find(n);
+    }
+
+    iterator        begin()       { return members.begin (); }
+    iterator        end  ()       { return members.end   (); }
+    const_iterator  begin() const { return members.begin (); }
+    const_iterator  end  () const { return members.end   (); }
+    const_iterator cbegin() const { return members.cbegin(); }
+    const_iterator cend  () const { return members.cend  (); }
+
+    bool findEntry(const FullQualifiedName &name_, NamespaceDefinition *pRootNs, NamespaceEntry **ppe = 0)
+    {
+        if (name_.isAbsolute() && pRootNs)
+            return pRootNs->findEntry(name_.toRelative(), pRootNs, ppe);
+
+        if (name_.isAbsolute())
+            throw std::runtime_error("umba::tokenizer::ufsm::NamespaceDefinition::findEntry: can't get entry by absolute name");
+
+        if (name_.empty())
+            throw std::runtime_error("umba::tokenizer::ufsm::NamespaceDefinition::findEntry: can't get entry by empty name");
+
+        auto it = find(name_.front());
+        if (it==end())
+            return false;
+
+        if (name_.size()>1)
+            return findEntry(name_.getTail(), ppe);
+
+        // not empty, e.g. size==1
+        if (ppe)
+           *ppe = &it->second;
+
+        return true;
+    }
+
+    bool findEntry(const FullQualifiedName &name_, NamespaceEntry **ppe = 0)
+    {
+        return findEntry(name_, 0, ppe);
+    }
+
+
     template< typename ValueType
             >
     void addDefinition(const ValueType &v)
@@ -149,47 +203,52 @@ public: // methods
         members[canonicalName] = NamespaceEntry{v};
     }
 
-    iterator find(const std::string &name)
+    NamespaceDefinition* getNamespace(const FullQualifiedName &name_, NamespaceDefinition *pRootNs, PositionInfo newPosInfo)
     {
-        return members.find(name);
-    }
+        if (name_.isAbsolute() && pRootNs)
+            return pRootNs->getNamespace(name_.toRelative(), pRootNs, newPosInfo);
 
-    const_iterator find(const std::string &name) const
-    {
-        return members.find(name);
-    }
+        if (name_.isAbsolute())
+            throw std::runtime_error("umba::tokenizer::ufsm::NamespaceDefinition::getNamespace: can't get entry by absolute name");
 
-    iterator        begin()       { return members.begin (); }
-    iterator        end  ()       { return members.end   (); }
-    const_iterator  begin() const { return members.begin (); }
-    const_iterator  end  () const { return members.end   (); }
-    const_iterator cbegin() const { return members.cbegin(); }
-    const_iterator cend  () const { return members.cend  (); }
+        if (name_.empty())
+            return this;
 
-
-    bool findEntry(const FullQualifiedName &name, NamespaceEntry *pe = 0)
-    {
-        if (name.empty())
-            throw std::runtime_error("umba::tokenizer::ufsm::NamespaceDefinition::findEntry: can't get entry by empty name");
-
-        if (name.isAbsolute())
-            throw std::runtime_error("umba::tokenizer::ufsm::NamespaceDefinition::findEntry: can't get entry by absolute name");
-
-        auto it = find(name.front());
+        // Имя - не пустое
+        auto it = find(name_.front());
         if (it==end())
-            return false;
+        {
+            NamespaceDefinition newNs;
+            newNs.positionInfo = newPosInfo;
+            newNs.name         = name_.front();
+            addDefinition(newNs);
+            it = find(name_.front());
+            if (it==end())
+                throw std::runtime_error("umba::tokenizer::ufsm::NamespaceDefinition::getNamespace: something goes wrong");
+        }
 
-        if (it->second.size()>1)
-            return findEntry(name.getTail(), pe);
+        NamespaceEntryKind kind = getNamespaceEntryKind(it->second);
+        if (kind!=NamespaceEntryKind::nsDefinition)
+        {
+            NamespaceDefinition tmpNs;
+            tmpNs.positionInfo = newPosInfo;
+            tmpNs.name         = name_.front();
 
-        // not empty, e.g. size==1
-        if (pe)
-           *pe = &it->second;
+            const auto &prevDef = std::get<StateMachineDefinition>(it->second);
 
-        return true;
+            throw looking_for_error(makeTypeValueInfo(prevDef), makeTypeValueInfo(tmpNs));
+        }
+
+        auto &childNsDef = std::get<NamespaceDefinition>(it->second);
+
+        return childNsDef.getNamespace(name_.getTail(), newPosInfo);
     }
 
-    //NamespaceEntryKind getNamespaceEntryKind(const NamespaceEntry &e)
+    NamespaceDefinition* getNamespace(const FullQualifiedName &name_, PositionInfo newPosInfo)
+    {
+        return getNamespace(name_, 0, newPosInfo);
+    }
+
 
 
 public: // methods
@@ -209,6 +268,7 @@ TypeValueInfo makeTypeValueInfo(const StateMachineDefinition &d)
     return TypeValueInfo{ d.positionInfo, d.getCanonicalName(), std::string("state machine") };
 }
 
+inline
 TypeValueInfo makeTypeValueInfo(const NamespaceDefinition &d)
 {
     return TypeValueInfo{ d.positionInfo, d.getCanonicalName(), std::string("namespace") };
@@ -224,7 +284,7 @@ std::string getNamespaceEntryName(const NamespaceEntry &e)
 {
     return std::visit( [](const auto &a)
                        {
-                           return e.getCanonicalName();
+                           return a.getCanonicalName();
                        }
                      , e
                      );
@@ -244,8 +304,77 @@ NamespaceEntryKind getNamespaceEntryKind(const NamespaceEntry &e)
                      );
 }
 
-//----------------------------------------------------------------------------
+//------------------------------
+inline
+PositionInfo getNamespaceEntryPositionInfo(const NamespaceEntry &e)
+{
+    return std::visit( [](const auto &a) -> PositionInfo
+                       {
+                           using ArgType = std::decay_t<decltype(a)>;
+                           if constexpr (std::is_same_v <ArgType, NamespaceDefinition    >) return a.positionInfo;
+                           if constexpr (std::is_same_v <ArgType, StateMachineDefinition >) return a.positionInfo;
+                       }
+                     , e
+                     );
+}
 
+//    StateMachineFlags flags = StateMachineFlags::none; // none, stateMachine
+
+
+//----------------------------------------------------------------------------
+inline
+StateMachineFlags getNamespaceEntryStateMachineFlags(const NamespaceEntry &e)
+{
+    return std::visit( [](const auto &a) -> StateMachineFlags
+                       {
+                           using ArgType = std::decay_t<decltype(a)>;
+                           if constexpr (std::is_same_v <ArgType, NamespaceDefinition    >) return StateMachineFlags::invalid;
+                           if constexpr (std::is_same_v <ArgType, StateMachineDefinition >)
+                           {
+                               return a.flags;
+                           }
+                       }
+                     , e
+                     );
+}
+
+inline
+std::string getNamespaceEntryKindString(NamespaceEntryKind kind, StateMachineFlags flags)
+{
+    std::string kindStr = "unknown/invalid";
+    switch(kind)
+    {
+        case NamespaceEntryKind::invalid      : break;
+        case NamespaceEntryKind::nsDefinition : kindStr = "namespace"; break;
+        case NamespaceEntryKind::fsmDefinition:
+             if ((flags&StateMachineFlags::stateMachine)==0)
+                 kindStr = "definitions";
+             else
+                 kindStr = "state machine";
+             break;
+        default: {}
+    }
+
+    return kindStr;
+}
+
+inline
+std::string getNamespaceEntryKindString(NamespaceEntryKind kind)
+{
+    return getNamespaceEntryKindString(kind, StateMachineFlags::stateMachine);
+}
+
+inline
+std::string getNamespaceEntryKindString(const NamespaceEntry &e)
+{
+    return getNamespaceEntryKindString(getNamespaceEntryKind(e), getNamespaceEntryStateMachineFlags(e));
+}
+
+inline
+TypeValueInfo makeTypeValueInfo(const NamespaceEntry &d)
+{
+    return TypeValueInfo{ getNamespaceEntryPositionInfo(d), getNamespaceEntryName(d), getNamespaceEntryKindString(d) };
+}
 
 
 //----------------------------------------------------------------------------

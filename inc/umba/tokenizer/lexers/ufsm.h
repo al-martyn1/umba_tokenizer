@@ -45,7 +45,7 @@ makeTokenizerBuilder()
                           .generateStandardCharClassTable()
 
                           //.addBrackets(make_string<StringType>("[]"), UMBA_TOKENIZER_TOKEN_SQUARE_BRACKETS)
-                          .addBrackets(make_string<StringType>("{}"), UMBA_TOKENIZER_TOKEN_CURLY_BRACKETS)
+                          .addBrackets(make_string<StringType>("{}"), UFSM_TOKEN_BRACKET_SCOPE_OPEN /* UMBA_TOKENIZER_TOKEN_CURLY_BRACKETS */ )
                           .addBrackets(make_string<StringType>("()"), UMBA_TOKENIZER_TOKEN_ROUND_BRACKETS)
 
 
@@ -79,6 +79,7 @@ makeTokenizerBuilder()
                           .addOperator(make_string<StringType>("="   ), UFSM_TOKEN_OP_ASSIGN      )
                           .addOperator(make_string<StringType>(":"   ), UFSM_TOKEN_OP_COLON       )
                           .addOperator(make_string<StringType>(","   ), UFSM_TOKEN_OP_COMMA       )
+                          .addOperator(make_string<StringType>("::"  ), UFSM_TOKEN_OP_SCOPE       )
 
                           .template addStringLiteralParser<CppStringLiteralParser>( UMBA_TOKENIZER_TOKEN_STRING_LITERAL
                                                                                   , { make_string<StringType>("\"")   // UMBA_TOKENIZER_TOKEN_STRING_LITERAL itself
@@ -118,6 +119,8 @@ struct TokenizerConfigurator
                                                                                     { {"namespace"       , UFSM_TOKEN_KWD_NAMESPACE    }
                                                                                     , {"fsm"             , UFSM_TOKEN_KWD_FSM          }
                                                                                     , {"state-machine"   , UFSM_TOKEN_KWD_FSM          }
+                                                                                    , {"definitions"     , UFSM_TOKEN_KWD_DEFINITIONS  }
+
                                                                                     , {"events"          , UFSM_TOKEN_KWD_EVENTS       }
                                                                                     , {"actions"         , UFSM_TOKEN_KWD_ACTIONS      }
                                                                                     , {"states"          , UFSM_TOKEN_KWD_STATES       }

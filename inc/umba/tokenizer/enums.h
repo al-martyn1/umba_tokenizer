@@ -23,6 +23,7 @@ namespace tokenizer{
 //#!ParserWaitForTokenFlags
 enum class ParserWaitForTokenFlags : std::uint32_t
 {
+    none                      = 0x0000 /*!< don't stop on any insignificant event */,
     stopOnSingleLineComment   = 0x0001 /*!< Остановится на однострочном коменте */,
     stopOnMultiLineComment    = 0x0002 /*!< Остановится на многострочном коменте */,
     stopOnComment             = 0x0003 /*!< Остановится на любом коменте */,
@@ -38,6 +39,7 @@ MARTY_CPP_MAKE_ENUM_FLAGS(ParserWaitForTokenFlags)
 
 MARTY_CPP_ENUM_FLAGS_SERIALIZE_BEGIN( ParserWaitForTokenFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( ParserWaitForTokenFlags::stopOnSingleLineComment , "StopOnSingleLineComment" );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( ParserWaitForTokenFlags::none                    , "None"                    );
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( ParserWaitForTokenFlags::stopOnMultiLineComment  , "StopOnMultiLineComment"  );
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( ParserWaitForTokenFlags::stopOnComment           , "StopOnComment"           );
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( ParserWaitForTokenFlags::stopOnSpace             , "StopOnSpace"             );
@@ -50,6 +52,7 @@ MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( ParserWaitForTokenFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( ParserWaitForTokenFlags::stopOnSingleLineComment , "stop-on-single-line-comment" );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( ParserWaitForTokenFlags::stopOnSingleLineComment , "stop_on_single_line_comment" );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( ParserWaitForTokenFlags::stopOnSingleLineComment , "stoponsinglelinecomment"     );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( ParserWaitForTokenFlags::none                    , "none"                        );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( ParserWaitForTokenFlags::stopOnMultiLineComment  , "stop-on-multi-line-comment"  );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( ParserWaitForTokenFlags::stopOnMultiLineComment  , "stop_on_multi_line_comment"  );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( ParserWaitForTokenFlags::stopOnMultiLineComment  , "stoponmultilinecomment"      );

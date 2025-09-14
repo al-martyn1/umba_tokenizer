@@ -41,6 +41,7 @@ umba-enum-gen %GEN_OPTS% %HEX2% %TPL_OVERRIDE% %SNIPPETOPTIONS_GEN_FLAGS%       
     --override-template-parameter=EnumNameFormat:$(ENAMNAME)                                                 ^
     %UINT32% %HEX4% -E=StateActionKind                      -F=@StateActionKind.txt                          ^
     %UINT32% %HEX4% -E=NamespaceEntryKind                   -F=@NamespaceEntryKind.txt                       ^
+    %UINT32% %HEX4% -E=InheritanceListMode                  -F=@InheritanceListMode.txt                      ^
     %FLAGS%                                                                                                  ^
     %UINT32% %HEX4% -E=ActionFlags                          -F=@ActionFlags.txt                              ^
     %UINT32% %HEX4% -E=EventFlags                           -F=@EventFlags.txt                               ^

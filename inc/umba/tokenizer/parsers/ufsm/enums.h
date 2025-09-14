@@ -92,6 +92,31 @@ MARTY_CPP_ENUM_CLASS_DESERIALIZE_BEGIN( NamespaceEntryKind, std::map, 1 )
 MARTY_CPP_ENUM_CLASS_DESERIALIZE_END( NamespaceEntryKind, std::map, 1 )
 
 
+//#!InheritanceListMode
+enum class InheritanceListMode : std::uint32_t
+{
+    invalid    = (std::uint32_t)(-1) /*!<  */,
+    inherits   = 0x0000 /*!<  */,
+    uses       = 0x0001 /*!<  */
+
+}; // enum 
+//#!
+
+MARTY_CPP_MAKE_ENUM_IS_FLAGS_FOR_NON_FLAGS_ENUM(InheritanceListMode)
+
+MARTY_CPP_ENUM_CLASS_SERIALIZE_BEGIN( InheritanceListMode, std::map, 1 )
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( InheritanceListMode::invalid    , "Invalid"  );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( InheritanceListMode::inherits   , "Inherits" );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( InheritanceListMode::uses       , "Uses"     );
+MARTY_CPP_ENUM_CLASS_SERIALIZE_END( InheritanceListMode, std::map, 1 )
+
+MARTY_CPP_ENUM_CLASS_DESERIALIZE_BEGIN( InheritanceListMode, std::map, 1 )
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( InheritanceListMode::invalid    , "invalid"  );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( InheritanceListMode::inherits   , "inherits" );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( InheritanceListMode::uses       , "uses"     );
+MARTY_CPP_ENUM_CLASS_DESERIALIZE_END( InheritanceListMode, std::map, 1 )
+
+
 //#!ActionFlags
 enum class ActionFlags : std::uint32_t
 {

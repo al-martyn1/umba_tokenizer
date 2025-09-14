@@ -1,0 +1,3 @@
+invalid=-1
+inherits
+uses

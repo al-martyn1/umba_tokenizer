@@ -1,3 +1,5 @@
+none                      = 0    // don't stop on any insignificant event
+
 stopOnSingleLineComment   = 1    // Остановится на однострочном коменте
 stopOnMultiLineComment    = 2    // Остановится на многострочном коменте
 stopOnComment             = 3    // Остановится на любом коменте

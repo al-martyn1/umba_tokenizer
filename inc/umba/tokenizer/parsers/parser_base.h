@@ -89,6 +89,11 @@ public: // types & ctors
 public: // methods
 //protected: // methods
 
+    FullTokenPosition getFullTokenPosition(TokenPosType pos) const
+    {
+        return m_pTokens->getFullTokenPosition(pos);
+    }
+
     file_id_type getFileId() const
     {
         return m_pTokens->getFileId();
@@ -132,6 +137,75 @@ public: // methods
 
 
     template<typename KindStringGetter>
+    void logSimpleUnexpected( const TokenCollectionItemType *pTokenInfo
+                      , umba::tokenizer::payload_type payloadUnexpected
+                      , KindStringGetter kindStringGetter
+                      ) const
+    {
+        // logUnexpected(pTokenInfo, {payloadExpected}, prefixMsg, kindStringGetter);
+
+        std::string unexpectedTokenKind = kindStringGetter(payloadUnexpected);
+        std::string msgId = "unexpected-" + unexpectedTokenKind;
+        std::string msg = "got unexpected '$(UnexpectedTokenKind)'";
+        auto formatMessage = FormatMessage<std::string>();
+        formatMessage.arg("UnexpectedTokenKind", unexpectedTokenKind);
+
+        #if 0
+        std::string unexpectedTokenValue;
+
+        // Ключевые слова получаются из идентификаторов, просто обретают новый ID
+        // Полезная нагрузка у них остаётся того же типа
+        if ( pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_IDENTIFIER
+          || (pTokenInfo->tokenType>=UMBA_TOKENIZER_TOKEN_KEYWORD_SET1_FIRST && pTokenInfo->tokenType<=UMBA_TOKENIZER_TOKEN_KEYWORD_SET8_LAST)
+           )
+        {
+            const token_parsed_data_type* pParsedData = getTokenParsedData(pTokenInfo);
+            auto identifierData = std::get<typename tokenizer_type::IdentifierDataHolder>(*pParsedData);
+            unexpectedTokenValue = identifierData.pData->value;
+        }
+
+        if (!unexpectedTokenValue.empty())
+        {
+            msg += " ('$(Value)')";
+        }
+
+        // msg += "";
+        #endif
+
+        TextPositionInfo textPosInfo = getTokenPositionInfo(pTokenInfo);
+        std::string erroneousLineText = m_pTokens->getTokenTextLine(textPosInfo);
+
+        m_pTokens->getLog()->formatArgs = formatMessage.values();
+
+        m_pTokens->getLog()->logErrorEvent( umba::tokenizer::log::ParserErrorEventType::customError
+                                          , textPosInfo
+                                          , payloadUnexpected // pTokenInfo->tokenType
+                                          , std::string() // unexpectedTokenValue  // erroneousValue
+                                          , erroneousLineText // std::string() // erroneousLineText - пока не ищем
+                                          , msgId, msg
+                                          , 0, 0
+                                          );
+    }
+    // void logErrorEvent( ParserErrorEventType          eventType
+    //                   , const TextPositionInfo        &textPos
+    //                   , umba::tokenizer::payload_type payload
+    //                   , std::string                   erroneousValue     // Can be empty, can contain non-printable chars 
+    //                   , std::string                   erroneousLineText  // Can be empty, can contain non-printable chars 
+    //                   , const std::string             &customMsgId       // Can be empty
+    //                   , const std::string             &customMessage     // Can be empty
+    //                   , const char* srcFile,          int srcLine
+    //                   ) const
+    //                   override
+
+    template<typename KindStringGetter>
+    void logSimpleUnexpected( const TokenCollectionItemType *pTokenInfo
+                      , KindStringGetter kindStringGetter
+                      ) const
+    {
+        logSimpleUnexpected( pTokenInfo, pTokenInfo->tokenType, kindStringGetter );
+    }
+
+    template<typename KindStringGetter>
     void logUnexpected( const TokenCollectionItemType *pTokenInfo
                       , umba::tokenizer::payload_type payloadExpected
                       , const std::string &prefixMsg
@@ -140,7 +214,6 @@ public: // methods
     {
         logUnexpected(pTokenInfo, {payloadExpected}, prefixMsg, kindStringGetter);
     }
-
 
     template<typename KindStringGetter>
     void logUnexpected( const TokenCollectionItemType *pTokenInfo
