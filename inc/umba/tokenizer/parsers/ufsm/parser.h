@@ -1709,7 +1709,6 @@ public:
                 // Ничего дополнительно не задано, считаем событие как external
                 evd.flags |= EventFlags::external;
                 sm.addDefinition(evd);
-                // readNextToken();
                 continue;
             }
 
@@ -1729,9 +1728,6 @@ public:
 
             if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
             {
-                // cmdStopTraffic : external - "The RED light (stop) mode is on";
-                // tmStopTraffic : external generated;
-
                 readNextToken();
 
                 if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_EXTERNAL)
@@ -1759,24 +1755,17 @@ public:
             }
             else if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_ASSIGN)
             {
-                // evIntegralLiteral = evBoolLiteral | evIntLiteral - "Пришел интегральный литерал";
-
                 bool waitSep = false;
 
                 for( readNextToken()
-                   ; umba::TheFlags(m_pTokenInfo->tokenType).oneOf(UFSM_TOKEN_OP_OR, UMBA_TOKENIZER_TOKEN_IDENTIFIER)
+                   ; umba::TheValue(m_pTokenInfo->tokenType).oneOf(UFSM_TOKEN_OP_OR, UMBA_TOKENIZER_TOKEN_IDENTIFIER)
                    ; readNextToken()
                    )
                 {
                     if (waitSep)
                     {
                         if (m_pTokenInfo->tokenType!=UFSM_TOKEN_OP_OR)
-                        {
-                            //if (!evd.basicEvents.empty())
-                                break;
-                            // else
-                            //     return checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ );
-                        }
+                            break;
 
                         waitSep = false;
                     }
@@ -1815,8 +1804,165 @@ public:
 
     }
 
-    bool parseStateMachineActions(StateMachineDefinition &  /* sm */ )
+    // deferStopTrafficWarning  : external generates tmStopTrafficWarning 
+    //     - "Generates deferred tmStopTrafficWarning event"; // starts one shot timer for tmStopTrafficWarning
+    // deferStopTraffic         : external generates tmStopTraffic; // starts one shot timer for tmStopTraffic
+    // turnOff   = greenOff, redOff - "Turn all lights off"; 
+    // onlyGreen = redOff, greenOn;
+
+    bool parseStateMachineActions(StateMachineDefinition &sm)
     {
+        // Пропускаем ключевое слово events, вычитываем следующий токен - должна быть открывающая фигурная скобка
+        readNextToken();
+
+        ActionFlags commonFlags = ActionFlags::none;
+
+        if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
+        {
+            readNextToken();
+            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_OVERRIDE} /* , "'display-options' directive: invalid option value" */ ))
+                return false; // а пришло хз что
+            commonFlags = ActionFlags::override;
+            readNextToken();
+        }
+
+        if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+            return false; // а пришло хз что
+
+        while(true)
+        {
+            // Ждём идентификатор или конец блока
+            readNextToken();
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_BRACKET_SCOPE_CLOSE)
+                return true;
+
+            if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
+                return false; // а пришло хз что
+
+            ActionDefinition ad;
+            ad.positionInfo = getFullPos();
+            ad.name  = extractIdentifierName(m_pTokenInfo);
+            ad.flags = commonFlags;
+
+            readNextToken();
+
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_SEMICOLON)
+            {
+                // Ничего дополнительно не задано, считаем событие как external
+                ad.flags |= ActionFlags::external;
+                sm.addDefinition(ad);
+                continue;
+            }
+
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+            {
+                readNextToken();
+                if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
+                    return false; // а пришло хз что
+                ad.description = extractLiteral(m_pTokenInfo);
+                ad.flags |= ActionFlags::external;
+                sm.addDefinition(ad);
+                readNextToken();
+                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
+                    return false;
+                continue;
+            }
+
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
+            {
+                readNextToken();
+
+                if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_EXTERNAL)
+                {
+                    ad.flags |= ActionFlags::external;
+                    readNextToken();
+                }
+
+                if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_GENERATES)
+                {
+                    ad.flags |= ActionFlags::external | ActionFlags::generates;
+                    // readNextToken();
+                    bool waitSep = false;
+                    for( readNextToken()
+                       ; umba::TheValue(m_pTokenInfo->tokenType).oneOf(UFSM_TOKEN_OP_COMMA, UMBA_TOKENIZER_TOKEN_IDENTIFIER)
+                       ; readNextToken()
+                       )
+                    {
+                        if (waitSep)
+                        {
+                            if (m_pTokenInfo->tokenType!=UFSM_TOKEN_OP_COMMA)
+                                break;
+                            waitSep = false;
+                        }
+                        else // ждём имя (идентификатор), после разделителя или в начале
+                        {
+                            if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ ))
+                                return false; // а пришло хз что
+                            ad.generates.emplace_back(extractIdentifierName(m_pTokenInfo));
+                            waitSep = true;
+                        }
+                    }
+
+                }
+
+                if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+                {
+                    readNextToken();
+                    if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
+                        return false; // а пришло хз что
+                    ad.description = extractLiteral(m_pTokenInfo);
+                    readNextToken();
+                }
+
+                sm.addDefinition(ad);
+            }
+            else if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_ASSIGN)
+            {
+                bool waitSep = false;
+
+                for( readNextToken()
+                   ; umba::TheValue(m_pTokenInfo->tokenType).oneOf(UFSM_TOKEN_OP_COMMA, UMBA_TOKENIZER_TOKEN_IDENTIFIER)
+                   ; readNextToken()
+                   )
+                {
+                    if (waitSep)
+                    {
+                        if (m_pTokenInfo->tokenType!=UFSM_TOKEN_OP_COMMA)
+                            break;
+                        waitSep = false;
+                    }
+                    else // ждём имя (идентификатор), после разделителя или в начале
+                    {
+                        if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ ))
+                            return false; // а пришло хз что
+                        ad.basicActions.emplace_back(extractIdentifierName(m_pTokenInfo));
+                        waitSep = true;
+                    }
+                }
+
+                if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+                {
+                    readNextToken();
+                    if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
+                        return false; // а пришло хз что
+                    ad.description = extractLiteral(m_pTokenInfo);
+                    readNextToken();
+                }
+
+                sm.addDefinition(ad);
+
+            }
+            else
+            {
+                return checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON,UFSM_TOKEN_OP_DESCR_FOLLOWS,UFSM_TOKEN_OP_COLON,UFSM_TOKEN_OP_ASSIGN} /* , "'display-options' directive: invalid option value" */ );
+            }
+
+            // Тут у нас должна быть точка с запятой
+            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
+                return false; // а пришло хз что
+
+        } // while(true)
+
         return false;
     }
 
@@ -1911,7 +2057,7 @@ public:
 
         // В начале цикла - не вычитываем, так как у нас уже идентификатор или разделитель NS
         for( // m_pTokenInfo = BaseClass::waitForSignificantTokenChecked( &m_tokenPos, ParserWaitForTokenFlags::none)
-           ; umba::TheFlags(m_pTokenInfo->tokenType).oneOf(UFSM_TOKEN_OP_SCOPE, UMBA_TOKENIZER_TOKEN_IDENTIFIER)
+           ; umba::TheValue(m_pTokenInfo->tokenType).oneOf(UFSM_TOKEN_OP_SCOPE, UMBA_TOKENIZER_TOKEN_IDENTIFIER)
            ; m_pTokenInfo = BaseClass::waitForSignificantTokenChecked( &m_tokenPos, ParserWaitForTokenFlags::none)
            )
         {
@@ -1943,7 +2089,7 @@ public:
         bool waitComma = false;
         
         for( m_pTokenInfo = BaseClass::waitForSignificantTokenChecked( &m_tokenPos, ParserWaitForTokenFlags::none) // пропустили открывающую скобку
-           ; umba::TheFlags(m_pTokenInfo->tokenType).oneOf( UFSM_TOKEN_OP_COMMA
+           ; umba::TheValue(m_pTokenInfo->tokenType).oneOf( UFSM_TOKEN_OP_COMMA
                                                           , UFSM_TOKEN_KWD_ACTIONS    
                                                           , UFSM_TOKEN_KWD_EVENTS     
                                                           , UFSM_TOKEN_KWD_PREDICATES 
@@ -1993,7 +2139,7 @@ public:
         readNextToken(); 
         while(true)
         {
-            if (umba::TheFlags(m_pTokenInfo->tokenType).oneOf(UFSM_TOKEN_KWD_USES, UFSM_TOKEN_KWD_INHERITS))
+            if (umba::TheValue(m_pTokenInfo->tokenType).oneOf(UFSM_TOKEN_KWD_USES, UFSM_TOKEN_KWD_INHERITS))
             {
                 if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_USES)
                     inheritanceListMode = InheritanceListMode::uses;
@@ -2027,13 +2173,27 @@ public:
             if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_OVERRIDE)
             {
                 readNextToken(); 
-                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
-                    return false;
-                if (!parseInheritanceOverrideFlags(ple.overrideFlags))
-                    return false;
-                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
-                    return false;
-                readNextToken(); 
+                if (m_pTokenInfo->tokenType!=UFSM_TOKEN_BRACKET_SCOPE_OPEN) // override без блока - это all
+                {
+                    ple.overrideFlags = InheritanceOverrideFlags::all;
+                }
+                else
+                {
+                    if (!parseInheritanceOverrideFlags(ple.overrideFlags))
+                        return false;
+                    if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
+                        return false;
+                    readNextToken(); 
+                
+                }
+
+                // if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+                //     return false;
+                // if (!parseInheritanceOverrideFlags(ple.overrideFlags))
+                //     return false;
+                // if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
+                //     return false;
+                // readNextToken(); 
 
                 // Если имя абсолютное - проверяем наличие с корня
                 // Если имя относительное, то пытаемся найти относительно текущего NS,
