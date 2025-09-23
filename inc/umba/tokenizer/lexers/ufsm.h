@@ -68,18 +68,19 @@ makeTokenizerBuilder()
                           .addNumbersPrefix(make_string<StringType>("0X"), UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_HEX, true) // allowUseExistingToken
                           #endif
 
-                          .addOperator(make_string<StringType>("-"   ), UFSM_TOKEN_OP_DESCR_FOLOWS)
-                          .addOperator(make_string<StringType>("*"   ), UFSM_TOKEN_OP_ANY         )
-                          .addOperator(make_string<StringType>("~"   ), UFSM_TOKEN_OP_NOT         )
-                          .addOperator(make_string<StringType>("&"   ), UFSM_TOKEN_OP_AND         )
-                          .addOperator(make_string<StringType>("|"   ), UFSM_TOKEN_OP_OR          )
-                          .addOperator(make_string<StringType>("!"   ), UFSM_TOKEN_OP_NOT_ALTER   )
-                          .addOperator(make_string<StringType>("&&"  ), UFSM_TOKEN_OP_AND_ALTER   )
-                          .addOperator(make_string<StringType>("||"  ), UFSM_TOKEN_OP_OR_ALTER    )
-                          .addOperator(make_string<StringType>("="   ), UFSM_TOKEN_OP_ASSIGN      )
-                          .addOperator(make_string<StringType>(":"   ), UFSM_TOKEN_OP_COLON       )
-                          .addOperator(make_string<StringType>(","   ), UFSM_TOKEN_OP_COMMA       )
-                          .addOperator(make_string<StringType>("::"  ), UFSM_TOKEN_OP_SCOPE       )
+                          .addOperator(make_string<StringType>("-"   ), UFSM_TOKEN_OP_DESCR_FOLLOWS)
+                          .addOperator(make_string<StringType>("*"   ), UFSM_TOKEN_OP_ANY          )
+                          .addOperator(make_string<StringType>("~"   ), UFSM_TOKEN_OP_NOT          )
+                          .addOperator(make_string<StringType>("&"   ), UFSM_TOKEN_OP_AND          )
+                          .addOperator(make_string<StringType>("|"   ), UFSM_TOKEN_OP_OR           )
+                          .addOperator(make_string<StringType>("!"   ), UFSM_TOKEN_OP_NOT_ALTER    )
+                          .addOperator(make_string<StringType>("&&"  ), UFSM_TOKEN_OP_AND_ALTER    )
+                          .addOperator(make_string<StringType>("||"  ), UFSM_TOKEN_OP_OR_ALTER     )
+                          .addOperator(make_string<StringType>("="   ), UFSM_TOKEN_OP_ASSIGN       )
+                          .addOperator(make_string<StringType>(":"   ), UFSM_TOKEN_OP_COLON        )
+                          .addOperator(make_string<StringType>(";"   ), UFSM_TOKEN_OP_SEMICOLON    )
+                          .addOperator(make_string<StringType>(","   ), UFSM_TOKEN_OP_COMMA        )
+                          .addOperator(make_string<StringType>("::"  ), UFSM_TOKEN_OP_SCOPE        )
 
                           .template addStringLiteralParser<CppStringLiteralParser>( UMBA_TOKENIZER_TOKEN_STRING_LITERAL
                                                                                   , { make_string<StringType>("\"")   // UMBA_TOKENIZER_TOKEN_STRING_LITERAL itself
@@ -121,11 +122,19 @@ struct TokenizerConfigurator
                                                                                     , {"state-machine"   , UFSM_TOKEN_KWD_FSM          }
                                                                                     , {"definitions"     , UFSM_TOKEN_KWD_DEFINITIONS  }
 
+                                                                                    , {"uses"            , UFSM_TOKEN_KWD_USES         }
+                                                                                    , {"inherits"        , UFSM_TOKEN_KWD_INHERITS     }
+                                                                                    , {"override"        , UFSM_TOKEN_KWD_OVERRIDE     }
+                                                                                    , {"generated"       , UFSM_TOKEN_KWD_GENERATED    }
+                                                                                    , {"generates"       , UFSM_TOKEN_KWD_GENERATES    }
+
                                                                                     , {"events"          , UFSM_TOKEN_KWD_EVENTS       }
                                                                                     , {"actions"         , UFSM_TOKEN_KWD_ACTIONS      }
                                                                                     , {"states"          , UFSM_TOKEN_KWD_STATES       }
                                                                                     , {"predicates"      , UFSM_TOKEN_KWD_PREDICATES   }
                                                                                     , {"transitions"     , UFSM_TOKEN_KWD_TRANSITIONS  }
+                                                                                    , {"all"             , UFSM_TOKEN_KWD_ALL          } // used in override list
+
                                                                                     , {"external"        , UFSM_TOKEN_KWD_EXTERNAL     }
                                                                                     , {"initial"         , UFSM_TOKEN_KWD_INITIAL      }
                                                                                     , {"final"           , UFSM_TOKEN_KWD_FINAL        }
@@ -158,7 +167,7 @@ struct TokenizerConfigurator
                                                                                   , true // case sensitive
                                                                                   );
 
-        tokenizer.template installTokenFilter<KebabCaseComposingFilter>(UFSM_TOKEN_OP_DESCR_FOLOWS);
+        tokenizer.template installTokenFilter<KebabCaseComposingFilter>(UFSM_TOKEN_OP_DESCR_FOLLOWS);
         tokenizer.template installTokenFilter<SimpleReplaceFilter>(UFSM_TOKEN_OP_NOT_ALTER, UFSM_TOKEN_OP_NOT);
         tokenizer.template installTokenFilter<SimpleReplaceFilter>(UFSM_TOKEN_OP_AND_ALTER, UFSM_TOKEN_OP_AND);
         tokenizer.template installTokenFilter<SimpleReplaceFilter>(UFSM_TOKEN_OP_OR_ALTER , UFSM_TOKEN_OP_OR );

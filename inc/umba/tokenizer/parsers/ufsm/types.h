@@ -174,7 +174,27 @@ public: // methods
             return false;
 
         if (name_.size()>1)
-            return findEntry(name_.getTail(), ppe);
+        {
+            NamespaceEntryKind kind = getNamespaceEntryKind(it->second);
+            if (kind!=NamespaceEntryKind::nsDefinition)
+                return false;
+
+            auto &foundNs = std::get<NamespaceDefinition>(it->second);
+
+        // NamespaceEntryKind kind = getNamespaceEntryKind(it->second);
+        // if (kind!=NamespaceEntryKind::nsDefinition)
+        // {
+        //     NamespaceDefinition tmpNs;
+        //     tmpNs.positionInfo = newPosInfo;
+        //     tmpNs.name         = name_.front();
+        //  
+        //     const auto &prevDef = std::get<StateMachineDefinition>(it->second);
+        //  
+        //     throw looking_for_error(makeTypeValueInfo(prevDef), makeTypeValueInfo(tmpNs));
+        // }
+
+            return foundNs.findEntry(name_.getTail(), ppe);
+        }
 
         // not empty, e.g. size==1
         if (ppe)
@@ -186,6 +206,58 @@ public: // methods
     bool findEntry(const FullQualifiedName &name_, NamespaceEntry **ppe = 0)
     {
         return findEntry(name_, 0, ppe);
+    }
+
+    // Находит определение по имени. Если имя относительное, сначала ищется относительно текущего NS, а потом с корня
+    NamespaceEntryKind findAnyDefinition( const FullQualifiedName &name_
+                                        , const FullQualifiedName &curNsName
+                                        , NamespaceDefinition *pRootNs
+                                        , FullQualifiedName *pFoundName = 0 // found full name
+                                        )
+    {
+        NamespaceEntry *pFoundEntry = 0;
+
+        if (name_.isAbsolute())
+        {
+            if (!pRootNs)
+                return NamespaceEntryKind::none;
+
+            if (!pRootNs->findEntry(name_.toRelative(), pRootNs, &pFoundEntry))
+                return NamespaceEntryKind::none;
+
+            if (!pFoundEntry)
+                return NamespaceEntryKind::none;
+
+            NamespaceEntryKind kind = getNamespaceEntryKind(*pFoundEntry);
+            if (kind==NamespaceEntryKind::none)
+                return kind;
+
+            if (pFoundName)
+               *pFoundName = name_;
+
+            return kind;
+        }
+
+        // У нас имя относительное, ищем его сначала с текущего NS
+        if (findEntry(name_, pRootNs, &pFoundEntry) && pFoundEntry)
+        {
+            NamespaceEntryKind kind = getNamespaceEntryKind(*pFoundEntry);
+            if (kind==NamespaceEntryKind::none)
+                return kind;
+
+            if (pFoundName)
+            {
+               // Делаем абсолютное имя из текущего пути NS и искомого имени
+               *pFoundName = curNsName.toAbsolute(); // на всякий случай делаем абсолютным
+               pFoundName->append(name_);
+               pFoundName->positionInfo = name_.positionInfo;
+            }
+
+            return kind;
+        }
+
+        // У нас имя относительное, но пытаемся его найти от корня - алгоритм такой же, как в плюсах
+        return findAnyDefinition( name_.toAbsolute(), curNsName, pRootNs, pFoundName);
     }
 
 
@@ -345,6 +417,7 @@ std::string getNamespaceEntryKindString(NamespaceEntryKind kind, StateMachineFla
     switch(kind)
     {
         case NamespaceEntryKind::invalid      : break;
+        case NamespaceEntryKind::none         : kindStr = "none"; break;
         case NamespaceEntryKind::nsDefinition : kindStr = "namespace"; break;
         case NamespaceEntryKind::fsmDefinition:
              if ((flags&StateMachineFlags::stateMachine)==0)

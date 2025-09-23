@@ -637,7 +637,7 @@ public:
 
     TextPositionInfo getTokenPositionInfo(token_pos_type pos) const
     {
-        getTokenPositionInfo(getTokenBysPos(pos));
+        return getTokenPositionInfo(getTokenBysPos(pos));
     }
 
     FullTokenPosition getFullTokenPosition(token_pos_type pos) const

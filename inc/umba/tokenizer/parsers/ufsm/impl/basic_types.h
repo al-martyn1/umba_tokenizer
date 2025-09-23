@@ -143,6 +143,14 @@ FullQualifiedName FullQualifiedName::toRelative() const
 }
 
 inline
+FullQualifiedName FullQualifiedName::toAbsolute() const
+{
+    FullQualifiedName res = *this;
+    res.flags |= FullQualifiedNameFlags::absolute;
+    return res;
+}
+
+inline
 FullQualifiedName FullQualifiedName::getTail() const
 {
     if (empty())

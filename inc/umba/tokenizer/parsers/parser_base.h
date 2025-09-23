@@ -114,6 +114,11 @@ public: // methods
         return m_pTokens->getTokenPositionInfo(ptki);
     }
 
+    TextPositionInfo getTokenPositionInfo(TokenPosType pos) const
+    {
+        return m_pTokens->getTokenPositionInfo(pos);
+    }
+
     const char_type* getTextPointer(const TokenCollectionItemType *ptki) const
     {
         return m_pTokens->getTextPointer(ptki);
@@ -135,6 +140,23 @@ public: // methods
                                           );
     }
 
+    //TextPositionInfo getTokenPositionInfo(token_pos_type pos) const
+
+    void logSimpleMessage(TokenPosType pos, umba::tokenizer::payload_type tokenType, const std::string &msgId, const std::string &msg) const
+    {
+        TextPositionInfo textPosInfo = getTokenPositionInfo(pos);
+        std::string erroneousLineText = m_pTokens->getTokenTextLine(textPosInfo);
+
+        m_pTokens->getLog()->logErrorEvent( umba::tokenizer::log::ParserErrorEventType::customError
+                                          , textPosInfo
+                                          , tokenType
+                                          , std::string() // unexpectedTokenValue  // erroneousValue
+                                          , erroneousLineText // std::string() // erroneousLineText - пока не ищем
+                                          , msgId, msg
+                                          , 0, 0
+                                          );
+    }
+
 
     template<typename KindStringGetter>
     void logSimpleUnexpected( const TokenCollectionItemType *pTokenInfo
@@ -149,28 +171,6 @@ public: // methods
         std::string msg = "got unexpected '$(UnexpectedTokenKind)'";
         auto formatMessage = FormatMessage<std::string>();
         formatMessage.arg("UnexpectedTokenKind", unexpectedTokenKind);
-
-        #if 0
-        std::string unexpectedTokenValue;
-
-        // Ключевые слова получаются из идентификаторов, просто обретают новый ID
-        // Полезная нагрузка у них остаётся того же типа
-        if ( pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_IDENTIFIER
-          || (pTokenInfo->tokenType>=UMBA_TOKENIZER_TOKEN_KEYWORD_SET1_FIRST && pTokenInfo->tokenType<=UMBA_TOKENIZER_TOKEN_KEYWORD_SET8_LAST)
-           )
-        {
-            const token_parsed_data_type* pParsedData = getTokenParsedData(pTokenInfo);
-            auto identifierData = std::get<typename tokenizer_type::IdentifierDataHolder>(*pParsedData);
-            unexpectedTokenValue = identifierData.pData->value;
-        }
-
-        if (!unexpectedTokenValue.empty())
-        {
-            msg += " ('$(Value)')";
-        }
-
-        // msg += "";
-        #endif
 
         TextPositionInfo textPosInfo = getTokenPositionInfo(pTokenInfo);
         std::string erroneousLineText = m_pTokens->getTokenTextLine(textPosInfo);
@@ -378,6 +378,15 @@ public: // methods
         
         return pTokenInfo;
 
+    }
+
+    const TokenInfoType* waitForSignificantTokenChecked(TokenPosType *pTokenPos=0, ParserWaitForTokenFlags waitFlags=ParserWaitForTokenFlags::stopOnAny)
+    {
+        const TokenInfoType* pRes = waitForSignificantToken(pTokenPos, waitFlags);
+        if (!pRes)
+            throw std::runtime_error("ParserBase::waitForSignificantTokenChecked: something goes wrong");
+
+        return pRes;
     }
 
     tokenizer_type& getTokenizer()

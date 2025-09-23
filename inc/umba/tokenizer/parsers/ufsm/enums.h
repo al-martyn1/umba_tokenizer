@@ -67,8 +67,9 @@ MARTY_CPP_ENUM_CLASS_DESERIALIZE_END( StateActionKind, std::map, 1 )
 enum class NamespaceEntryKind : std::uint32_t
 {
     invalid         = (std::uint32_t)(-1) /*!<  */,
-    nsDefinition    = 0x0000 /*!<  */,
-    fsmDefinition   = 0x0001 /*!<  */
+    none            = 0x0000 /*!<  */,
+    nsDefinition    = 0x0001 /*!<  */,
+    fsmDefinition   = 0x0002 /*!<  */
 
 }; // enum 
 //#!
@@ -77,12 +78,14 @@ MARTY_CPP_MAKE_ENUM_IS_FLAGS_FOR_NON_FLAGS_ENUM(NamespaceEntryKind)
 
 MARTY_CPP_ENUM_CLASS_SERIALIZE_BEGIN( NamespaceEntryKind, std::map, 1 )
     MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( NamespaceEntryKind::invalid         , "Invalid"       );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( NamespaceEntryKind::none            , "None"          );
     MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( NamespaceEntryKind::nsDefinition    , "NsDefinition"  );
     MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( NamespaceEntryKind::fsmDefinition   , "FsmDefinition" );
 MARTY_CPP_ENUM_CLASS_SERIALIZE_END( NamespaceEntryKind, std::map, 1 )
 
 MARTY_CPP_ENUM_CLASS_DESERIALIZE_BEGIN( NamespaceEntryKind, std::map, 1 )
     MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( NamespaceEntryKind::invalid         , "invalid"        );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( NamespaceEntryKind::none            , "none"           );
     MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( NamespaceEntryKind::nsDefinition    , "ns-definition"  );
     MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( NamespaceEntryKind::nsDefinition    , "ns_definition"  );
     MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( NamespaceEntryKind::nsDefinition    , "nsdefinition"   );
@@ -220,7 +223,7 @@ enum class InheritanceOverrideFlags : std::uint32_t
     predicates    = 0x0004 /*!<  */,
     states        = 0x0008 /*!<  */,
     transitions   = 0x0010 /*!<  */,
-    all           = events|actions|predicates|states|transitions /*!<  */
+    all           = actions|events|predicates|states|transitions /*!<  */
 
 }; // enum 
 //#!

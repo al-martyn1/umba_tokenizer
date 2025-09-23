@@ -54,6 +54,7 @@ public: // methods
 
     bool isAbsolute() const;
     FullQualifiedName toRelative() const;
+    FullQualifiedName toAbsolute() const;
     FullQualifiedName getTail   () const;
     void tailRemove(std::size_t nItems);
     void clear();

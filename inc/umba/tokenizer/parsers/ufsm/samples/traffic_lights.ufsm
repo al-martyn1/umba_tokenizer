@@ -27,7 +27,8 @@ namespace samples::traffic_lights
 //----------------------------------------------------------------------------
 // Управляющие команды
 // Всё почти как в state-machine, но из definitions нельзя сгенерировать автомат, и нельзя задавать переходы
-definitions TrafficLightCommands - "Defines commands for Traffic Light"
+definitions TrafficLightCommands
+- "Defines commands for Traffic Light" 
 {
     events
     {

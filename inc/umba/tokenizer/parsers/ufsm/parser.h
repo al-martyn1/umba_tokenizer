@@ -139,10 +139,34 @@ public:
         return identifierData.pData->value;
     }
 
+    std::string extractLiteral(const TokenInfoType *pTokenInfo)
+    {
+        auto pTokenParsedData = BaseClass::getTokenParsedData(pTokenInfo);
+        auto literalData = std::get<typename TokenizerType::StringLiteralDataHolder>(*pTokenParsedData);
+        return literalData.pData->value;
+    }
+
     FullTokenPosition getFullPos(TokenPosType pos) const  { return BaseClass::getFullTokenPosition(pos); }
     FullTokenPosition getFullPos() const                  { return getFullPos(m_tokenPos); }
 
 
+    NamespaceDefinition* getCurrentNamespace()
+    {
+        NamespaceDefinition* pCurNs = ctx.rootNs.getNamespace(ctx.curNsName, &ctx.rootNs, ctx.lastNsPos);
+        if (!pCurNs)
+            throw std::runtime_error("Something goes wrong");
+        return pCurNs;
+    }
+
+    void readNextToken(ParserWaitForTokenFlags readFlags=ParserWaitForTokenFlags::none)
+    {
+        m_pTokenInfo = BaseClass::waitForSignificantTokenChecked( &m_tokenPos, readFlags);
+    }
+
+    // m_pTokenInfo = BaseClass::waitForSignificantTokenChecked( &m_tokenPos, ParserWaitForTokenFlags::none);
+    // readNextToken();
+    
+    
 
 
 //    template<typename TVal>
@@ -485,12 +509,40 @@ public:
             case UFSM_TOKEN_KWD_NAMESPACE        : return "namespace";
             case UFSM_TOKEN_KWD_FSM              : return "state-machine";
             case UFSM_TOKEN_KWD_DEFINITIONS      : return "definitions";
-            case UFSM_TOKEN_OP_SCOPE             : return "scope resolution operator";
-            case UFSM_TOKEN_BRACKET_SCOPE_OPEN   : return "scope open bracket";
-            case UFSM_TOKEN_BRACKET_SCOPE_CLOSE  : return "scope close bracket";
+            case UFSM_TOKEN_BRACKET_SCOPE_OPEN   : return "scope-open-bracket";
+            case UFSM_TOKEN_BRACKET_SCOPE_CLOSE  : return "scope-close-bracket";
 
             case UMBA_TOKENIZER_TOKEN_IDENTIFIER : return "identifier";
+            case UMBA_TOKENIZER_TOKEN_STRING_LITERAL: return "string-literal";
 
+            case UFSM_TOKEN_KWD_EVENTS           : return "events";
+            case UFSM_TOKEN_KWD_ACTIONS          : return "actions";
+            case UFSM_TOKEN_KWD_STATES           : return "states";
+            case UFSM_TOKEN_KWD_PREDICATES       : return "predicates";
+            case UFSM_TOKEN_KWD_TRANSITIONS      : return "transitios";
+            case UFSM_TOKEN_KWD_ALL              : return "all";
+
+            case UFSM_TOKEN_KWD_USES             : return "uses";
+            case UFSM_TOKEN_KWD_INHERITS         : return "inherits";
+            case UFSM_TOKEN_KWD_OVERRIDE         : return "override";
+
+            case UFSM_TOKEN_KWD_GENERATED        : return "generated";
+            case UFSM_TOKEN_KWD_GENERATES        : return "generates";
+            //case          : return "";
+
+            case UFSM_TOKEN_OP_SCOPE             : return "op-scope-resolution";
+            case UFSM_TOKEN_OP_COMMA             : return "comma";
+            case UFSM_TOKEN_OP_COLON             : return "colon";
+            case UFSM_TOKEN_OP_SEMICOLON         : return "semicolon";
+            case UFSM_TOKEN_OP_DESCR_FOLLOWS     : return "description-separator";
+            case UFSM_TOKEN_OP_ANY               : return "op-any";
+            case UFSM_TOKEN_OP_NOT               : return "op-not";
+            case UFSM_TOKEN_OP_AND               : return "op-and";
+            case UFSM_TOKEN_OP_OR                : return "op-or";
+            case UFSM_TOKEN_OP_NOT_ALTER         : return "op-not";
+            case UFSM_TOKEN_OP_AND_ALTER         : return "op-and";
+            case UFSM_TOKEN_OP_OR_ALTER          : return "op-or";
+            case UFSM_TOKEN_OP_ASSIGN            : return "op-assign";
 
             /*
             case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR  : return "type"; // return "char"  ; 
@@ -609,7 +661,7 @@ public:
     //  
     //     val = std::uint64_t(numericLiteralData.pData->value);
     //  
-    //     return BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //     return BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     // }
 
     // //! Разбираем диапазон. Возвращается следующий токен для анализа и продолжения разбора строки или ноль при ошибке
@@ -645,7 +697,7 @@ public:
     //     }
     //  
     //     // Читаем второе число из диапазона
-    //     pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //     if (!pTokenInfo)
     //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
     //  
@@ -669,7 +721,7 @@ public:
     //     auto stringLiteralData = std::get<typename tokenizer_type::StringLiteralDataHolder>(*pParsedData);
     //     str = stringLiteralData.pData->asString();
     //  
-    //     return BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //     return BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     // }
 
 
@@ -701,7 +753,7 @@ public:
     //         return expectedReachedMsg(pTokenInfo, {MERMAID_TOKEN_OPERATOR_RANGE}, makeMsg("failed reading range end name")), (const TokenInfoType*)0;
     //  
     //     // Читаем второе число из диапазона
-    //     pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //     if (!pTokenInfo)
     //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
     //  
@@ -725,14 +777,14 @@ public:
     //     item.itemType           = EPacketDiagramItemType::explicitType;
     //     item.explicitTypeTokenId = pTokenInfo->tokenType;
     //  
-    //     pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //     if (!pTokenInfo)
     //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
     //  
     //     if (pTokenInfo->tokenType!=UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_OPEN)
     //         return pTokenInfo; // Не массив
     //  
-    //     pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //     if (!pTokenInfo)
     //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
     //  
@@ -746,7 +798,7 @@ public:
     //     if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE}, "invalid array size"))
     //         return 0;
     //  
-    //     return BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //     return BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     // }
 
     // //! Разбор директивы packet-beta. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
@@ -754,14 +806,14 @@ public:
     // {
     //     // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
     //  
-    //     pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //     if (!pTokenInfo)
     //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
     //  
     //     if (pTokenInfo->tokenType!=MERMAID_TOKEN_OPERATOR_EXTRA)
     //         return pTokenInfo; // Что-то пришло, но не расширенные опции
     //  
-    //     pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //     if (!pTokenInfo)
     //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
     //  
@@ -785,7 +837,7 @@ public:
     //         }
     //     }
     //  
-    //     return BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //     return BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     // }
 
     // //! Разбор директивы display-width. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
@@ -793,7 +845,7 @@ public:
     // {
     //     // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
     //  
-    //     pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //     if (!pTokenInfo)
     //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
     //  
@@ -820,7 +872,7 @@ public:
     //  
     //     std::size_t optCnt = 0;
     //  
-    //     pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //     while(pTokenInfo)
     //     {
     //         if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER, UMBA_TOKENIZER_TOKEN_LINEFEED}, "'display-options' directive: invalid option value"))
@@ -852,7 +904,7 @@ public:
     //  
     //         diagram.setOptionFlag(optVal);
     //  
-    //         pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //         pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //  
     //     }
     //  
@@ -868,7 +920,7 @@ public:
     //     // %%#! org 0x800200 : "name" - абсолютный org
     //     // %%#! org auto : "Some Entry" - автоматическое вычисление адреса
     //  
-    //     pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //     if (!pTokenInfo)
     //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
     //  
@@ -877,7 +929,7 @@ public:
     //     if (pTokenInfo->tokenType==MERMAID_TOKEN_OPERATOR_PLUS)
     //     {
     //         hasPlus = true;
-    //         pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //         pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //         if (!pTokenInfo)
     //             return 0; // Сообщение уже выведено, просто возвращаем ошибку
     //     }
@@ -918,7 +970,7 @@ public:
     //  
     //         item.orgType = EOrgType::orgAuto;
     //  
-    //         pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //         pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //     }
     //  
     //     if (!pTokenInfo)
@@ -932,7 +984,7 @@ public:
     //     if (pTokenInfo->tokenType!=MERMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER) // В отличие от регулярной записи, тут название опционально, нагенерим, если надо будет
     //         return pTokenInfo;
     //  
-    //     pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //     if (!pTokenInfo)
     //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
     //  
@@ -949,7 +1001,7 @@ public:
     //     BaseClass::setRawModeAutoStop(umba::tokenizer::TokenizerRawAutoStopMode::stopOnCharExcluding, string_type("\r\n"));
     //     BaseClass::setRawMode(true);
     //  
-    //     pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //     if (!pTokenInfo)
     //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
     //     if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_RAW_DATA}, "invalid 'title' directive"))
@@ -965,7 +1017,7 @@ public:
     //         diagram.title = umba::string::trim_copy(rawData.pData->asString());
     //     }
     //  
-    //     return BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //     return BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     // }
 
     // const TokenInfoType* parseBitSize(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, std::uint64_t &bitSize, const std::string &msg=std::string())
@@ -999,7 +1051,7 @@ public:
     //     if (savedBitSize>bitSize)
     //         return BaseClass::logSimpleMessage(pTokenInfo, "integer-overflow", msg.empty() ? "integer overflow" : msg + ": integer overflow"), (const TokenInfoType*)0;
     //  
-    //     return BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //     return BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     // }
 
 
@@ -1026,7 +1078,7 @@ public:
     //     Endianness          endianness = Endianness::undefined; // littleEndian;
     //     // EPacketDiagramType  bitSizeSizeType = EPacketDiagramType::unknown; // Используем не по назначению, а для хринения типа биты или байты в числе (bitDiagram, byteDiagram)
     //  
-    //     pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //  
     //     auto optionsCounter = -1;
     //  
@@ -1138,14 +1190,14 @@ public:
     //         {
     //             if (!updateEndianness(Endianness::littleEndian))
     //                 return 0;
-    //             pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //             pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //         }
     //  
     //         else if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_BE)
     //         {
     //             if (!updateEndianness(Endianness::bigEndian))
     //                 return 0;
-    //             pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //             pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //         }
     //  
     //         else if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_DATA)
@@ -1153,7 +1205,7 @@ public:
     //             if (dataSizeTaken)
     //                 return BaseClass::logMessage(pTokenInfo, "native-options", "data size ('data' option) already taken"), (const TokenInfoType*)0;
     //             dataSizeTaken = true;
-    //             pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //             pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //             pTokenInfo = parseBitSize(tokenPos, pTokenInfo, diagram.dataBitSize, "'native' directive 'data' option");
     //         }
     //  
@@ -1163,7 +1215,7 @@ public:
     //                 return BaseClass::logMessage(pTokenInfo, "native-options", "segment size ('segment' option) already taken"), (const TokenInfoType*)0;
     //             segmentSizeTaken = true;
     //             pTokenInfoLastSegmentOption = pTokenInfo;
-    //             pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //             pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //             pTokenInfo = parseBitSize(tokenPos, pTokenInfo, diagram.segmentBitSize, "'native' directive 'segment' option");
     //         }
     //  
@@ -1173,7 +1225,7 @@ public:
     //                 return BaseClass::logMessage(pTokenInfo, "native-options", "segment shift ('segment-shift' option) already taken"), (const TokenInfoType*)0;
     //             segmentShiftTaken = true;
     //             pTokenInfoLastSegmentOption = pTokenInfo;
-    //             pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //             pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //             pTokenInfo = parseBitSize(tokenPos, pTokenInfo, diagram.segmentShift, "'native' directive 'segment-shift' option");
     //         }
     //  
@@ -1183,7 +1235,7 @@ public:
     //                 return BaseClass::logMessage(pTokenInfo, "native-options", "offset size ('offset' option) already taken"), (const TokenInfoType*)0;
     //             offsetSizeTaken = true;
     //             pTokenInfoLastSegmentOption = pTokenInfo;
-    //             pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //             pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //             pTokenInfo = parseBitSize(tokenPos, pTokenInfo, diagram.offsetBitSize, "'native' directive 'offset' option");
     //         }
     //  
@@ -1199,14 +1251,14 @@ public:
     //             if (!pTokenInfo)
     //                 return 0; // Сообщение уже выведено, просто возвращаем ошибку
     //  
-    //             pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //             pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //             if (!pTokenInfo)
     //                 return 0; // Сообщение уже выведено, просто возвращаем ошибку
     //  
     //             if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_BYTE || pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_BIT )
     //             {
     //                 bitSizeSizeType = (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_BYTE) ? EPacketDiagramType::byteDiagram : EPacketDiagramType::bitDiagram;
-    //                 pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+    //                 pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
     //             }
     //         }
     //         #endif
@@ -1251,7 +1303,7 @@ public:
 //             return 0;
 //  
 //         // Читаем следующий токен
-//         pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+//         pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
 //         if (!checkNotNul(pTokenInfo))
 //             return 0;
 //  
@@ -1265,7 +1317,7 @@ public:
 //         if (pTokenInfo->tokenType!=MERMAID_TOKEN_OPERATOR_EXTRA)
 //             return pTokenInfo;
 //  
-//         pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+//         pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
 //  
 //         if (!pTokenInfo)
 //             return 0; // Сообщение уже выведено, просто возвращаем ошибку
@@ -1413,7 +1465,7 @@ public:
 //                 if (item.getTypeSize()!=1 || !(item.isArray() || item.isRange()))
 //                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'block' option can be set only for char/int8/uint8 arrays/ranges" ), (const TokenInfoType*)0;
 //                 item.blockMode = true;
-//                 pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+//                 pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
 //                 continue;
 //             }
 //  
@@ -1423,7 +1475,7 @@ public:
 //                 item.charsRange = true; // asciiZet автоматом задаёт тип ренджа
 //                 forceTypedRange = true;
 //                 // Берем следующий токен и пилим по циклу дальше
-//                 pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+//                 pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
 //                 continue;
 //             }
 //  
@@ -1442,7 +1494,7 @@ public:
 //                 else
 //                     item.charsRange = false;
 //  
-//                 pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+//                 pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
 //                 continue;
 //             }
 //  
@@ -1480,7 +1532,7 @@ public:
 //                 }
 //  
 //                 // Берем следующий токен и пилим по циклу дальше
-//                 pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+//                 pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
 //  
 //                 continue;
 //             }
@@ -1491,7 +1543,7 @@ public:
 //                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: `checksum` option already taken" ), (const TokenInfoType*)0;
 //  
 //                 hasChecksum = true;
-//                 pTokenInfo  = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+//                 pTokenInfo  = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
 //  
 //                 continue;
 //             }
@@ -1527,7 +1579,7 @@ public:
 //                 //checksumOptions.kind = ChecksumKind::crc;
 //                 // hasCrc = true;
 //  
-//                 pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+//                 pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
 //                 if (!pTokenInfo)
 //                     return 0; // Сообщение уже выведено, просто возвращаем ошибку
 //  
@@ -1568,7 +1620,7 @@ public:
 //  
 //                 hasSeed = true;
 //  
-//                 pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+//                 pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
 //                 if (!pTokenInfo)
 //                     return 0; // Сообщение уже выведено, просто возвращаем ошибку
 //  
@@ -1586,7 +1638,7 @@ public:
 //  
 //                 hasPoly = true;
 //  
-//                 pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
+//                 pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
 //                 if (!pTokenInfo)
 //                     return 0; // Сообщение уже выведено, просто возвращаем ошибку
 //  
@@ -1611,6 +1663,469 @@ public:
 //         return returnCheckUpdateOptions();
 //     }
 
+
+    // cmdStopTraffic : external - "The RED light (stop) mode is on";
+    // tmStopTraffic : external generated;
+    // evIntegralLiteral = evBoolLiteral | evIntLiteral - "Пришел интегральный литерал";
+
+    bool parseStateMachineEvents(StateMachineDefinition & sm)
+    {
+        // Пропускаем ключевое слово events, вычитываем следующий токен - должна быть открывающая фигурная скобка
+        readNextToken();
+
+        EventFlags commonFlags = EventFlags::none;
+
+        if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
+        {
+            readNextToken();
+            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_OVERRIDE} /* , "'display-options' directive: invalid option value" */ ))
+                return false; // а пришло хз что
+            commonFlags = EventFlags::override;
+            readNextToken();
+        }
+
+        if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+            return false; // а пришло хз что
+
+        while(true)
+        {
+            // Ждём идентификатор или конец блока
+            readNextToken();
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_BRACKET_SCOPE_CLOSE)
+                return true;
+
+            if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
+                return false; // а пришло хз что
+
+            EventDefinition evd;
+            evd.positionInfo = getFullPos();
+            evd.name  = extractIdentifierName(m_pTokenInfo);
+            evd.flags = commonFlags;
+
+            readNextToken();
+
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_SEMICOLON)
+            {
+                // Ничего дополнительно не задано, считаем событие как external
+                evd.flags |= EventFlags::external;
+                sm.addDefinition(evd);
+                // readNextToken();
+                continue;
+            }
+
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+            {
+                readNextToken();
+                if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
+                    return false; // а пришло хз что
+                evd.description = extractLiteral(m_pTokenInfo);
+                evd.flags |= EventFlags::external;
+                sm.addDefinition(evd);
+                readNextToken();
+                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
+                    return false;
+                continue;
+            }
+
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
+            {
+                // cmdStopTraffic : external - "The RED light (stop) mode is on";
+                // tmStopTraffic : external generated;
+
+                readNextToken();
+
+                if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_EXTERNAL)
+                {
+                    evd.flags |= EventFlags::external;
+                    readNextToken();
+                }
+
+                if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_GENERATED)
+                {
+                    evd.flags |= EventFlags::external | EventFlags::generated;
+                    readNextToken();
+                }
+
+                if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+                {
+                    readNextToken();
+                    if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
+                        return false; // а пришло хз что
+                    evd.description = extractLiteral(m_pTokenInfo);
+                    readNextToken();
+                }
+
+                sm.addDefinition(evd);
+            }
+            else if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_ASSIGN)
+            {
+                // evIntegralLiteral = evBoolLiteral | evIntLiteral - "Пришел интегральный литерал";
+
+                bool waitSep = false;
+
+                for( readNextToken()
+                   ; umba::TheFlags(m_pTokenInfo->tokenType).oneOf(UFSM_TOKEN_OP_OR, UMBA_TOKENIZER_TOKEN_IDENTIFIER)
+                   ; readNextToken()
+                   )
+                {
+                    if (waitSep)
+                    {
+                        if (m_pTokenInfo->tokenType!=UFSM_TOKEN_OP_OR)
+                        {
+                            //if (!evd.basicEvents.empty())
+                                break;
+                            // else
+                            //     return checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ );
+                        }
+
+                        waitSep = false;
+                    }
+                    else // ждём имя (идентификатор), после разделителя или в начале
+                    {
+                        if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ ))
+                            return false; // а пришло хз что
+                        //fqn.append(extractIdentifierName(m_pTokenInfo));
+                        evd.basicEvents.emplace_back(extractIdentifierName(m_pTokenInfo));
+                        waitSep = true;
+                    }
+                }
+
+                if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+                {
+                    readNextToken();
+                    if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
+                        return false; // а пришло хз что
+                    evd.description = extractLiteral(m_pTokenInfo);
+                    readNextToken();
+                }
+
+                sm.addDefinition(evd);
+
+            }
+            else
+            {
+                return checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON,UFSM_TOKEN_OP_DESCR_FOLLOWS,UFSM_TOKEN_OP_COLON,UFSM_TOKEN_OP_ASSIGN} /* , "'display-options' directive: invalid option value" */ );
+            }
+
+            // Тут у нас должна быть точка с запятой
+            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
+                return false; // а пришло хз что
+
+        } // while(true)
+
+    }
+
+    bool parseStateMachineActions(StateMachineDefinition &  /* sm */ )
+    {
+        return false;
+    }
+
+    bool parseStateMachineStates(StateMachineDefinition &  /* sm */ )
+    {
+        return false;
+    }
+
+    bool parseStateMachinePredicates(StateMachineDefinition &  /* sm */ )
+    {
+        return false;
+    }
+
+    bool parseStateMachineTransitions(StateMachineDefinition &  /* sm */ )
+    {
+        return false;
+    }
+
+    bool parseStateMachineBody(StateMachineDefinition & sm)
+    {
+        // Скобка уже открыта
+        while(true)
+        {
+            readNextToken(); 
+
+            switch(m_pTokenInfo->tokenType)
+            {
+                case UFSM_TOKEN_KWD_EVENTS     : 
+                     if (!parseStateMachineEvents(sm))
+                         return false;
+                     break;
+
+                case UFSM_TOKEN_KWD_ACTIONS    : 
+                     if (!parseStateMachineActions(sm))
+                         return false;
+                     break;
+
+                case UFSM_TOKEN_KWD_STATES     : 
+                     if (!parseStateMachineStates(sm))
+                         return false;
+                     break;
+
+                case UFSM_TOKEN_KWD_PREDICATES :
+                     if (!parseStateMachinePredicates(sm))
+                         return false;
+                     break;
+
+                case UFSM_TOKEN_KWD_TRANSITIONS:
+                     if (!parseStateMachineTransitions(sm))
+                         return false;
+                     break;
+
+                case UFSM_TOKEN_BRACKET_SCOPE_CLOSE:
+                {
+                     // выбрали закрывающую скобку стейт-машины со входа
+                     // readNextToken(); // или не надо
+                     return true;
+                }
+
+                default:
+                {
+                     if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_EVENTS,UFSM_TOKEN_KWD_ACTIONS,UFSM_TOKEN_KWD_STATES,UFSM_TOKEN_KWD_PREDICATES,UFSM_TOKEN_KWD_TRANSITIONS,UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
+                         return false; // а пришло хз что
+                }
+
+            } // switch
+
+            // Выбрали закрывающую скобку блока actions/events/... со входа
+            //readNextToken(); 
+        }
+
+        //return true;
+    }
+
+    //----------------------------------------------------------------------------
+    // Останавливается на любом неизвестном токене
+    bool parseFullQualifiedName(FullQualifiedName &fqn)
+    {
+        fqn.clear();
+        bool waitSep = false;
+
+        if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_SCOPE)
+        {
+            // В начале у нас оператор скоупа, значит имя абсолютное
+            waitSep = true;
+            fqn.flags = FullQualifiedNameFlags::absolute;
+        }
+        else
+        {
+            fqn.flags = FullQualifiedNameFlags::none;
+        }
+
+        // В начале цикла - не вычитываем, так как у нас уже идентификатор или разделитель NS
+        for( // m_pTokenInfo = BaseClass::waitForSignificantTokenChecked( &m_tokenPos, ParserWaitForTokenFlags::none)
+           ; umba::TheFlags(m_pTokenInfo->tokenType).oneOf(UFSM_TOKEN_OP_SCOPE, UMBA_TOKENIZER_TOKEN_IDENTIFIER)
+           ; m_pTokenInfo = BaseClass::waitForSignificantTokenChecked( &m_tokenPos, ParserWaitForTokenFlags::none)
+           )
+        {
+            if (waitSep)
+            {
+                if (m_pTokenInfo->tokenType!=UFSM_TOKEN_OP_SCOPE)
+                    return true;
+                // if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SCOPE} /* , "'display-options' directive: invalid option value" */ ))
+                //     return false; // пришло что-то другое - ошибка
+                waitSep = false;
+            }
+            else // ждём имя (идентификатор), после скоуп-разделителя или в начале
+            {
+                if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ ))
+                    return false; // а пришло хз что
+                fqn.append(extractIdentifierName(m_pTokenInfo));
+                waitSep = true;
+            }
+        }
+
+       // Пришел неизвестный токен, но то, что пришло, было у нужном порядке через '::', а пришедший токен проверяем выше, после возврата
+       return true;
+    }
+
+    //----------------------------------------------------------------------------
+    // Останавливается на любом неизвестном токене
+    bool parseInheritanceOverrideFlags(InheritanceOverrideFlags &parsedOverrideFlags)
+    {
+        bool waitComma = false;
+        
+        for( m_pTokenInfo = BaseClass::waitForSignificantTokenChecked( &m_tokenPos, ParserWaitForTokenFlags::none) // пропустили открывающую скобку
+           ; umba::TheFlags(m_pTokenInfo->tokenType).oneOf( UFSM_TOKEN_OP_COMMA
+                                                          , UFSM_TOKEN_KWD_ACTIONS    
+                                                          , UFSM_TOKEN_KWD_EVENTS     
+                                                          , UFSM_TOKEN_KWD_PREDICATES 
+                                                          , UFSM_TOKEN_KWD_STATES     
+                                                          , UFSM_TOKEN_KWD_TRANSITIONS
+                                                          , UFSM_TOKEN_KWD_ALL
+                                                          )
+           ; m_pTokenInfo = BaseClass::waitForSignificantTokenChecked( &m_tokenPos, ParserWaitForTokenFlags::none)
+           )
+        {
+            if (waitComma)
+            {
+                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_COMMA} /* , "'display-options' directive: invalid option value" */ ))
+                    return false; // пришло что-то другое - ошибка
+                waitComma = false;
+            }
+            else // ждём флаг (кейворд флага)
+            {
+                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_EVENTS, UFSM_TOKEN_KWD_ACTIONS, UFSM_TOKEN_KWD_STATES, UFSM_TOKEN_KWD_PREDICATES, UFSM_TOKEN_KWD_TRANSITIONS, UFSM_TOKEN_KWD_ALL} /* , "'display-options' directive: invalid option value" */ ))
+                    return false; // а пришла запятая
+                InheritanceOverrideFlags newFlagVal = InheritanceOverrideFlags::none;
+                switch(m_pTokenInfo->tokenType)
+                {
+                    case UFSM_TOKEN_KWD_ACTIONS    : newFlagVal = InheritanceOverrideFlags::actions    ; break;
+                    case UFSM_TOKEN_KWD_EVENTS     : newFlagVal = InheritanceOverrideFlags::events     ; break;
+                    case UFSM_TOKEN_KWD_PREDICATES : newFlagVal = InheritanceOverrideFlags::predicates ; break;
+                    case UFSM_TOKEN_KWD_STATES     : newFlagVal = InheritanceOverrideFlags::states     ; break;
+                    case UFSM_TOKEN_KWD_TRANSITIONS: newFlagVal = InheritanceOverrideFlags::transitions; break;
+                    case UFSM_TOKEN_KWD_ALL        : newFlagVal = InheritanceOverrideFlags::all        ; break;
+                };
+
+                //!!! Нужно проверить наличие этого флага, если уже установлен, то это ошибка
+                // Пока просто устанавливаем без проверки
+                parsedOverrideFlags |= newFlagVal;
+                waitComma = true;
+            }
+        }
+
+       // Пришел неизвестный токен, но то, что пришло, было у нужном порядке через запятые, а пришедший токен проверяем выше, после возврата
+       return true;
+    }
+
+    //----------------------------------------------------------------------------
+    bool parseStateMachineInheritanceList(StateMachineDefinition &sm, InheritanceListMode &inheritanceListMode)
+    {
+        // Пропускаем ':' UFSM_TOKEN_OP_COLON - он был вычитан на уровне выше, но не удалён
+        readNextToken(); 
+        while(true)
+        {
+            if (umba::TheFlags(m_pTokenInfo->tokenType).oneOf(UFSM_TOKEN_KWD_USES, UFSM_TOKEN_KWD_INHERITS))
+            {
+                if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_USES)
+                    inheritanceListMode = InheritanceListMode::uses;
+                else
+                    inheritanceListMode = InheritanceListMode::inherits;
+
+                readNextToken(); 
+            }
+
+            // Тут ждём идентификатор
+            // FullQualifiedName fqn;
+            // InheritanceOverrideFlags overrideFlags = InheritanceOverrideFlags::none;
+            // PositionInfo positionInfo;
+            ParentListEntry ple;
+            ple.flags = inheritanceListMode==InheritanceListMode::uses ? ParentListEntryFlags::uses : ParentListEntryFlags::inherits;
+
+            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SCOPE, UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ ))
+                return false;
+
+            ple.positionInfo = getFullPos(m_tokenPos);
+
+            // У нас - идентификатор или оператор скоупа, парсим полное имя
+            if (!parseFullQualifiedName(ple.name))
+            {
+                // Ошибку вроде вывели в parseFullQualifiedName
+                //expectedReachedMsg(m_pTokenInfo, {UFSM_TOKEN_OP_SCOPE, UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , msg */ );
+                return false;
+            }
+
+            // После имени может идти override, а после override - обязательно должен идти блок с атрибутами, он не может быть опциональным
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_OVERRIDE)
+            {
+                readNextToken(); 
+                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+                    return false;
+                if (!parseInheritanceOverrideFlags(ple.overrideFlags))
+                    return false;
+                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
+                    return false;
+                readNextToken(); 
+
+                // Если имя абсолютное - проверяем наличие с корня
+                // Если имя относительное, то пытаемся найти относительно текущего NS,
+                // если не нашли, то ищем от корня
+
+                NamespaceDefinition* pCurNs = getCurrentNamespace();
+
+                FullQualifiedName foundName;
+                NamespaceEntryKind parentKind = pCurNs->findAnyDefinition( ple.name, ctx.curNsName, &ctx.rootNs, &foundName);
+                switch(parentKind)
+                {
+                    case NamespaceEntryKind::none         : // ple.name not found
+                         BaseClass::logSimpleMessage(ple.positionInfo.pos, UMBA_TOKENIZER_TOKEN_IDENTIFIER /* tokenType */, "definition-not-found", "'definitions' or 'state-machine' not found");
+                         return false;
+
+                    case NamespaceEntryKind::nsDefinition : // definitions or state-machine expected, but found namespace 
+                         BaseClass::logSimpleMessage(ple.positionInfo.pos, UMBA_TOKENIZER_TOKEN_IDENTIFIER /* tokenType */, "definition-not-found", "expected 'definitions' or 'state-machine' name, but found namespace");
+                         return false;
+
+                    case NamespaceEntryKind::fsmDefinition: // OK
+                         ple.name = foundName; // задаём полное имя
+                         break;
+
+                    case NamespaceEntryKind::invalid      : // 
+                         throw std::runtime_error("Something goes wrong");
+                }
+
+                sm.parents[ple.name.getCanonicalName()] = ple;
+            }
+            else
+            {
+                NamespaceDefinition* pCurNs = getCurrentNamespace();
+
+                FullQualifiedName foundName;
+                NamespaceEntryKind parentKind = pCurNs->findAnyDefinition( ple.name, ctx.curNsName, &ctx.rootNs, &foundName);
+                switch(parentKind)
+                {
+                    case NamespaceEntryKind::none         : // ple.name not found
+                         BaseClass::logSimpleMessage(ple.positionInfo.pos, UMBA_TOKENIZER_TOKEN_IDENTIFIER /* tokenType */, "definition-not-found", "'definitions' or 'state-machine' not found");
+                         return false;
+
+                    case NamespaceEntryKind::nsDefinition : // definitions or state-machine expected, but found namespace 
+                         BaseClass::logSimpleMessage(ple.positionInfo.pos, UMBA_TOKENIZER_TOKEN_IDENTIFIER /* tokenType */, "definition-not-found", "expected 'definitions' or 'state-machine' name, but found namespace");
+                         return false;
+
+                    case NamespaceEntryKind::fsmDefinition: // OK
+                         ple.name = foundName; // задаём полное имя
+                         break;
+
+                    case NamespaceEntryKind::invalid      : // 
+                         throw std::runtime_error("Something goes wrong");
+                }
+
+                sm.parents[ple.name.getCanonicalName()] = ple;
+            }
+
+            // После имени или списка override может идти запятая, дефис перед литералом описания, или открывающая скобка блока state machide'ы
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COMMA)
+            {
+                readNextToken(); 
+                continue;
+            }
+
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_BRACKET_SCOPE_OPEN)
+            {
+                return true;
+            }
+
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+            {
+                readNextToken(); 
+                if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL, } /* , "'display-options' directive: invalid option value" */ ))
+                    return false;
+
+                sm.description = extractLiteral(m_pTokenInfo);
+                readNextToken(); 
+
+                // После описания должна идти открывающая скобка
+                // if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+                //     return false;
+            }
+
+            // // Тут должна быть открывающая скобка
+            // if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+            //     return false;
+
+            return true;
+        }
+
+    }
+
+    //----------------------------------------------------------------------------
     // definitions TrafficLightCommands - "Defines commands for Traffic Light"
 
     // definitions TrafficLightEventsActions
@@ -1628,23 +2143,47 @@ public:
     //      TrafficLightEventsActions override // возможные коллизии молча переписываются более поздними значениями
     // - "Three-lights traffic light (Reg-Yellow-Green)"
 
-
-
     bool parseStateMachine(StateMachineDefinition &sm, InheritanceListMode inheritanceListMode)
     {
-        UMBA_USED(sm);
-        UMBA_USED(inheritanceListMode);
-
-        m_pTokenInfo = BaseClass::waitForSignificantToken( &m_tokenPos, ParserWaitForTokenFlags::none);
-        if (!checkNotNul(m_pTokenInfo))
-            return false;
+        readNextToken();
 
         if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ ))
             return false;
 
         sm.name = extractIdentifierName(m_pTokenInfo);
 
-        return false;
+        readNextToken(); 
+        if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
+        {
+            if (!parseStateMachineInheritanceList(sm, inheritanceListMode))
+                return false;
+        }
+        // else 
+        
+        if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+        {
+            readNextToken(); 
+            if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL, } /* , "'display-options' directive: invalid option value" */ ))
+                return false;
+
+            sm.description = extractLiteral(m_pTokenInfo);
+            readNextToken(); 
+        }
+
+        // Тут у нас должна быть открывающая блок скобка
+        if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+            return false;
+
+        // Пропускаем открывающую скобку
+        // m_pTokenInfo = 
+        // readNextToken(); 
+
+        if (!parseStateMachineBody(sm))
+            return false;
+
+        getCurrentNamespace()->addDefinition(sm);
+
+        return true;
     }
 
     bool parseDefinitions()
@@ -1655,12 +2194,6 @@ public:
 
         if (!parseStateMachine(sm, InheritanceListMode::uses))
             return false;
-
-        NamespaceDefinition* pNs = ctx.rootNs.getNamespace(ctx.curNsName, &ctx.rootNs, ctx.lastNsPos);
-        if (!pNs)
-            throw std::runtime_error("Something goes wrong");
-
-        pNs->addDefinition(sm);
 
         return true;
     }
@@ -1673,12 +2206,6 @@ public:
 
         if (!parseStateMachine(sm, InheritanceListMode::inherits))
             return false;
-
-        NamespaceDefinition* pNs = ctx.rootNs.getNamespace(ctx.curNsName, &ctx.rootNs, ctx.lastNsPos);
-        if (!pNs)
-            throw std::runtime_error("Something goes wrong");
-
-        pNs->addDefinition(sm);
 
         return true;
     }
@@ -1695,9 +2222,7 @@ public:
 
         while(true)
         {
-            m_pTokenInfo = BaseClass::waitForSignificantToken( &m_tokenPos, ParserWaitForTokenFlags::none);
-            if (!checkNotNul(m_pTokenInfo))
-                return false;
+            readNextToken();
 
             if (!waitSep) // wait for name
             {
@@ -1722,7 +2247,7 @@ public:
                 {
                     ctx.appendCurNsName(nsName);
                     // Просто создаём namespace
-                    ctx.rootNs.getNamespace(ctx.curNsName, &ctx.rootNs, ctx.lastNsPos); // PositionInfo is not the same as TokenPosType
+                    getCurrentNamespace(); // PositionInfo is not the same as TokenPosType
                     return parseNamespaceBody();
                 }
             }
@@ -1737,9 +2262,7 @@ public:
         while(true)
         {
             //const TokenInfoType *pTokenInfo
-            m_pTokenInfo = BaseClass::waitForSignificantToken( &m_tokenPos, ParserWaitForTokenFlags::none);
-            if (!checkNotNul(m_pTokenInfo))
-                return false;
+            readNextToken();
 
             if (m_pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_LINEFEED)
                 continue;
@@ -1784,134 +2307,8 @@ public:
 
                 ctx.curNsName.tailRemove(nsPopCount);
 
-                // expectedReachedMsg(m_pTokenInfo, { UFSM_TOKEN_KWD_NAMESPACE, UFSM_TOKEN_KWD_FSM, UFSM_TOKEN_KWD_DEFINITIONS } /* , msg */ );
-                // return false;
-
-
-    // FullQualifiedName         curNsName;
-    //  
-    // // При открытии NS может использоваться сразу пачка имён, 
-    // // `namespace aa::bb::cc`, и нам надо знать, сколько имён
-    // // удалять из текущего имени
-    // std::vector<std::size_t>  nsOpenLevels;
-
             }
 
-            //UFSM_TOKEN_KWD_FSM, UFSM_TOKEN_KWD_DEFINITIONS
-
-
-            // if (isAnyNumber(pTokenInfo->tokenType) || isAnyType(pTokenInfo->tokenType))
-            // {
-            //     PacketDiagramItemType item;
-            //     ChecksumOptions checksumOptions;
-            //  
-            //     item.pTokenInfo = pTokenInfo; // На всякий случай инфу сохраняем
-            //     
-            //     try
-            //     {
-            //         pTokenInfo = parseRegularLine(tokenPos, pTokenInfo, item, checksumOptions);
-            //     }
-            //     catch(const marty::mem::address_wrap &)
-            //     {
-            //         return BaseClass::logMessage( pTokenInfo, "address-wrap", "address wrapping detected. Check your 'org' directives" ), false;
-            //     }
-            //     
-            //     if (!pTokenInfo)
-            //         return false;
-            //  
-            //     if (checksumOptions.kind!=ChecksumKind::undefined)
-            //     {
-            //         item.checksumIndex = diagram.checksumList.size();
-            //         diagram.checksumList.emplace_back(checksumOptions);
-            //     }
-            //  
-            //     if (!addDiagramItem(item))
-            //         return false;
-            // }
-            //  
-            // else if (pTokenInfo->tokenType==MERMAID_TOKEN_DIRECTIVE_PACKET_BETA)
-            // {
-            //     if (!diagram.isDataEmpty())
-            //         return BaseClass::logMessage( pTokenInfo, "unexpected-packet-beta", "'packet-beta' directive must follow before the data records definition" ), false;
-            //     pTokenInfo = parsePacketBetaDirective(tokenPos, pTokenInfo);
-            // }
-            //  
-            // else if (pTokenInfo->tokenType==MERMAID_TOKEN_DIRECTIVE_TITLE)
-            // {
-            //     if (!diagram.isDataEmpty())
-            //         return BaseClass::logMessage( pTokenInfo, "unexpected-title", "'title' directive must follow before the data records definition" ), false;
-            //     pTokenInfo = parseTitleDirective(tokenPos, pTokenInfo);
-            // }
-            //  
-            // else if (pTokenInfo->tokenType==MERMAID_TOKEN_OPERATOR_EXTRA)
-            // {
-            //     pTokenInfo = BaseClass::waitForSignificantToken( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-            //     if (!pTokenInfo)
-            //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
-            //  
-            //     if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_LINEFEED)
-            //         continue;
-            //  
-            //     if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
-            //         return true; // normal stop
-            //  
-            //     if (!umba::TheValue(pTokenInfo->tokenType).oneOf( MERMAID_TOKEN_DIRECTIVE_NATIVE
-            //                                                     , MERMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH
-            //                                                     , MERMAID_TOKEN_DIRECTIVE_DISPLAY_OPTIONS
-            //                                                     , MERMAID_TOKEN_DIRECTIVE_ORG
-            //                                                     )
-            //        )
-            //     {
-            //          expectedReachedMsg(pTokenInfo, {MERMAID_TOKEN_DIRECTIVE_NATIVE } /* , msg */ );
-            //          return 0;
-            //     }
-            //     // if (!checkExactTokenType(pTokenInfo, {MERMAID_TOKEN_DIRECTIVE_NATIVE, MERMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH} /* , "invalid 'packet-beta' directive options" */ ))
-            //     //     return 0;
-            //  
-            //     if (pTokenInfo->tokenType==MERMAID_TOKEN_DIRECTIVE_NATIVE)
-            //     {
-            //         if (!diagram.isDataEmpty())
-            //             return BaseClass::logMessage( pTokenInfo, "unexpected-native", "'native' directive must follow before the data records definition" ), false;
-            //         pTokenInfo = parseNativeDirective(tokenPos, pTokenInfo);
-            //     }
-            //  
-            //     else if (pTokenInfo->tokenType==MERMAID_TOKEN_DIRECTIVE_DISPLAY_WIDTH)
-            //     {
-            //         if (!diagram.isDataEmpty())
-            //             return BaseClass::logMessage( pTokenInfo, "unexpected-display-width", "'display-width' directive must follow before the data records definition" ), false;
-            //         pTokenInfo = parseDisplayWidthDirective(tokenPos, pTokenInfo);
-            //     }
-            //  
-            //     else if (pTokenInfo->tokenType==MERMAID_TOKEN_DIRECTIVE_DISPLAY_OPTIONS)
-            //     {
-            //         if (!diagram.isDataEmpty())
-            //             return BaseClass::logMessage( pTokenInfo, "unexpected-display-options", "'display-options' directive must follow before the data records definition" ), false;
-            //         pTokenInfo = parseDisplayOptionsDirective(tokenPos, pTokenInfo);
-            //     }
-            //  
-            //     else if (pTokenInfo->tokenType==MERMAID_TOKEN_DIRECTIVE_ORG)
-            //     {
-            //         PacketDiagramItemType item;
-            //         item.pTokenInfo = pTokenInfo; // На всякий случай инфу сохраняем
-            //         // pTokenInfo = parseOrgDirective(tokenPos, pTokenInfo, item);
-            //         try
-            //         {
-            //             pTokenInfo = parseOrgDirective(tokenPos, pTokenInfo, item);
-            //         }
-            //         catch(const marty::mem::address_wrap &)
-            //         {
-            //             return BaseClass::logMessage( pTokenInfo, "address-wrap", "address wrapping detected. Check your 'org' directives" ), false;
-            //         }
-            //  
-            //         if (!pTokenInfo)
-            //             return false;
-            //         if (!addDiagramItem(item))
-            //             return false;
-            //     }
-            //  
-            //     // const TokenInfoType* parseOrgDirective(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, PacketDiagramItemType &item) 
-            // }
-            //  
             else
             {
                 expectedReachedMsg(m_pTokenInfo, { UFSM_TOKEN_KWD_NAMESPACE, UFSM_TOKEN_KWD_FSM, UFSM_TOKEN_KWD_DEFINITIONS } /* , msg */ );
