@@ -631,6 +631,12 @@ public:
         return false;
     }
 
+    bool expectedReachedMsg(const TokenInfoType *pTokenInfo, umba::tokenizer::payload_type payloadExpected, const std::string &msg=std::string()) const
+    {
+        BaseClass::logUnexpected( pTokenInfo, payloadExpected, msg, [&](umba::tokenizer::payload_type tk) { return getTokenIdStr(tk); } );
+        return false;
+    }
+
     bool checkExactTokenType(const TokenInfoType *pTokenInfo, std::initializer_list<umba::tokenizer::payload_type> payloadExpectedList, const std::string &msg=std::string()) const
     {
         for(auto e : payloadExpectedList)
@@ -641,1027 +647,58 @@ public:
         return expectedReachedMsg(pTokenInfo, payloadExpectedList, msg);
     }
 
-    // //! Разбираем токен числового литерала. Возвращается следующий токен для анализа и продолжения разбора строки или ноль при ошибке
-    // const TokenInfoType* parseNumber(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, std::uint64_t &val, const std::string &msg=std::string())
-    // {
-    //     // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
-    //  
-    //     // if (!checkNotNul(pTokenInfo))
-    //     //     return 0;
-    //  
-    //     using umba::tokenizer::ParserWaitForTokenFlags;
-    //  
-    //     if (!isAnyNumber(pTokenInfo->tokenType))
-    //         return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, msg), (const TokenInfoType*)0;
-    //  
-    //     const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
-    //     auto numericLiteralData = std::get<typename tokenizer_type::IntegerNumericLiteralDataHolder>(*pParsedData);
-    //     if (numericLiteralData.pData->fOverflow)
-    //         return BaseClass::logSimpleMessage(pTokenInfo, "integer-overflow", msg.empty() ? "integer overflow" : msg + ": integer overflow"), (const TokenInfoType*)0;
-    //  
-    //     val = std::uint64_t(numericLiteralData.pData->value);
-    //  
-    //     return BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    // }
+    bool checkExactTokenType(const TokenInfoType *pTokenInfo, umba::tokenizer::payload_type payloadExpected, const std::string &msg=std::string()) const
+    {
+        // for(auto e : payloadExpectedList)
+        // {
+        //     if (e==pTokenInfo->tokenType) // tkReached
+        //         return true;
+        // }
 
-    // //! Разбираем диапазон. Возвращается следующий токен для анализа и продолжения разбора строки или ноль при ошибке
-    // const TokenInfoType* parseRange(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, AddressRange &addressRange, EPacketDiagramItemType &itemType, const std::string &msg=std::string())
-    // {
-    //     // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
-    //     // Хотя не всегда, иногда мы ожидаем, что у нас диапазон, и переходим сюда без проверки
-    //  
-    //     auto makeMsg = [&](const std::string &details)
-    //     {
-    //         return msg.empty() ? details : msg + ": " + details;
-    //     };
-    //  
-    //     if (!checkNotNul(pTokenInfo))
-    //         return 0;
-    //  
-    //     if (!isAnyNumber(pTokenInfo->tokenType))
-    //         return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, makeMsg("failed reading range start")), (const TokenInfoType*)0;
-    //  
-    //  
-    //     using umba::tokenizer::ParserWaitForTokenFlags;
-    //  
-    //     pTokenInfo = parseNumber(tokenPos, pTokenInfo, addressRange.start, makeMsg("start offset value"));
-    //     if (!pTokenInfo)
-    //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //  
-    //     // У нас не обязательно будет на входе range, за которым идёт MERMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER
-    //     // Так что выше должны это проверить
-    //     if (pTokenInfo->tokenType!=MERMAID_TOKEN_OPERATOR_RANGE)
-    //     {
-    //         itemType = EPacketDiagramItemType::singleValue;
-    //         return pTokenInfo;
-    //     }
-    //  
-    //     // Читаем второе число из диапазона
-    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //     if (!pTokenInfo)
-    //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //  
-    //     if (!isAnyNumber(pTokenInfo->tokenType))
-    //         return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, makeMsg("failed reading range end")), (const TokenInfoType*)0;
-    //  
-    //     pTokenInfo = parseNumber(tokenPos, pTokenInfo, addressRange.end, makeMsg("range end value"));
-    //     itemType = EPacketDiagramItemType::range;
-    //  
-    //     return pTokenInfo;
-    // }
+        if (payloadExpected==pTokenInfo->tokenType)
+            return true;
 
-
-    // //! Разбор обычной строки. Может возвращать ноль при ошибке, или токен LF/FIN
-    // const TokenInfoType* readStringLiteral(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, std::string &str, const std::string &msg=std::string())
-    // {
-    //     if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL}, msg))
-    //         return 0;
-    //  
-    //     const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
-    //     auto stringLiteralData = std::get<typename tokenizer_type::StringLiteralDataHolder>(*pParsedData);
-    //     str = stringLiteralData.pData->asString();
-    //  
-    //     return BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    // }
-
-
-    // //! Разбираем диапазон, заданный строками. Возвращается следующий токен для анализа и продолжения разбора строки или ноль при ошибке
-    // const TokenInfoType* parseNameRange(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, AddressRangeLabels &addressRange, const std::string &msg=std::string())
-    // {
-    //     // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
-    //     // Хотя не всегда, иногда мы ожидаем, что у нас диапазон, и переходим сюда без проверки
-    //  
-    //     auto makeMsg = [&](const std::string &details)
-    //     {
-    //         return msg.empty() ? details : msg + ": " + details;
-    //     };
-    //  
-    //     if (!checkNotNul(pTokenInfo))
-    //         return 0;
-    //  
-    //     if (pTokenInfo->tokenType!=UMBA_TOKENIZER_TOKEN_STRING_LITERAL)
-    //         return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL}, makeMsg("failed reading range start name")), (const TokenInfoType*)0;
-    //  
-    //  
-    //     using umba::tokenizer::ParserWaitForTokenFlags;
-    //  
-    //     pTokenInfo = readStringLiteral(tokenPos, pTokenInfo, addressRange.start, makeMsg("range start name"));
-    //     if (!pTokenInfo)
-    //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //  
-    //     if (pTokenInfo->tokenType!=MERMAID_TOKEN_OPERATOR_RANGE)
-    //         return expectedReachedMsg(pTokenInfo, {MERMAID_TOKEN_OPERATOR_RANGE}, makeMsg("failed reading range end name")), (const TokenInfoType*)0;
-    //  
-    //     // Читаем второе число из диапазона
-    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //     if (!pTokenInfo)
-    //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //  
-    //     if (pTokenInfo->tokenType!=UMBA_TOKENIZER_TOKEN_STRING_LITERAL)
-    //         return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL}, makeMsg("failed reading range end name")), (const TokenInfoType*)0;
-    //  
-    //     pTokenInfo = readStringLiteral(tokenPos, pTokenInfo, addressRange.end, makeMsg("range end name"));
-    //  
-    //     return pTokenInfo;
-    // }
+        return expectedReachedMsg(pTokenInfo, payloadExpected, msg);
+    }
 
 
 
-    // //! Разбираем тип. Возвращается следующий токен для анализа и продолжения разбора строки или ноль при ошибке
-    // const TokenInfoType* parseType(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, PacketDiagramItemType &item)
-    // {
-    //     // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
-    //  
-    //     using umba::tokenizer::ParserWaitForTokenFlags;
-    //  
-    //     item.itemType           = EPacketDiagramItemType::explicitType;
-    //     item.explicitTypeTokenId = pTokenInfo->tokenType;
-    //  
-    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //     if (!pTokenInfo)
-    //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //  
-    //     if (pTokenInfo->tokenType!=UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_OPEN)
-    //         return pTokenInfo; // Не массив
-    //  
-    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //     if (!pTokenInfo)
-    //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //  
-    //     if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, "invalid array size"))
-    //         return 0;
-    //  
-    //     pTokenInfo = parseNumber(tokenPos, pTokenInfo, item.arraySize, "array size");
-    //     if (!pTokenInfo)
-    //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //  
-    //     if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE}, "invalid array size"))
-    //         return 0;
-    //  
-    //     return BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    // }
-
-    // //! Разбор директивы packet-beta. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
-    // const TokenInfoType* parsePacketBetaDirective(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo)
-    // {
-    //     // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
-    //  
-    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //     if (!pTokenInfo)
-    //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //  
-    //     if (pTokenInfo->tokenType!=MERMAID_TOKEN_OPERATOR_EXTRA)
-    //         return pTokenInfo; // Что-то пришло, но не расширенные опции
-    //  
-    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //     if (!pTokenInfo)
-    //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //  
-    //     // В данном контексте MERMAID_TOKEN_ATTR_BYTE_DIA==MERMAID_TOKEN_ATTR_BYTE
-    //     // и MERMAID_TOKEN_ATTR_BIT_DIA==MERMAID_TOKEN_ATTR_BIT
-    //  
-    //     if (!checkExactTokenType(pTokenInfo, {MERMAID_TOKEN_ATTR_BYTE_DIA, MERMAID_TOKEN_ATTR_BIT_DIA, MERMAID_TOKEN_ATTR_MEMORY_DIA, MERMAID_TOKEN_ATTR_BYTE, MERMAID_TOKEN_ATTR_BIT, UMBA_TOKENIZER_TOKEN_LINEFEED}, "invalid 'packet-beta' directive options"))
-    //         return 0;
-    //  
-    //     if ((diagram.parsingOptions&PacketDiagramParsingOptions::allowOverrideType)!=0u)
-    //     {
-    //         switch(pTokenInfo->tokenType)
-    //         {
-    //             case MERMAID_TOKEN_ATTR_BYTE      : [[fallthrough]]; // error C2416: attribute 'fallthrough' cannot be applied in this context
-    //             case MERMAID_TOKEN_ATTR_BYTE_DIA  : diagram.diagramType = EPacketDiagramType::byteDiagram; break;
-    //             case MERMAID_TOKEN_ATTR_BIT       : [[fallthrough]]; // error C2416: attribute 'fallthrough' cannot be applied in this context
-    //             case MERMAID_TOKEN_ATTR_BIT_DIA   : diagram.diagramType = EPacketDiagramType::bitDiagram ; break;
-    //  
-    //             case MERMAID_TOKEN_ATTR_MEMORY_DIA: diagram.diagramType = EPacketDiagramType::memDiagram ; break;
-    //             case UMBA_TOKENIZER_TOKEN_LINEFEED: return pTokenInfo;
-    //         }
-    //     }
-    //  
-    //     return BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    // }
-
-    // //! Разбор директивы display-width. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
-    // const TokenInfoType* parseDisplayWidthDirective(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo)
-    // {
-    //     // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
-    //  
-    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //     if (!pTokenInfo)
-    //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //  
-    //     if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, "invalid 'display-width' directive: missing width value"))
-    //         return 0;
-    //  
-    //     std::uint64_t displayWidth = 0;
-    //     pTokenInfo = parseNumber(tokenPos, pTokenInfo, displayWidth, "'display-width' directive");
-    //     if (!pTokenInfo)
-    //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //  
-    //     if ((diagram.parsingOptions&PacketDiagramParsingOptions::allowOverrideDisplayWidth)!=0u)
-    //     {
-    //         diagram.displayWidth = displayWidth;
-    //     }
-    //  
-    //     return pTokenInfo;
-    // }
-
-    // //! Разбор директивы display-options. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
-    // const TokenInfoType* parseDisplayOptionsDirective(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo)
-    // {
-    //     // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
-    //  
-    //     std::size_t optCnt = 0;
-    //  
-    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //     while(pTokenInfo)
-    //     {
-    //         if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER, UMBA_TOKENIZER_TOKEN_LINEFEED}, "'display-options' directive: invalid option value"))
-    //             return 0;
-    //  
-    //         if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_LINEFEED)
-    //         {
-    //             if (!optCnt)
-    //                 return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER}, "'display-options' directive: use 'none' for empty options list"), (const TokenInfoType*)0;
-    //             return pTokenInfo;
-    //         }
-    //  
-    //         // Тут у нас только UMBA_TOKENIZER_TOKEN_IDENTIFIER
-    //         ++optCnt;
-    //  
-    //         auto pTokenParsedData = BaseClass::getTokenParsedData(pTokenInfo);
-    //  
-    //         // Тут обрабатываем данные идентификатора
-    //         // UMBA_USED(pTokenParsedData);
-    //  
-    //         auto identifierData = std::get<typename TokenizerType::IdentifierDataHolder>(*pTokenParsedData);
-    //         string_type identifierStr = string_type(identifierData.pData->value);
-    //         // UMBA_USED(identifierData);
-    //         // UMBA_USED(identifierStr);
-    //  
-    //         auto optVal = enum_deserialize(identifierStr, PacketDiagramDisplayOptions::invalid);
-    //         if (optVal==PacketDiagramDisplayOptions::invalid)
-    //             return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER}, "'display-options' directive: unknown option"), (const TokenInfoType*)0;
-    //  
-    //         diagram.setOptionFlag(optVal);
-    //  
-    //         pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //  
-    //     }
-    //  
-    //     return pTokenInfo;
-    // }
-
-    // //! Разбор директивы org. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
-    // const TokenInfoType* parseOrgDirective(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, PacketDiagramItemType &item) 
-    // {
-    //     // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
-    //  
-    //     // %%#! org + 0x20 : "name" - смещение от предыдущего org
-    //     // %%#! org 0x800200 : "name" - абсолютный org
-    //     // %%#! org auto : "Some Entry" - автоматическое вычисление адреса
-    //  
-    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //     if (!pTokenInfo)
-    //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //  
-    //     bool hasPlus = false;
-    //  
-    //     if (pTokenInfo->tokenType==MERMAID_TOKEN_OPERATOR_PLUS)
-    //     {
-    //         hasPlus = true;
-    //         pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //         if (!pTokenInfo)
-    //             return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //     }
-    //  
-    //     if (isAnyNumber(pTokenInfo->tokenType))
-    //     {
-    //         pTokenInfo = parseNumber(tokenPos, pTokenInfo, item.orgAddress, "'org' directive");
-    //         item.orgType = hasPlus ? EOrgType::orgRel : EOrgType::orgAbs;
-    //         if (item.orgType==EOrgType::orgAbs && diagram.memoryModel==EMemoryModel::segmented)
-    //         {
-    //             //pTokenInfo = BaseClass::getToken(&tokenPos);
-    //             if (!pTokenInfo)
-    //                 return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //             if (pTokenInfo->tokenType!=MERMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER)
-    //                 return expectedReachedMsg(pTokenInfo, {MERMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER}, "'org' directive: reading segment address"), (const TokenInfoType*)0;
-    //                 //return BaseClass::logSimpleMessage(pTokenInfo, "unexpected-token", "'org' directive: unexpected token while reading segment address"), (const TokenInfoType*)0;
-    //  
-    //             pTokenInfo = BaseClass::getToken(&tokenPos);
-    //             if (!pTokenInfo)
-    //                 return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //  
-    //             if (!isAnyNumber(pTokenInfo->tokenType))
-    //                 return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, "'org' directive: reading segment address"), (const TokenInfoType*)0;
-    //                 //return BaseClass::logSimpleMessage(pTokenInfo, "unexpected-token", "'org' directive: unexpected token while reading segment address"), (const TokenInfoType*)0;
-    //  
-    //             pTokenInfo = parseNumber(tokenPos, pTokenInfo, item.orgOffset, "'org' directive");
-    //  
-    // // bool expectedReachedMsg(const TokenInfoType *pTokenInfo, std::initializer_list<umba::tokenizer::payload_type> payloadExpectedList, const std::string &msg=std::string()) const
-    // // {
-    // //     BaseClass::logUnexpected( pTokenInfo, payloadExpectedList, msg, [&](umba::tokenizer::payload_type tk) { return getTokenIdStr(tk); } );
-    //  
-    //         }
-    //     }
-    //     else if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_AUTO)
-    //     {
-    //         if (hasPlus)
-    //             return BaseClass::logSimpleMessage(pTokenInfo, "unexpected-auto", "'org' directive: unexpected 'auto' after relative address option ('+')"), (const TokenInfoType*)0;
-    //  
-    //         item.orgType = EOrgType::orgAuto;
-    //  
-    //         pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //     }
-    //  
-    //     if (!pTokenInfo)
-    //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //  
-    //     item.addressRange.start = 0;
-    //     item.addressRange.end   = 0;
-    //     item.itemType           = EPacketDiagramItemType::org;
-    //  
-    //  
-    //     if (pTokenInfo->tokenType!=MERMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER) // В отличие от регулярной записи, тут название опционально, нагенерим, если надо будет
-    //         return pTokenInfo;
-    //  
-    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //     if (!pTokenInfo)
-    //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //  
-    //     return readStringLiteral(tokenPos, pTokenInfo, item.text, "'org' directive");
-    // }
-
-    // //! Разбор директивы title. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
-    // const TokenInfoType* parseTitleDirective(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo)
-    // {
-    //     // На старте нет нужды проверять тип токена, сюда мы попадаем только по подходящей ветке
-    //  
-    //     //auto pTextStart = BaseClass::getTextPointer(pTokenInfo);
-    //  
-    //     BaseClass::setRawModeAutoStop(umba::tokenizer::TokenizerRawAutoStopMode::stopOnCharExcluding, string_type("\r\n"));
-    //     BaseClass::setRawMode(true);
-    //  
-    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //     if (!pTokenInfo)
-    //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //     if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_RAW_DATA}, "invalid 'title' directive"))
-    //         return 0;
-    //  
-    //  
-    //     //allowOverrideType
-    //  
-    //     if ((diagram.parsingOptions&PacketDiagramParsingOptions::allowOverrideTitle)!=0u)
-    //     {
-    //         const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
-    //         auto rawData = std::get<typename tokenizer_type::RawDataHolder>(*pParsedData);
-    //         diagram.title = umba::string::trim_copy(rawData.pData->asString());
-    //     }
-    //  
-    //     return BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    // }
-
-    // const TokenInfoType* parseBitSize(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, std::uint64_t &bitSize, const std::string &msg=std::string())
-    // {
-    //     if (!pTokenInfo)
-    //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //  
-    //     pTokenInfo = parseNumber(tokenPos, pTokenInfo, bitSize, msg);
-    //     if (!pTokenInfo)
-    //         return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //  
-    //     if (!umba::TheValue(pTokenInfo->tokenType).oneOf(MERMAID_TOKEN_ATTR_BYTE, MERMAID_TOKEN_ATTR_BIT))
-    //     {
-    //         BaseClass::logUnexpected( pTokenInfo, {MERMAID_TOKEN_ATTR_BYTE, MERMAID_TOKEN_ATTR_BIT}, msg
-    //                                 , [&](umba::tokenizer::payload_type tk)
-    //                                   {   
-    //                                       if (tk==MERMAID_TOKEN_ATTR_BYTE)
-    //                                           return std::string("bytes");
-    //                                       else if (tk==MERMAID_TOKEN_ATTR_BIT)
-    //                                           return std::string("bits");
-    //                                       else 
-    //                                           return getTokenIdStr(tk);
-    //                                   }
-    //                                 );
-    //         return 0;
-    //     }
-    //  
-    //     auto savedBitSize = bitSize;
-    //     if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_BYTE)
-    //         bitSize *= 8;
-    //     if (savedBitSize>bitSize)
-    //         return BaseClass::logSimpleMessage(pTokenInfo, "integer-overflow", msg.empty() ? "integer overflow" : msg + ": integer overflow"), (const TokenInfoType*)0;
-    //  
-    //     return BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    // }
 
 
-    // , {"segment"                    , MERMAID_TOKEN_ATTR_SEGMENT               }
-    // , {"segment-shift"              , MERMAID_TOKEN_ATTR_SEGMENT_SHIFT         }
-    // , {"offset"                     , MERMAID_TOKEN_ATTR_OFFSET                }
-    // , {"data"                       , MERMAID_TOKEN_ATTR_DATA                  }
+    template<typename TokenHandler>
+    bool readHomogeneousTokensList( umba::tokenizer::payload_type tokenToken, umba::tokenizer::payload_type tokenSep
+                                  , bool readNextOnStart
+                                  , TokenHandler handler
+                                  )
+    {
+        if (readNextOnStart)
+            readNextToken();
 
-    // // native le 32 bits bit byte bytes
-    // //! Разбор директивы native. Разбор полного выражения. Может возвращать ноль при ошибке, или токен LF/FIN
-    // const TokenInfoType* parseNativeDirective(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo)
-    // {
-    //     //bool endiannessTaken    = false;
-    //     bool dataSizeTaken      = false;
-    //     bool segmentSizeTaken   = false;
-    //     bool offsetSizeTaken    = false;
-    //     bool segmentShiftTaken  = false;
-    //  
-    //     //bool sizeTaken       = false;
-    //     //const TokenInfoType* pTokenInfoBitSize = 0;
-    //     const TokenInfoType* pTokenInfoLastSegmentOption = 0;
-    //  
-    //     // std::uint64_t       bitSize = 0;
-    //     Endianness          endianness = Endianness::undefined; // littleEndian;
-    //     // EPacketDiagramType  bitSizeSizeType = EPacketDiagramType::unknown; // Используем не по назначению, а для хринения типа биты или байты в числе (bitDiagram, byteDiagram)
-    //  
-    //     pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //  
-    //     auto optionsCounter = -1;
-    //  
-    //     //------------------------------
-    //     auto returnCheckUpdateOptions = [&]() -> const TokenInfoType*
-    //     {
-    //         if (optionsCounter<1)
-    //             return BaseClass::logMessage(pTokenInfo, "native-options", "there is no options taken in the 'native' directive"), (const TokenInfoType*)0;
-    //  
-    //         if (pTokenInfoLastSegmentOption)
-    //         {
-    //             if (!segmentSizeTaken || !segmentShiftTaken || !offsetSizeTaken)
-    //                 return BaseClass::logMessage(pTokenInfo, "native-options", "not all segmented mode definitions taken ('segment', 'segment-shift', 'offset')"), (const TokenInfoType*)0;
-    //  
-    //             diagram.memoryModel = EMemoryModel::segmented;
-    //         }
-    //  
-    //         #if 0
-    //         if (pTokenInfoBitSize)
-    //         {
-    //             if (bitSizeSizeType==EPacketDiagramType::unknown)
-    //             {
-    //                 // детектим бит/байт размер, 16/32/64/128/256 - размер в битах
-    //                 //                           1/2/4    - размер в байтах
-    //                 //                           8        - неоднозначно, 8 бит или 8 байт (64 бита?)
-    //                 //                           16 и 32 в качестве размера в байтах никто уже не задаст в здравом уме - будут использовать битность 128/256
-    //                 if (!umba::TheValue(bitSize).oneOf(1u,2u,4u,8u,16u,32u,64u,128u,256u))
-    //                     return BaseClass::logMessage(pTokenInfoBitSize, "native-options", "'native' directive: bit size must be 1/2/4/8 bytes ot 8/16/32/64/128/256 bits"), (const TokenInfoType*)0;
-    //  
-    //                 if (bitSize==8)
-    //                     return BaseClass::logMessage(pTokenInfoBitSize, "native-options", "'native' directive: bit size 8 bits or bytes?"), (const TokenInfoType*)0;
-    //  
-    //                 if (!umba::TheValue(bitSize).oneOf(1u,2u,4u))
-    //                     bitSize *= 8; // Из байт в биты
-    //             }
-    //             else if (bitSizeSizeType==EPacketDiagramType::byteDiagram)
-    //             {
-    //                 if (!umba::TheValue(bitSize).oneOf(1u,2u,4u,8u))
-    //                     return BaseClass::logMessage(pTokenInfoBitSize, "native-options", "'native' directive: bit size must be 1/2/4/8 bytes ot 8/16/32/64/128/256 bits"), (const TokenInfoType*)0;
-    //                 bitSize *= 8; // Из байт в биты
-    //             }
-    //             else // bits
-    //             {
-    //                 if (!umba::TheValue(bitSize).oneOf(8u,16u,32u,64u,128u,256u))
-    //                     return BaseClass::logMessage(pTokenInfoBitSize, "native-options", "'native' directive: bit size must be 1/2/4/8 bytes ot 8/16/32/64/128/256 bits"), (const TokenInfoType*)0;
-    //                 // Только проверка, перевода нет, и так биты
-    //             }
-    //  
-    //             if ((diagram.parsingOptions&DiagramParsingOptions::allowOverrideBitSize)!=0u)
-    //             {
-    //                 diagram.bitSize = bitSize;
-    //             }
-    //         }
-    //         #endif
-    //  
-    //         if (endianness!=Endianness::undefined)
-    //         {
-    //             if ((diagram.parsingOptions&PacketDiagramParsingOptions::allowOverrideEndianness)!=0u)
-    //             {
-    //                 diagram.endianness = endianness;
-    //             }
-    //         }
-    //  
-    //         return pTokenInfo;
-    //     };
-    //  
-    //     //------------------------------
-    //     auto updateEndianness = [&](Endianness e)
-    //     {
-    //         if (endianness!=Endianness::undefined)
-    //             return BaseClass::logMessage(pTokenInfo, "native-options", "endianness already taken"), false;
-    //         endianness = e;
-    //         return true;
-    //     };
-    //  
-    //     //------------------------------
-    //     while(true)
-    //     {
-    //         if (!pTokenInfo)
-    //             return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //  
-    //         ++optionsCounter;
-    //  
-    //         if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
-    //         {
-    //             return returnCheckUpdateOptions();
-    //         }
-    //  
-    //         if (!umba::TheValue(pTokenInfo->tokenType).oneOf( MERMAID_TOKEN_ATTR_LE
-    //                                                         , MERMAID_TOKEN_ATTR_BE
-    //                                                         , MERMAID_TOKEN_ATTR_DATA
-    //                                                         , MERMAID_TOKEN_ATTR_SEGMENT
-    //                                                         , MERMAID_TOKEN_ATTR_SEGMENT_SHIFT
-    //                                                         , MERMAID_TOKEN_ATTR_OFFSET
-    //                                                         , UMBA_TOKENIZER_TOKEN_LINEFEED
-    //                                                         )
-    //            )
-    //         {
-    //             expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, MERMAID_TOKEN_ATTR_LE /* , MERMAID_TOKEN_ATTR_BE */  | UMBA_TOKENIZER_TOKEN_LINEFEED }, "invalid 'native' directive options" );
-    //             return 0;
-    //         }
-    //  
-    //         if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_LINEFEED)
-    //         {
-    //             return returnCheckUpdateOptions();
-    //         }
-    //  
-    //         if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_LE)
-    //         {
-    //             if (!updateEndianness(Endianness::littleEndian))
-    //                 return 0;
-    //             pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //         }
-    //  
-    //         else if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_BE)
-    //         {
-    //             if (!updateEndianness(Endianness::bigEndian))
-    //                 return 0;
-    //             pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //         }
-    //  
-    //         else if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_DATA)
-    //         {
-    //             if (dataSizeTaken)
-    //                 return BaseClass::logMessage(pTokenInfo, "native-options", "data size ('data' option) already taken"), (const TokenInfoType*)0;
-    //             dataSizeTaken = true;
-    //             pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //             pTokenInfo = parseBitSize(tokenPos, pTokenInfo, diagram.dataBitSize, "'native' directive 'data' option");
-    //         }
-    //  
-    //         else if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_SEGMENT)
-    //         {
-    //             if (segmentSizeTaken)
-    //                 return BaseClass::logMessage(pTokenInfo, "native-options", "segment size ('segment' option) already taken"), (const TokenInfoType*)0;
-    //             segmentSizeTaken = true;
-    //             pTokenInfoLastSegmentOption = pTokenInfo;
-    //             pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //             pTokenInfo = parseBitSize(tokenPos, pTokenInfo, diagram.segmentBitSize, "'native' directive 'segment' option");
-    //         }
-    //  
-    //         else if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_SEGMENT_SHIFT)
-    //         {
-    //             if (segmentShiftTaken)
-    //                 return BaseClass::logMessage(pTokenInfo, "native-options", "segment shift ('segment-shift' option) already taken"), (const TokenInfoType*)0;
-    //             segmentShiftTaken = true;
-    //             pTokenInfoLastSegmentOption = pTokenInfo;
-    //             pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //             pTokenInfo = parseBitSize(tokenPos, pTokenInfo, diagram.segmentShift, "'native' directive 'segment-shift' option");
-    //         }
-    //  
-    //         else if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_OFFSET)
-    //         {
-    //             if (offsetSizeTaken)
-    //                 return BaseClass::logMessage(pTokenInfo, "native-options", "offset size ('offset' option) already taken"), (const TokenInfoType*)0;
-    //             offsetSizeTaken = true;
-    //             pTokenInfoLastSegmentOption = pTokenInfo;
-    //             pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //             pTokenInfo = parseBitSize(tokenPos, pTokenInfo, diagram.offsetBitSize, "'native' directive 'offset' option");
-    //         }
-    //  
-    //         #if 0
-    //         else // Остались только числа
-    //         {
-    //             if (pTokenInfoBitSize)
-    //                 return BaseClass::logMessage(pTokenInfo, "native-options", "bit size already taken"), (const TokenInfoType*)0;
-    //  
-    //             pTokenInfoBitSize = pTokenInfo;
-    //  
-    //             pTokenInfo = parseNumber(tokenPos, pTokenInfo, bitSize, "'native' directive");
-    //             if (!pTokenInfo)
-    //                 return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //  
-    //             pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //             if (!pTokenInfo)
-    //                 return 0; // Сообщение уже выведено, просто возвращаем ошибку
-    //  
-    //             if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_BYTE || pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_BIT )
-    //             {
-    //                 bitSizeSizeType = (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_BYTE) ? EPacketDiagramType::byteDiagram : EPacketDiagramType::bitDiagram;
-    //                 pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-    //             }
-    //         }
-    //         #endif
-    //     }
-    //  
-    // }
+        bool waitSep = false;
 
-//     //! Разбор обычной строки. Может возвращать ноль при ошибке, или токен LF/FIN
-//     const TokenInfoType* parseRegularLine(TokenPosType &tokenPos, const TokenInfoType *pTokenInfo, PacketDiagramItemType &item, ChecksumOptions &checksumOptions)
-//     {
-//         if (!pTokenInfo)
-//             return 0; // Сообщение уже выведено, просто возвращаем ошибку
-//  
-//         bool bRange = false;
-//         bool forceTypedRange = false;
-//  
-//         if (isAnyNumber(pTokenInfo->tokenType))
-//         {
-//             pTokenInfo = parseRange(tokenPos, pTokenInfo, item.addressRange, item.itemType);
-//             bRange = true;
-//         }
-//  
-//         else if (isAnyType(pTokenInfo->tokenType))
-//         {
-//             pTokenInfo = parseType(tokenPos, pTokenInfo, item);
-//         }
-//  
-//         else
-//             return 0;
-//  
-//  
-//         if (bRange && diagram.testDisplayOption(PacketDiagramDisplayOptions::rangeAsChars))
-//         {
-//             item.charsRange = true;
-//         }
-//  
-//  
-//         if (!pTokenInfo)
-//             return 0; // Сообщение уже выведено, просто возвращаем ошибку
-//  
-//         if (!checkExactTokenType(pTokenInfo, {MERMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER}, "invalid record definition"))
-//             return 0;
-//  
-//         // Читаем следующий токен
-//         pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-//         if (!checkNotNul(pTokenInfo))
-//             return 0;
-//  
-//         if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL}, "invalid record definition"))
-//             return 0;
-//  
-//         pTokenInfo = readStringLiteral(tokenPos, pTokenInfo, item.text, "invalid record definition");
-//         if (!pTokenInfo)
-//             return 0; // Сообщение уже выведено, просто возвращаем ошибку
-//  
-//         if (pTokenInfo->tokenType!=MERMAID_TOKEN_OPERATOR_EXTRA)
-//             return pTokenInfo;
-//  
-//         pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-//  
-//         if (!pTokenInfo)
-//             return 0; // Сообщение уже выведено, просто возвращаем ошибку
-//  
-//         Endianness &endianness = item.endianness; // = Endianness::unknown;
-//         bool hasChecksum   = false; // было ли ключевое слово checksum
-//         // bool hasCsKind     = false; // определим по значению поля kind
-//         //bool hasCrc        = false; // потом заменим 
-//         bool hasSeed       = false;
-//         bool hasPoly       = false;
-//  
-//         checksumOptions.crcConfig.seed = 0;
-//         endianness = Endianness::undefined;
-//  
-//         umba::tokenizer::payload_type itemValueType = MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8;
-//  
-//         if ((item.isArray() || item.isRange()) && item.getTypeSize()==1)
-//         {
-//             // у нас однобайтный массив или рендж, надо проверить тип, не отображать ли его блоком по типу
-//             if (item.isRange())
-//             {
-//                 if (item.charsRange)
-//                     itemValueType = MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR;
-//                 else
-//                     itemValueType = MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8;
-//             }
-//             else // массив заданного явно типа
-//             {
-//                 itemValueType = item.explicitTypeTokenId;
-//             }
-//  
-//             if ( (diagram.testDisplayOption(PacketDiagramDisplayOptions::uintBytesAsBlock) && itemValueType==MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8) 
-//               || (diagram.testDisplayOption(PacketDiagramDisplayOptions::intBytesAsBlock)  && itemValueType==MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8 )
-//               || (diagram.testDisplayOption(PacketDiagramDisplayOptions::charBytesAsBlock) && itemValueType==MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR )
-//                )
-//             {
-//                 item.blockMode = true;
-//             }
-//         }
-//  
-//         auto returnCheckUpdateOptions = [&]() -> const TokenInfoType*
-//         {
-//             auto tfs = item.getTypeFieldSize();
-//  
-//             if (checksumOptions.kind==ChecksumKind::crc)
-//             {
-//                 // seed по умолчанию 0
-//                 // if (!hasSeed)
-//                 //     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'crc' option taken, but no 'seed' option taken" ), (const TokenInfoType*)0;
-//                 if (!hasPoly)
-//                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'crc' option taken, but no 'poly' option taken" ), (const TokenInfoType*)0;
-//  
-//                 if (tfs!=1 && tfs!=2 && tfs!=4)
-//                 {
-//                     BaseClass::logMessage( item.pTokenInfo, "r-definition", "record definition: 'crc' option taken, but size of field is invalid ($(SizeOfField)). Size of field can be only 1, 2 or 4"
-//                                          , umba::FormatMessage<std::string>().arg("SizeOfField", tfs).values()
-//                                          );
-//                     return 0;
-//                 }
-//             }
-//  
-//             if (umba::TheValue(checksumOptions.kind).oneOf(ChecksumKind::simpleSum, ChecksumKind::simpleSumComplement, ChecksumKind::simpleSumInvert, ChecksumKind::simpleXor, ChecksumKind::simpleXorComplement, ChecksumKind::simpleXorInvert))
-//             {
-//                 if (tfs!=1)
-//                 {
-//                     BaseClass::logMessage( item.pTokenInfo, "r-definition", "record definition: 'simple-*' checksum option taken, but size of field is invalid ($(SizeOfField)). Size of field can be only 1"
-//                                          , umba::FormatMessage<std::string>().arg("SizeOfField", tfs).values()
-//                                          );
-//                     return 0;
-//                 }
-//  
-//                 // item.crcIndex = 0; // сигналим, что CRC опции валидны. Это поле потом следует установить в реальный индекс CRC опций.
-//             }
-//  
-//             if (item.isAsciiZet())
-//             {
-//                 if (item.getTypeSize()!=1 || !(item.isArray() || item.isRange()))
-//                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'ascii-z' option can be set only for char/int8/uint8 arrays/ranges" ), (const TokenInfoType*)0;
-//             }
-//  
-//             if (item.endianness!=Endianness::undefined)
-//             {
-//                 if (item.getTypeSize()==1)
-//                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: endianness option can't be set for char/int8/uint8 values/arrays/ranges" ), (const TokenInfoType*)0;
-//             }
-//  
-//             // item.endianness = Endianness::littleEndian
-//  
-//             return pTokenInfo;
-//         };
-//  
-// // crc, 
-// // struct ChecksumOptions
-// // {
-// //     ChecksumKind    kind = ChecksumKind::undefined;
-// //     // std::size_t          cellIndex  = std::size_t(-1); // Индекс в массиве data, по которому расположена информация о ячейке
-// //     CrcConfig       crcConfig; // Размер crc (size) высчитывается от размера элемента, в который помещается, если размер не 1/2/4 - это ошибка
-// //     AddressRange    addressRange  ; // Индексы начального и конечного байт данных, сам CRC не должен туда входить
-// //  
-// // }; // struct ChecksumOptions
-//  
-//  
-//  
-//         // %%#! le be middle-endian le-me be-me crc 0-10 seed 10 poly 0x1234
-//  
-//         while(true)
-//         {
-//             if (!pTokenInfo)
-//                 return 0; // Сообщение уже выведено, просто возвращаем ошибку
-//  
-//             if (pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
-//             {
-//                 return returnCheckUpdateOptions();
-//             }
-//  
-//             item.pTokenInfo = pTokenInfo;
-//  
-//             const auto tokenTypeVal = UMBA_THE_VALUE(pTokenInfo->tokenType); // umba::TheValue<std::decay< decltype(pTokenInfo->tokenType)> >(pTokenInfo->tokenType); // UMBA_THE_VALUE(pTokenInfo->tokenType);
-//  
-//             if ( !isAnyNumber(pTokenInfo->tokenType)
-//               && !tokenTypeVal.oneOf( MERMAID_TOKEN_ATTR_LE, MERMAID_TOKEN_ATTR_BE
-//                                     , MERMAID_TOKEN_ATTR_ME, MERMAID_TOKEN_ATTR_LE_ME, MERMAID_TOKEN_ATTR_BE_ME
-//                                     , UMBA_TOKENIZER_TOKEN_LINEFEED
-//                                     , MERMAID_TOKEN_ATTR_ASCII_Z
-//                                     , MERMAID_TOKEN_ATTR_CRC, MERMAID_TOKEN_ATTR_SEED, MERMAID_TOKEN_ATTR_POLY
-//                                     , MERMAID_TOKEN_ATTR_CHECKSUM
-//                                     , MERMAID_TOKEN_ATTR_SIMPLE_SUM, MERMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT, MERMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT
-//                                     , MERMAID_TOKEN_ATTR_SIMPLE_XOR, MERMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT, MERMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT
-//                                     , MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR, MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8
-//                                     , MERMAID_TOKEN_ATTR_BLOCK
-//                                     )
-//                )
-//             {
-//                 expectedReachedMsg(pTokenInfo, { /* UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC, */  MERMAID_TOKEN_ATTR_LE /* , MERMAID_TOKEN_ATTR_BE */  | UMBA_TOKENIZER_TOKEN_LINEFEED } /*, "invalid 'native' directive options" */ );
-//                 return 0;
-//             }
-//  
-//             if (tokenTypeVal.oneOf(UMBA_TOKENIZER_TOKEN_LINEFEED))
-//             {
-//                 return returnCheckUpdateOptions();
-//             }
-//  
-//             if (tokenTypeVal.oneOf(MERMAID_TOKEN_ATTR_BLOCK))
-//             {
-//                 if (item.getTypeSize()!=1 || !(item.isArray() || item.isRange()))
-//                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'block' option can be set only for char/int8/uint8 arrays/ranges" ), (const TokenInfoType*)0;
-//                 item.blockMode = true;
-//                 pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-//                 continue;
-//             }
-//  
-//             if (tokenTypeVal.oneOf(MERMAID_TOKEN_ATTR_ASCII_Z))
-//             {
-//                 item.asciiZet = true;
-//                 item.charsRange = true; // asciiZet автоматом задаёт тип ренджа
-//                 forceTypedRange = true;
-//                 // Берем следующий токен и пилим по циклу дальше
-//                 pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-//                 continue;
-//             }
-//  
-//             if (tokenTypeVal.oneOf(MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR, MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8))
-//             {
-//                 if (!bRange)
-//                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: trying to set range type for non-range entry" ), (const TokenInfoType*)0;
-//  
-//                 if (forceTypedRange)
-//                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: range type already was set (by type name or by 'ascii-z' option)" ), (const TokenInfoType*)0;
-//             
-//                 forceTypedRange = true;
-//  
-//                 if (tokenTypeVal.oneOf(MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR))
-//                     item.charsRange = true;
-//                 else
-//                     item.charsRange = false;
-//  
-//                 pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-//                 continue;
-//             }
-//  
-//  
-//             if (tokenTypeVal.oneOf(MERMAID_TOKEN_ATTR_LE, MERMAID_TOKEN_ATTR_BE, MERMAID_TOKEN_ATTR_ME, MERMAID_TOKEN_ATTR_LE_ME, MERMAID_TOKEN_ATTR_BE_ME))
-//             {
-//                 if (endianness!=Endianness::unknown)
-//                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: endianness option already taken" ), (const TokenInfoType*)0;
-//  
-//                 if (tokenTypeVal.oneOf(MERMAID_TOKEN_ATTR_ME))
-//                 {
-//                     if (diagram.endianness==Endianness::unknown)
-//                         return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: middle-endian option taken, but project endianness not set" ), (const TokenInfoType*)0;
-//  
-//                     else if (diagram.endianness==Endianness::littleEndian)
-//                         item.endianness = Endianness::leMiddleEndian;
-//  
-//                     else if (diagram.endianness==Endianness::bigEndian)
-//                         item.endianness = Endianness::beMiddleEndian;
-//  
-//                     else
-//                         return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: unknown byte order in project definition" ), (const TokenInfoType*)0;
-//                 }
-//                 else
-//                 {
-//                     switch(pTokenInfo->tokenType)
-//                     {
-//                         case MERMAID_TOKEN_ATTR_LE    : item.endianness = Endianness::littleEndian  ; break;
-//                         case MERMAID_TOKEN_ATTR_BE    : item.endianness = Endianness::bigEndian     ; break;
-//                         case MERMAID_TOKEN_ATTR_LE_ME : item.endianness = Endianness::leMiddleEndian; break;
-//                         case MERMAID_TOKEN_ATTR_BE_ME : item.endianness = Endianness::beMiddleEndian; break;
-//                         default:
-//                             return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: something goes wrong" ), (const TokenInfoType*)0;
-//                     }
-//                 }
-//  
-//                 // Берем следующий токен и пилим по циклу дальше
-//                 pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-//  
-//                 continue;
-//             }
-//  
-//             if (tokenTypeVal.oneOf(MERMAID_TOKEN_ATTR_CHECKSUM))
-//             {
-//                 if (hasChecksum)
-//                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: `checksum` option already taken" ), (const TokenInfoType*)0;
-//  
-//                 hasChecksum = true;
-//                 pTokenInfo  = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-//  
-//                 continue;
-//             }
-//  
-//             // Все опции типа контрольной суммы могут не предваряться ключевым словом checksum, но лучше его использовать
-//             // для повышения читаемости
-//  
-//             // else if (pTokenInfo->tokenType==MERMAID_TOKEN_ATTR_CRC)
-//             if (tokenTypeVal.oneOf( MERMAID_TOKEN_ATTR_SIMPLE_SUM, MERMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT, MERMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT
-//                                   , MERMAID_TOKEN_ATTR_SIMPLE_XOR, MERMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT, MERMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT
-//                                   , MERMAID_TOKEN_ATTR_CRC
-//                                   )
-//                     )
-//             {
-//                 // или можно не надо?
-//                 // if (!hasChecksum)
-//                 //     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'crc' option: check sum kind already taken" ), (const TokenInfoType*)0;
-//  
-//                 if (checksumOptions.kind!=ChecksumKind::undefined)
-//                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: check sum kind already taken" ), (const TokenInfoType*)0;
-//  
-//                 switch(pTokenInfo->tokenType)
-//                 {
-//                     case MERMAID_TOKEN_ATTR_SIMPLE_SUM           : checksumOptions.kind = ChecksumKind::simpleSum          ; break;
-//                     case MERMAID_TOKEN_ATTR_SIMPLE_SUM_COMPLEMENT: checksumOptions.kind = ChecksumKind::simpleSumComplement; break;
-//                     case MERMAID_TOKEN_ATTR_SIMPLE_SUM_INVERT    : checksumOptions.kind = ChecksumKind::simpleSumInvert    ; break;
-//                     case MERMAID_TOKEN_ATTR_SIMPLE_XOR           : checksumOptions.kind = ChecksumKind::simpleXor          ; break;
-//                     case MERMAID_TOKEN_ATTR_SIMPLE_XOR_COMPLEMENT: checksumOptions.kind = ChecksumKind::simpleXorComplement; break;
-//                     case MERMAID_TOKEN_ATTR_SIMPLE_XOR_INVERT    : checksumOptions.kind = ChecksumKind::simpleXorInvert    ; break;
-//                     case MERMAID_TOKEN_ATTR_CRC                  : checksumOptions.kind = ChecksumKind::crc                ; break;
-//                 }
-//  
-//                 //checksumOptions.kind = ChecksumKind::crc;
-//                 // hasCrc = true;
-//  
-//                 pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-//                 if (!pTokenInfo)
-//                     return 0; // Сообщение уже выведено, просто возвращаем ошибку
-//  
-//                 // Хотим тут range
-//                 // !!! Тут надо делать селект - если токен не числовой внутри орга, то литеральный глобальный
-//                 // Пока только числовой делаем
-//  
-//                 EPacketDiagramItemType itemType = EPacketDiagramItemType::invalid;
-//                 checksumOptions.addressRangeKind = AddressRangeKind::undefined;
-//                 if (isAnyNumber(pTokenInfo->tokenType))
-//                 {
-//                     pTokenInfo = parseRange(tokenPos, pTokenInfo, checksumOptions.addressRange, itemType, "record definition 'checksum' option");
-//                     checksumOptions.addressRangeKind = AddressRangeKind::localIndexes;
-//                 }
-//                 else
-//                 {
-//                     pTokenInfo = parseNameRange(tokenPos, pTokenInfo, checksumOptions.addressRangeLabels, "record definition 'checksum' option");
-//                     checksumOptions.addressRangeKind = AddressRangeKind::globalLabels;
-//                 }
-//  
-//                 if (!pTokenInfo)
-//                     return 0; // Сообщение уже выведено, просто возвращаем ошибку
-//  
-//                 if (itemType!=EPacketDiagramItemType::range)
-//                 {
-//                     // parseRange тут немного херню даёт, и диагностика хромает, показывает следующую запись, но пока так
-//                     // !!! Надо разобраться, почему диагностика не туда пырит
-//                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: expected adress range, but got a single value or something else" ), (const TokenInfoType*)0;
-//                 }
-//  
-//                 continue;
-//             }
-//  
-//             if (tokenTypeVal.oneOf(MERMAID_TOKEN_ATTR_SEED))
-//             {
-//                 if (hasSeed)
-//                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'seed' option already taken" ), (const TokenInfoType*)0;
-//  
-//                 hasSeed = true;
-//  
-//                 pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-//                 if (!pTokenInfo)
-//                     return 0; // Сообщение уже выведено, просто возвращаем ошибку
-//  
-//                 pTokenInfo = parseNumber(tokenPos, pTokenInfo, checksumOptions.crcConfig.seed, "record definition 'seed' option");
-//                 if (!pTokenInfo)
-//                     return 0; // Сообщение уже выведено, просто возвращаем ошибку
-//  
-//                 continue;
-//             }
-//  
-//             if (tokenTypeVal.oneOf(MERMAID_TOKEN_ATTR_POLY))
-//             {
-//                 if (hasPoly)
-//                     return BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: 'poly' option already taken" ), (const TokenInfoType*)0;
-//  
-//                 hasPoly = true;
-//  
-//                 pTokenInfo = BaseClass::waitForSignificantTokenChecked( &tokenPos, ParserWaitForTokenFlags::stopOnLinefeed);
-//                 if (!pTokenInfo)
-//                     return 0; // Сообщение уже выведено, просто возвращаем ошибку
-//  
-//                 pTokenInfo = parseNumber(tokenPos, pTokenInfo, checksumOptions.crcConfig.poly, "record definition 'poly' option");
-//                 if (!pTokenInfo)
-//                     return 0; // Сообщение уже выведено, просто возвращаем ошибку
-//  
-//                 continue;
-//             }
-//  
-//             // else
-//             {
-//                 BaseClass::logMessage( pTokenInfo, "r-definition", "record definition: something goes wrong - unexpected token" );
-//                 return 0;
-//             }
-//  
-//         }
-//  
-//         if (!pTokenInfo)
-//             return 0; // Сообщение уже выведено, просто возвращаем ошибку
-//  
-//         return returnCheckUpdateOptions();
-//     }
+        for( 
+           ; umba::TheValue(m_pTokenInfo->tokenType).oneOf(tokenSep, tokenToken)
+           ; readNextToken()
+           )
+        {
+            if (waitSep)
+            {
+                if (m_pTokenInfo->tokenType!=tokenSep)
+                    break;
+                waitSep = false;
+            }
+            else // ждём tokenToken, после разделителя или в начале
+            {
+                if (!checkExactTokenType(m_pTokenInfo, tokenToken /* , "'display-options' directive: invalid option value" */ ))
+                    return false; // а пришло хз что
+                //evd.basicEvents.emplace_back(extractIdentifierName(m_pTokenInfo));
+                handler();
+                waitSep = true;
+            }
+        }
+
+        return true;
+    }
 
 
     // cmdStopTraffic : external - "The RED light (stop) mode is on";
@@ -1755,29 +792,10 @@ public:
             }
             else if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_ASSIGN)
             {
-                bool waitSep = false;
-
-                for( readNextToken()
-                   ; umba::TheValue(m_pTokenInfo->tokenType).oneOf(UFSM_TOKEN_OP_OR, UMBA_TOKENIZER_TOKEN_IDENTIFIER)
-                   ; readNextToken()
-                   )
-                {
-                    if (waitSep)
-                    {
-                        if (m_pTokenInfo->tokenType!=UFSM_TOKEN_OP_OR)
-                            break;
-
-                        waitSep = false;
-                    }
-                    else // ждём имя (идентификатор), после разделителя или в начале
-                    {
-                        if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ ))
-                            return false; // а пришло хз что
-                        //fqn.append(extractIdentifierName(m_pTokenInfo));
-                        evd.basicEvents.emplace_back(extractIdentifierName(m_pTokenInfo));
-                        waitSep = true;
-                    }
-                }
+                if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_OR
+                                              , true /* readNextOnStart */
+                                              , [&]() { evd.basicEvents.emplace_back(extractIdentifierName(m_pTokenInfo)); } ))
+                   return false;
 
                 if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
                 {
@@ -1881,27 +899,11 @@ public:
                 if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_GENERATES)
                 {
                     ad.flags |= ActionFlags::external | ActionFlags::generates;
-                    // readNextToken();
-                    bool waitSep = false;
-                    for( readNextToken()
-                       ; umba::TheValue(m_pTokenInfo->tokenType).oneOf(UFSM_TOKEN_OP_COMMA, UMBA_TOKENIZER_TOKEN_IDENTIFIER)
-                       ; readNextToken()
-                       )
-                    {
-                        if (waitSep)
-                        {
-                            if (m_pTokenInfo->tokenType!=UFSM_TOKEN_OP_COMMA)
-                                break;
-                            waitSep = false;
-                        }
-                        else // ждём имя (идентификатор), после разделителя или в начале
-                        {
-                            if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ ))
-                                return false; // а пришло хз что
-                            ad.generates.emplace_back(extractIdentifierName(m_pTokenInfo));
-                            waitSep = true;
-                        }
-                    }
+
+                    if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_COMMA
+                                                  , true /* readNextOnStart */
+                                                  , [&]() { ad.generates.emplace_back(extractIdentifierName(m_pTokenInfo)); } ))
+                       return false;
 
                 }
 
@@ -1918,27 +920,11 @@ public:
             }
             else if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_ASSIGN)
             {
-                bool waitSep = false;
+                if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_COMMA
+                                              , true /* readNextOnStart */
+                                              , [&]() { ad.basicActions.emplace_back(extractIdentifierName(m_pTokenInfo)); } ))
+                   return false;
 
-                for( readNextToken()
-                   ; umba::TheValue(m_pTokenInfo->tokenType).oneOf(UFSM_TOKEN_OP_COMMA, UMBA_TOKENIZER_TOKEN_IDENTIFIER)
-                   ; readNextToken()
-                   )
-                {
-                    if (waitSep)
-                    {
-                        if (m_pTokenInfo->tokenType!=UFSM_TOKEN_OP_COMMA)
-                            break;
-                        waitSep = false;
-                    }
-                    else // ждём имя (идентификатор), после разделителя или в начале
-                    {
-                        if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ ))
-                            return false; // а пришло хз что
-                        ad.basicActions.emplace_back(extractIdentifierName(m_pTokenInfo));
-                        waitSep = true;
-                    }
-                }
 
                 if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
                 {
@@ -1968,6 +954,16 @@ public:
 
     bool parseStateMachineStates(StateMachineDefinition &  /* sm */ )
     {
+// struct StateDefinition
+// {
+//     PositionInfo    positionInfo;
+//     std::string     name        ;
+//     std::string     description ;
+//  
+//     StateFlags      flags = StateFlags::none;
+//  
+//     std::unordered_map<StateActionKind, StateActionRefs>   actionRefs; 
+
         return false;
     }
 
@@ -2042,6 +1038,12 @@ public:
     bool parseFullQualifiedName(FullQualifiedName &fqn)
     {
         fqn.clear();
+
+        // if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_COMMA
+        //                               , true /* readNextOnStart */
+        //                               , [&]() { ad.basicActions.emplace_back(extractIdentifierName(m_pTokenInfo)); } ))
+        //    return false;
+
         bool waitSep = false;
 
         if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_SCOPE)
