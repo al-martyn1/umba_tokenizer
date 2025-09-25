@@ -219,18 +219,18 @@ uses TrafficLightCommands,
 
         turnedOff : initial - "Traffic Light is turned OFF"
         {
-            enter { turnOff /*, startAliveTimer */ } // При входе в состояние всегда всё выключаем
+            enter: turnOff /*, startAliveTimer */; // При входе в состояние всегда всё выключаем
         }
 
         trafficAllowed - "Informs pedestrians that they are can go"
-        { enter { runTrafficAllowed } }
+        { enter: runTrafficAllowed }
 
         // Светофор показыват уведомление, что скоро произойдёт смена сигнала на запрещающий
         stopNotice - "Informs pedestrians that the RED light is coming soon"
-        { enter {runStopNotice} }
+        { enter: runStopNotice; }
 
         trafficStopped - "Informs pedestrians that the traffic must stops"
-        { enter { runTrafficStopped } }
+        { enter: runTrafficStopped; }
 
     }
 
@@ -412,25 +412,25 @@ uses TrafficLightCommands,
     states
     {
         turnedOff : initial - "Traffic Light is turned OFF"
-        { enter { turnOff } }
+        { enter: turnOff; }
 
         allowWarning { enter {runAllowWarning} }
 
         trafficAllowed - "Informs road users that they are can go"
-        { enter { runTrafficAllowed } }
+        { enter: runTrafficAllowed; }
 
         stopNotice - "Informs road users that the RED light is coming soon"
-        { enter {runStopNotice} }
+        { enter: runStopNotice; }
 
-        stopWarning { enter {runStopWarning} }
+        stopWarning { enter: runStopWarning; }
 
         trafficStopped - "Informs road users that the traffic must stops"
-        { enter { runTrafficStopped } }
+        { enter: runTrafficStopped; }
 
         uncontrolledMode
         {
-            enter {runUncontrolledMode}
-            leave {awayFromUncontrolled}
+            enter: runUncontrolledMode;
+            leave: awayFromUncontrolled;
         }
 
     }
