@@ -662,9 +662,6 @@ public:
     }
 
 
-
-
-
     template<typename TokenHandler>
     bool readHomogeneousTokensList( umba::tokenizer::payload_type tokenToken, umba::tokenizer::payload_type tokenSep
                                   , bool readNextOnStart
@@ -795,7 +792,7 @@ public:
                 if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_OR
                                               , true /* readNextOnStart */
                                               , [&]() { evd.basicEvents.emplace_back(extractIdentifierName(m_pTokenInfo)); } ))
-                   return false;
+                    return false;
 
                 if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
                 {
@@ -903,7 +900,7 @@ public:
                     if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_COMMA
                                                   , true /* readNextOnStart */
                                                   , [&]() { ad.generates.emplace_back(extractIdentifierName(m_pTokenInfo)); } ))
-                       return false;
+                        return false;
 
                 }
 
@@ -923,7 +920,7 @@ public:
                 if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_COMMA
                                               , true /* readNextOnStart */
                                               , [&]() { ad.basicActions.emplace_back(extractIdentifierName(m_pTokenInfo)); } ))
-                   return false;
+                    return false;
 
 
                 if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
@@ -952,19 +949,136 @@ public:
         return false;
     }
 
-    bool parseStateMachineStates(StateMachineDefinition &  /* sm */ )
+    bool parseStateMachineStates(StateMachineDefinition &sm )
     {
-// struct StateDefinition
-// {
-//     PositionInfo    positionInfo;
-//     std::string     name        ;
-//     std::string     description ;
-//  
-//     StateFlags      flags = StateFlags::none;
-//  
-//     std::unordered_map<StateActionKind, StateActionRefs>   actionRefs; 
+        // struct StateDefinition
+        // {
+        //     PositionInfo    positionInfo;
+        //     std::string     name        ;
+        //     std::string     description ;
+        //  
+        //     StateFlags      flags = StateFlags::none;
+        //  
+        //     std::unordered_map<StateActionKind, StateActionRefs>   actionRefs; 
 
-        return false;
+        // Пропускаем ключевое слово actions, вычитываем следующий токен - должна быть открывающая фигурная скобка
+        readNextToken();
+
+        StateFlags commonFlags = StateFlags::none;
+
+        if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
+        {
+            readNextToken();
+            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_OVERRIDE} /* , "'display-options' directive: invalid option value" */ ))
+                return false; // а пришло хз что
+            commonFlags = StateFlags::override;
+            readNextToken();
+        }
+
+        if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+            return false; // а пришло хз что
+
+        // states : override // Перезаписывает то, что было определено в базе, но не в текущем автомате
+        // {
+        //     turnedOff : initial - "Traffic Light is turned OFF"
+        //     {
+        //         enter: turnOff /*, startAliveTimer */; // При входе в состояние всегда всё выключаем
+        //     }
+        //  
+        //     trafficAllowed - "Informs pedestrians that they are can go"
+        //     { enter: runTrafficAllowed }
+        //  
+        //     // Светофор показыват уведомление, что скоро произойдёт смена сигнала на запрещающий
+        //     stopNotice - "Informs pedestrians that the RED light is coming soon"
+        //     { enter: runStopNotice; }
+        //  
+        //     trafficStopped - "Informs pedestrians that the traffic must stops"
+        //     { enter: runTrafficStopped; }
+        // }
+
+        while(true)
+        {
+            // Ждём идентификатор или конец блока
+            readNextToken();
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_BRACKET_SCOPE_CLOSE)
+                return true;
+
+            if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
+                return false; // а пришло хз что
+
+            StateDefinition sd;
+            sd.positionInfo = getFullPos();
+            sd.name  = extractIdentifierName(m_pTokenInfo);
+            sd.flags = commonFlags;
+
+            readNextToken();
+
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
+            {
+                readNextToken(); // вычитываем следующий токен
+                // может быть только признак initial/final
+                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_INITIAL, UFSM_TOKEN_KWD_FINAL} /* , "'display-options' directive: invalid option value" */ ))
+                    return false; // а пришло хз что
+
+                sd.flags |= m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_INITIAL ? StateFlags::initial : StateFlags::final;
+                readNextToken();
+            }
+
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+            {
+                readNextToken();
+                if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
+                    return false; // а пришло хз что
+                sd.description = extractLiteral(m_pTokenInfo);
+                readNextToken();
+            }
+
+            // Теперь ожидаем блок с различными типами действий: enter/leave/self-enter/self-leave
+            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+                return false; // а пришло хз что
+                
+            while(true)
+            {
+                // Ждём идентификатор типа действия или конец блока
+                readNextToken();
+                if (m_pTokenInfo->tokenType==UFSM_TOKEN_BRACKET_SCOPE_CLOSE)
+                    break;
+  
+                // Ждём идентификатор типа действия
+                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_ENTER, UFSM_TOKEN_KWD_LEAVE, UFSM_TOKEN_KWD_SELF_ENTER, UFSM_TOKEN_KWD_SELF_LEAVE} /* , "'display-options' directive: invalid option value" */ ))
+                    return false; // а пришло хз что
+
+                StateActionKind saKind = StateActionKind::none;
+
+                switch(m_pTokenInfo->tokenType)
+                {
+                    case UFSM_TOKEN_KWD_ENTER     : saKind = StateActionKind::stateEnter; break;
+                    case UFSM_TOKEN_KWD_LEAVE     : saKind = StateActionKind::stateLeave; break;
+                    case UFSM_TOKEN_KWD_SELF_ENTER: saKind = StateActionKind::selfEnter ; break;
+                    case UFSM_TOKEN_KWD_SELF_LEAVE: saKind = StateActionKind::selfLeave ; break;
+                }
+
+                readNextToken();
+                // Ждем разделитель перед списком действий
+                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_COLON} /* , "'display-options' directive: invalid option value" */ ))
+                    return false; // а пришло хз что
+                
+                if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_COMMA
+                                              , true /* readNextOnStart */
+                                              , [&]() { sd.actionRefs[saKind].push_back(extractIdentifierName(m_pTokenInfo)); } ))
+                    return false;
+
+                // Тут у нас должна быть точка с запятой
+                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
+                    return false; // а пришло хз что
+
+            } // while(true)
+
+            sm.addDefinition(sd);
+
+        } // while(true)
+
+        // return true; // unreachable
     }
 
     bool parseStateMachinePredicates(StateMachineDefinition &  /* sm */ )
