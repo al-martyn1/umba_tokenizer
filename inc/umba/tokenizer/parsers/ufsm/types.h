@@ -16,6 +16,7 @@
 #include <functional>
 #include <type_traits>
 #include <variant>
+#include <iterator>
 
 
 
@@ -208,7 +209,9 @@ public: // methods
         return findEntry(name_, 0, ppe);
     }
 
-    // Находит определение по имени. Если имя относительное, сначала ищется относительно текущего NS, а потом с корня
+    // Находит определение по имени. Если имя относительное
+    // используется алгоритм поиска, как в C++:
+    // относительно текущего NS, затем по шагам переходим на уровень выше
     NamespaceEntryKind findAnyDefinition( const FullQualifiedName &name_
                                         , const FullQualifiedName &curNsName
                                         , NamespaceDefinition *pRootNs
@@ -238,26 +241,29 @@ public: // methods
             return kind;
         }
 
-        // У нас имя относительное, ищем его сначала с текущего NS
-        if (findEntry(name_, pRootNs, &pFoundEntry) && pFoundEntry)
+        FullQualifiedName baseNs = curNsName;
+        do
         {
-            NamespaceEntryKind kind = getNamespaceEntryKind(*pFoundEntry);
-            if (kind==NamespaceEntryKind::none)
-                return kind;
-
-            if (pFoundName)
+            auto checkName = baseNs;
+            checkName.append(name_);
+            
+            if (pRootNs->findEntry(checkName.toRelative(), pRootNs, &pFoundEntry))
             {
-               // Делаем абсолютное имя из текущего пути NS и искомого имени
-               *pFoundName = curNsName.toAbsolute(); // на всякий случай делаем абсолютным
-               pFoundName->append(name_);
-               pFoundName->positionInfo = name_.positionInfo;
+                NamespaceEntryKind kind = getNamespaceEntryKind(*pFoundEntry);
+                if (kind==NamespaceEntryKind::none)
+                    return kind;
+
+                if (pFoundName)
+                   *pFoundName = checkName;
+
+                return kind;
             }
 
-            return kind;
-        }
+            baseNs = baseNs.getHead();
 
-        // У нас имя относительное, но пытаемся его найти от корня - алгоритм такой же, как в плюсах
-        return findAnyDefinition( name_.toAbsolute(), curNsName, pRootNs, pFoundName);
+        } while(!baseNs.empty());
+
+        return NamespaceEntryKind::none;
     }
 
 

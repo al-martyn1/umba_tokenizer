@@ -56,6 +56,7 @@ public: // methods
     FullQualifiedName toRelative() const;
     FullQualifiedName toAbsolute() const;
     FullQualifiedName getTail   () const;
+    FullQualifiedName getHead   () const;
     void tailRemove(std::size_t nItems);
     void clear();
     void append(const std::string &n);

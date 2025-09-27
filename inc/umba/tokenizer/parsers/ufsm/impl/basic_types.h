@@ -158,11 +158,27 @@ FullQualifiedName FullQualifiedName::getTail() const
 
     FullQualifiedName res;
     res.positionInfo = positionInfo;
-    res.flags = flags & ~FullQualifiedNameFlags::absolute;
+    res.flags = flags & ~FullQualifiedNameFlags::absolute; // сбрасывает признак абсолютности
     auto fromIt = name.begin(); ++fromIt;
     res.name.insert(res.name.end(), fromIt, name.end());
     return res;
 }
+
+inline
+FullQualifiedName FullQualifiedName::getHead() const
+{
+    FullQualifiedName res;
+    res.positionInfo = positionInfo;
+    res.flags = flags; // признак абсолютности остаётся таким, как был
+
+    if (name.empty())
+        return res;
+
+    auto toIt = name.begin(); std::advance(toIt, std::ptrdiff_t(name.size()-1));
+    res.name.insert(res.name.end(), name.begin(), toIt);
+    return res;
+}
+
 
 inline
 void FullQualifiedName::tailRemove(std::size_t nItems)
@@ -182,7 +198,11 @@ void FullQualifiedName::tailRemove(std::size_t nItems)
 
 inline void FullQualifiedName::clear() { tailRemove(std::size_t(-1)); }
 inline void FullQualifiedName::append(const std::string &n) { name.emplace_back(n); }
-inline void FullQualifiedName::append(const FullQualifiedName &n) { for(auto &&nm : n) append(nm); }
+inline void FullQualifiedName::append(const FullQualifiedName &n)
+{
+    // for(auto &&nm : n) append(nm);
+    name.insert(name.end(), n.name.begin(), n.name.end());
+}
 
 
 //----------------------------------------------------------------------------

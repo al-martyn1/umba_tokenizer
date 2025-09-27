@@ -666,12 +666,13 @@ public:
     bool readHomogeneousTokensList( umba::tokenizer::payload_type tokenToken, umba::tokenizer::payload_type tokenSep
                                   , bool readNextOnStart
                                   , TokenHandler handler
+                                  , bool initialWaitSep = false
                                   )
     {
         if (readNextOnStart)
             readNextToken();
 
-        bool waitSep = false;
+        bool waitSep = initialWaitSep;
 
         for( 
            ; umba::TheValue(m_pTokenInfo->tokenType).oneOf(tokenSep, tokenToken)
@@ -1171,6 +1172,13 @@ public:
             fqn.flags = FullQualifiedNameFlags::none;
         }
 
+        if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_SCOPE
+                                      , false /* readNextOnStart */
+                                      , [&]() { fqn.append(extractIdentifierName(m_pTokenInfo)); } 
+                                      , waitSep ))
+            return false;
+
+        #if 0
         // В начале цикла - не вычитываем, так как у нас уже идентификатор или разделитель NS
         for( // m_pTokenInfo = BaseClass::waitForSignificantTokenChecked( &m_tokenPos, ParserWaitForTokenFlags::none)
            ; umba::TheValue(m_pTokenInfo->tokenType).oneOf(UFSM_TOKEN_OP_SCOPE, UMBA_TOKENIZER_TOKEN_IDENTIFIER)
@@ -1193,6 +1201,7 @@ public:
                 waitSep = true;
             }
         }
+        #endif
 
        // Пришел неизвестный токен, но то, что пришло, было у нужном порядке через '::', а пришедший токен проверяем выше, после возврата
        return true;
@@ -1285,22 +1294,28 @@ public:
                 return false;
             }
 
-            // После имени может идти override, а после override - обязательно должен идти блок с атрибутами, он не может быть опциональным
+            // После имени может идти override, а после override - опционально идёт блок с атрибутами
             if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_OVERRIDE)
             {
                 readNextToken(); 
-                if (m_pTokenInfo->tokenType!=UFSM_TOKEN_BRACKET_SCOPE_OPEN) // override без блока - это all
+
+                if (m_pTokenInfo->tokenType!=UFSM_TOKEN_OP_COLON) // override без блока - это all
                 {
                     ple.overrideFlags = InheritanceOverrideFlags::all;
                 }
                 else
                 {
+                    readNextToken(); 
+                    if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+                        return false; // а пришло хз
+
+                    readNextToken(); 
                     if (!parseInheritanceOverrideFlags(ple.overrideFlags))
                         return false;
+
                     if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
                         return false;
                     readNextToken(); 
-                
                 }
 
                 // if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
@@ -1315,56 +1330,58 @@ public:
                 // Если имя относительное, то пытаемся найти относительно текущего NS,
                 // если не нашли, то ищем от корня
 
-                NamespaceDefinition* pCurNs = getCurrentNamespace();
-
-                FullQualifiedName foundName;
-                NamespaceEntryKind parentKind = pCurNs->findAnyDefinition( ple.name, ctx.curNsName, &ctx.rootNs, &foundName);
-                switch(parentKind)
-                {
-                    case NamespaceEntryKind::none         : // ple.name not found
-                         BaseClass::logSimpleMessage(ple.positionInfo.pos, UMBA_TOKENIZER_TOKEN_IDENTIFIER /* tokenType */, "definition-not-found", "'definitions' or 'state-machine' not found");
-                         return false;
-
-                    case NamespaceEntryKind::nsDefinition : // definitions or state-machine expected, but found namespace 
-                         BaseClass::logSimpleMessage(ple.positionInfo.pos, UMBA_TOKENIZER_TOKEN_IDENTIFIER /* tokenType */, "definition-not-found", "expected 'definitions' or 'state-machine' name, but found namespace");
-                         return false;
-
-                    case NamespaceEntryKind::fsmDefinition: // OK
-                         ple.name = foundName; // задаём полное имя
-                         break;
-
-                    case NamespaceEntryKind::invalid      : // 
-                         throw std::runtime_error("Something goes wrong");
-                }
-
-                sm.parents[ple.name.getCanonicalName()] = ple;
+                // NamespaceDefinition* pCurNs = getCurrentNamespace();
+                //  
+                // FullQualifiedName foundName;
+                // NamespaceEntryKind parentKind = pCurNs->findAnyDefinition( ple.name, ctx.curNsName, &ctx.rootNs, &foundName);
+                // switch(parentKind)
+                // {
+                //     case NamespaceEntryKind::none         : // ple.name not found
+                //          BaseClass::logSimpleMessage(ple.positionInfo.pos, UMBA_TOKENIZER_TOKEN_IDENTIFIER /* tokenType */, "definition-not-found", "'definitions' or 'state-machine' not found");
+                //          return false;
+                //  
+                //     case NamespaceEntryKind::nsDefinition : // definitions or state-machine expected, but found namespace 
+                //          BaseClass::logSimpleMessage(ple.positionInfo.pos, UMBA_TOKENIZER_TOKEN_IDENTIFIER /* tokenType */, "definition-not-found", "expected 'definitions' or 'state-machine' name, but found namespace");
+                //          return false;
+                //  
+                //     case NamespaceEntryKind::fsmDefinition: // OK
+                //          ple.name = foundName; // задаём полное имя
+                //          break;
+                //  
+                //     case NamespaceEntryKind::invalid      : // 
+                //          throw std::runtime_error("Something goes wrong");
+                // }
+                //  
+                // sm.parents[ple.name.getCanonicalName()] = ple;
             }
             else
             {
-                NamespaceDefinition* pCurNs = getCurrentNamespace();
-
-                FullQualifiedName foundName;
-                NamespaceEntryKind parentKind = pCurNs->findAnyDefinition( ple.name, ctx.curNsName, &ctx.rootNs, &foundName);
-                switch(parentKind)
-                {
-                    case NamespaceEntryKind::none         : // ple.name not found
-                         BaseClass::logSimpleMessage(ple.positionInfo.pos, UMBA_TOKENIZER_TOKEN_IDENTIFIER /* tokenType */, "definition-not-found", "'definitions' or 'state-machine' not found");
-                         return false;
-
-                    case NamespaceEntryKind::nsDefinition : // definitions or state-machine expected, but found namespace 
-                         BaseClass::logSimpleMessage(ple.positionInfo.pos, UMBA_TOKENIZER_TOKEN_IDENTIFIER /* tokenType */, "definition-not-found", "expected 'definitions' or 'state-machine' name, but found namespace");
-                         return false;
-
-                    case NamespaceEntryKind::fsmDefinition: // OK
-                         ple.name = foundName; // задаём полное имя
-                         break;
-
-                    case NamespaceEntryKind::invalid      : // 
-                         throw std::runtime_error("Something goes wrong");
-                }
-
-                sm.parents[ple.name.getCanonicalName()] = ple;
             }
+
+            NamespaceDefinition* pCurNs = getCurrentNamespace();
+
+            FullQualifiedName foundName;
+            NamespaceEntryKind parentKind = pCurNs->findAnyDefinition( ple.name, ctx.curNsName, &ctx.rootNs, &foundName);
+            switch(parentKind)
+            {
+                case NamespaceEntryKind::none         : // ple.name not found
+                     BaseClass::logSimpleMessage(ple.positionInfo.pos, UMBA_TOKENIZER_TOKEN_IDENTIFIER /* tokenType */, "definition-not-found", "'definitions' or 'state-machine' not found");
+                     return false;
+
+                case NamespaceEntryKind::nsDefinition : // definitions or state-machine expected, but found namespace 
+                     BaseClass::logSimpleMessage(ple.positionInfo.pos, UMBA_TOKENIZER_TOKEN_IDENTIFIER /* tokenType */, "definition-not-found", "expected 'definitions' or 'state-machine' name, but found namespace");
+                     return false;
+
+                case NamespaceEntryKind::fsmDefinition: // OK
+                     ple.name = foundName; // задаём полное имя
+                     break;
+
+                case NamespaceEntryKind::invalid      : // 
+                     throw std::runtime_error("Something goes wrong");
+            }
+
+            sm.parents[ple.name.getCanonicalName()] = ple;
+
 
             // После имени или списка override может идти запятая, дефис перед литералом описания, или открывающая скобка блока state machide'ы
             if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COMMA)
