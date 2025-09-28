@@ -150,6 +150,7 @@ struct PredicateDefinition
 
     /*! Выражение для пользовательского (не external)  предиката */
     LogicExpression expression  ;
+    //LogicExpression expressionSmp; // simplified
 
     /*! Список событий, для которых предикат может быть использован. 
         Актуален только если установлен флаг PredicateFlags::validFor */

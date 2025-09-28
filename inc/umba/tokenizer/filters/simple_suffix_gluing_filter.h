@@ -134,6 +134,7 @@ public:
         {
             payloadData.pData->hasSuffix      = true;
             payloadData.pData->suffixStartPos = suffixStartIter; // .getOffsetFromStart();
+            payloadData.pData->suffixEndPos   = literalEndIter ; // .getOffsetFromStart();
             // !!! Зачем я тут копию делаю?
             token_parsed_data_type payloadDataCopy = payloadData;
             return this->callNextTokenHandler( tokenizer, prevTokenInfo.lineStartFlag, prevTokenInfo.payloadToken

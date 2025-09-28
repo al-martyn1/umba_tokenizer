@@ -223,7 +223,7 @@ uses TrafficLightCommands,
         }
 
         trafficAllowed - "Informs pedestrians that they are can go"
-        { enter: runTrafficAllowed }
+        { enter: runTrafficAllowed; }
 
         // Светофор показыват уведомление, что скоро произойдёт смена сигнала на запрещающий
         stopNotice - "Informs pedestrians that the RED light is coming soon"
@@ -405,8 +405,8 @@ uses TrafficLightCommands,
 
     predicates
     {
-        greenLightIsOn  : external - "Checks the GREEN light is ON"; // valid-for {toggleGreen}
-        yellowLightIsOn : external - "Checks the YELLOW light is ON"; // valid-for {toggleYellow}
+        greenLightIsOn  : external valid-for {toggleGreen} - "Checks the GREEN light is ON";
+        yellowLightIsOn : external valid-for {toggleYellow} - "Checks the YELLOW light is ON";
     }
 
     states

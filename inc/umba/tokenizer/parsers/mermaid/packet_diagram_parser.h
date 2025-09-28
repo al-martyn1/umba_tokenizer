@@ -535,7 +535,7 @@ public:
         if (!isAnyNumber(pTokenInfo->tokenType))
             return expectedReachedMsg(pTokenInfo, {UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC}, msg), (const TokenInfoType*)0;
 
-        const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
+        const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedDataPtr(pTokenInfo);
         auto numericLiteralData = std::get<typename tokenizer_type::IntegerNumericLiteralDataHolder>(*pParsedData);
         if (numericLiteralData.pData->fOverflow)
             return BaseClass::logSimpleMessage(pTokenInfo, "integer-overflow", msg.empty() ? "integer overflow" : msg + ": integer overflow"), (const TokenInfoType*)0;
@@ -598,7 +598,7 @@ public:
         if (!checkExactTokenType(pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL}, msg))
             return 0;
 
-        const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
+        const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedDataPtr(pTokenInfo);
         auto stringLiteralData = std::get<typename tokenizer_type::StringLiteralDataHolder>(*pParsedData);
         str = stringLiteralData.pData->asString();
 
@@ -769,7 +769,7 @@ public:
             // Тут у нас только UMBA_TOKENIZER_TOKEN_IDENTIFIER
             ++optCnt;
 
-            auto pTokenParsedData = BaseClass::getTokenParsedData(pTokenInfo);
+            auto pTokenParsedData = BaseClass::getTokenParsedDataPtr(pTokenInfo);
 
             // Тут обрабатываем данные идентификатора
             // UMBA_USED(pTokenParsedData);
@@ -893,7 +893,7 @@ public:
 
         if ((diagram.parsingOptions&PacketDiagramParsingOptions::allowOverrideTitle)!=0u)
         {
-            const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedData(pTokenInfo);
+            const token_parsed_data_type* pParsedData = BaseClass::getTokenParsedDataPtr(pTokenInfo);
             auto rawData = std::get<typename tokenizer_type::RawDataHolder>(*pParsedData);
             diagram.title = umba::string::trim_copy(rawData.pData->asString());
         }

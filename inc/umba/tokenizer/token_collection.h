@@ -410,6 +410,7 @@ public:
     using payload_type                            = umba::tokenizer::payload_type;
     using iterator_type                           = typename tokenizer_type::iterator_type;
     using token_parsed_data_type                  = typename tokenizer_type::token_parsed_data_type;
+    using token_empty_data_type                   = typename tokenizer_type::token_empty_data_type;
     using shared_log_type                         = umba::tokenizer::log::SharedParserErrorLog;
     using string_type                             = typename tokenizer_type::string_type; // Input chars string type
     using char_type                               = typename string_type::value_type;
@@ -598,7 +599,7 @@ public:
         return m_tokenCollectionList.size();
     }
 
-    const token_parsed_data_type* getTokenParsedData(const TokenCollectionItemType *ptki) const
+    const token_parsed_data_type* getTokenParsedDataPtr(const TokenCollectionItemType *ptki) const
     {
         UMBA_ASSERT(ptki);
 
@@ -608,6 +609,18 @@ public:
 
         return &m_tokenParsedDataCollectionList[parsedDataIndex];
     }
+
+    token_parsed_data_type getTokenParsedData(const TokenCollectionItemType *ptki) const
+    {
+        UMBA_ASSERT(ptki);
+
+        std::size_t parsedDataIndex = ptki->parsedDataIndex;
+        if (parsedDataIndex>=m_tokenParsedDataCollectionList.size())
+            return token_parsed_data_type{token_empty_data_type{}}; // Нет данных
+
+        return m_tokenParsedDataCollectionList[parsedDataIndex];
+    }
+
 
     TextPositionInfo getTokenPositionInfo(const TokenCollectionItemType *ptki) const
     {

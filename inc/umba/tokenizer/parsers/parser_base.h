@@ -45,6 +45,7 @@ public: // types & ctors
     using TokenInfoType            = TokenCollectionItemType;
     using TokenPosType             = typename TokenCollectionType::token_pos_type;
     using token_parsed_data_type   = typename tokenizer_type::token_parsed_data_type;
+    using token_empty_data_type    = typename tokenizer_type::token_empty_data_type;
     using file_id_type             = umba::TextPositionInfo::file_id_type;
     using string_type              = typename tokenizer_type::string_type; // Input chars string type
     using char_type                = typename string_type::value_type;
@@ -53,8 +54,6 @@ public: // types & ctors
     using SharedFilenameSetType    = std::shared_ptr<FilenameSetType>;
 
     // using FilenameSetType               = umba:: /* Simple */ FilenameSet<std::size_t /* , std::string */ >;
-
-
 
     UMBA_RULE_OF_FIVE_COPY_DELETE(ParserBase);
     UMBA_RULE_OF_FIVE_MOVE_DEFAULT(ParserBase);
@@ -104,10 +103,16 @@ public: // methods
         return m_pFilenameSet;
     }
 
-    const token_parsed_data_type* getTokenParsedData(const TokenCollectionItemType *ptki) const
+    const token_parsed_data_type* getTokenParsedDataPtr(const TokenCollectionItemType *ptki) const
+    {
+        return m_pTokens->getTokenParsedDataPtr(ptki);
+    }
+
+    token_parsed_data_type getTokenParsedData(const TokenCollectionItemType *ptki) const
     {
         return m_pTokens->getTokenParsedData(ptki);
     }
+
 
     TextPositionInfo getTokenPositionInfo(const TokenCollectionItemType *ptki) const
     {
@@ -271,7 +276,7 @@ public: // methods
           || (pTokenInfo->tokenType>=UMBA_TOKENIZER_TOKEN_KEYWORD_SET1_FIRST && pTokenInfo->tokenType<=UMBA_TOKENIZER_TOKEN_KEYWORD_SET8_LAST)
            )
         {
-            const token_parsed_data_type* pParsedData = getTokenParsedData(pTokenInfo);
+            const token_parsed_data_type* pParsedData = getTokenParsedDataPtr(pTokenInfo);
             auto identifierData = std::get<typename tokenizer_type::IdentifierDataHolder>(*pParsedData);
             unexpectedTokenValue = identifierData.pData->value;
         }

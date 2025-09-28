@@ -246,8 +246,8 @@ public: // depending types
         string_type          value;
 
         iterator_type        suffixStartPos = {};
+        iterator_type        suffixEndPos   = {};
         bool                 hasSuffix      = false;
-        //std::size_t          suffixStartPos = std::size_t(-1);
 
         StringType asString() const
         {
@@ -285,7 +285,7 @@ public: // depending types
     {
         integer_type         value;
         iterator_type        suffixStartPos = {};
-        //std::size_t          suffixStartPos = std::size_t(-1);
+        iterator_type        suffixEndPos   = {};
 
         bool                 hasSuffix = false;
         bool                 fOverflow = false; // число не влезло в используемый тип (std::uint64_t). Для marty::Decimal такой ситуации не происходит.
@@ -297,7 +297,8 @@ public: // depending types
     {
         floating_point_type  value;
         iterator_type        suffixStartPos = {};
-        //std::size_t          suffixStartPos = std::size_t(-1);
+        iterator_type        suffixEndPos   = {};
+
         bool                 hasSuffix = false;
 
         bool                 fIntegerOverflow   ; // при разборе целая часть не влезла в std::uint64_t. Для marty::Decimal такой ситуации не происходит.
@@ -355,6 +356,7 @@ public: // depending types
 
     using TokenParsedDataType                       = TokenParsedData                ;
     using token_parsed_data_type                    = TokenParsedData                ;
+    using token_empty_data_type                     = EmptyData                      ;
 
     using empty_data_type                           = EmptyData                      ;
     
@@ -818,8 +820,9 @@ protected: // methods - helpers - из "грязного" проекта, где
         UMBA_USED(itEnd);
         IntegerNumericLiteralData res;
         res.hasSuffix      = false;
-        // res.suffixStartPos = std::size_t(-1);
+
         res.suffixStartPos = itEnd;
+        res.suffixEndPos   = itEnd;
 
         res.value     = numberCurrentIntValue;
         res.fOverflow = numberIntegerOverflow;
@@ -832,8 +835,9 @@ protected: // methods - helpers - из "грязного" проекта, где
         UMBA_USED(itEnd);
         FloatNumericLiteralData res;
         res.hasSuffix      = false;
-        // res.suffixStartPos = std::size_t(-1);
+
         res.suffixStartPos = itEnd;
+        res.suffixEndPos   = itEnd;
 
         // auto powerDivider = (typename FloatNumericLiteralData::DataValueType)utils::makePowerOf((typename FloatNumericLiteralData::DataValueType)numbersBase, numberCurrentFractionalPower, numberFractionalOverflow);
         //

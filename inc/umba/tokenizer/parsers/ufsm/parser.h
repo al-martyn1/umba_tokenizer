@@ -13,6 +13,7 @@
 #include "umba/tokenizer/tokenizer_log.h"
 #include "umba/tokenizer/tokenizer_log_console.h"
 #include "umba/tokenizer/token_collection.h"
+#include "marty_expressions/tokenizer_helpers.h"
 //
 #include "../utils.h"
 #include "../parser_base.h"
@@ -134,14 +135,14 @@ public:
 
     std::string extractIdentifierName(const TokenInfoType *pTokenInfo)
     {
-        auto pTokenParsedData = BaseClass::getTokenParsedData(pTokenInfo);
+        auto pTokenParsedData = BaseClass::getTokenParsedDataPtr(pTokenInfo);
         auto identifierData = std::get<typename TokenizerType::IdentifierDataHolder>(*pTokenParsedData);
         return identifierData.pData->value;
     }
 
     std::string extractLiteral(const TokenInfoType *pTokenInfo)
     {
-        auto pTokenParsedData = BaseClass::getTokenParsedData(pTokenInfo);
+        auto pTokenParsedData = BaseClass::getTokenParsedDataPtr(pTokenInfo);
         auto literalData = std::get<typename TokenizerType::StringLiteralDataHolder>(*pTokenParsedData);
         return literalData.pData->value;
     }
@@ -715,7 +716,7 @@ public:
             readNextToken();
             if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_OVERRIDE} /* , "'display-options' directive: invalid option value" */ ))
                 return false; // а пришло хз что
-            commonFlags = EventFlags::override;
+            commonFlags |= EventFlags::override;
             readNextToken();
         }
 
@@ -838,7 +839,7 @@ public:
             readNextToken();
             if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_OVERRIDE} /* , "'display-options' directive: invalid option value" */ ))
                 return false; // а пришло хз что
-            commonFlags = ActionFlags::override;
+            commonFlags |= ActionFlags::override;
             readNextToken();
         }
 
@@ -888,9 +889,10 @@ public:
             {
                 readNextToken();
 
+                ad.flags |= ActionFlags::external;
+
                 if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_EXTERNAL)
                 {
-                    ad.flags |= ActionFlags::external;
                     readNextToken();
                 }
 
@@ -952,16 +954,6 @@ public:
 
     bool parseStateMachineStates(StateMachineDefinition &sm )
     {
-        // struct StateDefinition
-        // {
-        //     PositionInfo    positionInfo;
-        //     std::string     name        ;
-        //     std::string     description ;
-        //  
-        //     StateFlags      flags = StateFlags::none;
-        //  
-        //     std::unordered_map<StateActionKind, StateActionRefs>   actionRefs; 
-
         // Пропускаем ключевое слово actions, вычитываем следующий токен - должна быть открывающая фигурная скобка
         readNextToken();
 
@@ -972,30 +964,12 @@ public:
             readNextToken();
             if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_OVERRIDE} /* , "'display-options' directive: invalid option value" */ ))
                 return false; // а пришло хз что
-            commonFlags = StateFlags::override;
+            commonFlags |= StateFlags::override;
             readNextToken();
         }
 
         if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
             return false; // а пришло хз что
-
-        // states : override // Перезаписывает то, что было определено в базе, но не в текущем автомате
-        // {
-        //     turnedOff : initial - "Traffic Light is turned OFF"
-        //     {
-        //         enter: turnOff /*, startAliveTimer */; // При входе в состояние всегда всё выключаем
-        //     }
-        //  
-        //     trafficAllowed - "Informs pedestrians that they are can go"
-        //     { enter: runTrafficAllowed }
-        //  
-        //     // Светофор показыват уведомление, что скоро произойдёт смена сигнала на запрещающий
-        //     stopNotice - "Informs pedestrians that the RED light is coming soon"
-        //     { enter: runStopNotice; }
-        //  
-        //     trafficStopped - "Informs pedestrians that the traffic must stops"
-        //     { enter: runTrafficStopped; }
-        // }
 
         while(true)
         {
@@ -1082,8 +1056,201 @@ public:
         // return true; // unreachable
     }
 
-    bool parseStateMachinePredicates(StateMachineDefinition &  /* sm */ )
+    bool readLogicExpression(LogicExpression &expr, bool readNextOnStart=true) // LogicExpression *pExprSmp, 
     {
+        using ParserErrorType = typename LogicExpressionParser::ErrorType;
+
+        LogicExpressionParser parser = LogicExpressionParser(makeLogicExpressionOperatorTraits());
+        ParserErrorType parserErr = parser.initialize();
+        if (parserErr!=ParserErrorType::none)
+        {
+            //BaseClass::logSimpleMessage(getFullPos(), m_pTokenInfo->tokenType, "expression-parsering", "parser initialization failed");
+            BaseClass::logSimpleMessage(m_tokenPos, m_pTokenInfo->tokenType, "expression-parsering", "parser initialization failed");
+            return false;
+        }
+
+        using marty::expressions::tokenizer_helpers::convertTokenizerEvent;
+        using marty::expressions::tokenizer_helpers::IdentifierConvertTraits;
+
+
+        if (readNextOnStart)
+            readNextToken();
+         
+        std::size_t tokensCount = 0;
+        for( 
+           ; umba::TheValue(m_pTokenInfo->tokenType)
+             .oneOf( UMBA_TOKENIZER_TOKEN_ROUND_BRACKET_OPEN 
+                   , UMBA_TOKENIZER_TOKEN_ROUND_BRACKET_CLOSE
+                   , UFSM_TOKEN_OP_NOT, UFSM_TOKEN_OP_NOT_ALTER
+                   , UFSM_TOKEN_OP_AND, UFSM_TOKEN_OP_AND_ALTER
+                   , UFSM_TOKEN_OP_OR , UFSM_TOKEN_OP_OR_ALTER
+                   , UMBA_TOKENIZER_TOKEN_IDENTIFIER
+                   )
+           ; readNextToken(), ++tokensCount
+           )
+        {
+            LogicExpressionInputItem inputItem;
+            if (!convertTokenizerEvent<tokenizer_type>( inputItem, m_pTokenInfo->tokenType
+                                      , getFullPos(), BaseClass::getTokenParsedData(m_pTokenInfo)
+                                      , false // bCaseIgnore
+                                      , true // bBoolConvert
+                                      , true // bOpConvert  
+                                      , IdentifierConvertTraits<std::string>() // "false"->false, "true"->true, "not"->!, "and"->&, "or"->|
+                                      ))
+                throw std::runtime_error("readLogicExpression: something goes wrong");
+
+            parserErr = parser.parse(inputItem);
+            if (parserErr!= ParserErrorType::none)
+            {
+                //BaseClass::logSimpleMessage(getFullPos(), m_pTokenInfo->tokenType, "expression-parsering", parser.getErrorMessage(parserErr));
+                BaseClass::logSimpleMessage(m_tokenPos, m_pTokenInfo->tokenType, "expression-parsering", parser.getErrorMessage(parserErr));
+                return false;
+            }
+        }
+
+        if (!tokensCount)
+        {
+            //BaseClass::logSimpleMessage(getFullPos(), m_pTokenInfo->tokenType, "expression-parsering", "expression is empty");
+            BaseClass::logSimpleMessage(m_tokenPos, m_pTokenInfo->tokenType, "expression-parsering", "expression is empty");
+            return false;
+        }
+
+        // ParserErrorType 
+        parserErr = parser.finalize();
+        if (parserErr!= ParserErrorType::none)
+        {
+            //BaseClass::logSimpleMessage(getFullPos(), m_pTokenInfo->tokenType, "expression-parsering", parser.getErrorMessage(parserErr));
+            BaseClass::logSimpleMessage(m_tokenPos, m_pTokenInfo->tokenType, "expression-parsering", parser.getErrorMessage(parserErr));
+            return false;
+        }
+
+        expr = parser.getExpression();
+
+        // ExpressionNodeType simplify(const ExpressionNodeType &node) const
+        //     LogicExpressionParser
+        //     LogicExpressionEvaluator
+
+        return true;
+    }
+
+
+    bool parseStateMachinePredicates(StateMachineDefinition &sm)
+    {
+        // Пропускаем ключевое слово predicates, вычитываем следующий токен - должна быть открывающая фигурная скобка
+        readNextToken();
+
+        PredicateFlags commonFlags = PredicateFlags::none;
+
+        if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
+        {
+            readNextToken();
+            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_OVERRIDE} /* , "'display-options' directive: invalid option value" */ ))
+                return false; // а пришло хз что
+            commonFlags |= PredicateFlags::override;
+            readNextToken();
+        }
+
+        if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+            return false; // а пришло хз что
+
+        // struct PredicateDefinition
+        // {
+        //     PositionInfo    positionInfo;
+        //     std::string     name        ;
+        //     std::string     description ;
+        //     PredicateFlags  flags = PredicateFlags::none;
+        //     LogicExpression expression  ;
+        //     std::vector<std::string>   validForList; 
+
+        // greenLightIsOn  : external valid-for {toggleGreen} - "Checks the GREEN light is ON";
+        // yellowLightIsOn : external valid-for {toggleYellow} - "Checks the YELLOW light is ON";
+        // redLightIsOn    : external - "Checks the YELLOW light is ON"; // valid-for {toggleYellow}
+        // yellowOrGreenLightIsOn = yellowLightIsOn | greenLightIsOn;
+
+        while(true)
+        {
+            // Ждём идентификатор или конец блока
+            readNextToken();
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_BRACKET_SCOPE_CLOSE)
+                return true;
+
+            if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
+                return false; // а пришло хз что
+
+            PredicateDefinition pd;
+            pd.positionInfo = getFullPos();
+            pd.name  = extractIdentifierName(m_pTokenInfo);
+            pd.flags = commonFlags;
+
+            readNextToken();
+
+            bool hasExpression = false;
+
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_ASSIGN)
+            {
+                if (!readLogicExpression(pd.expression, true /* readNextOnStart */ ))
+                    return false;
+
+                hasExpression = true;
+            }
+            else if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
+            {
+                pd.flags |= PredicateFlags::external;
+
+                readNextToken();
+
+                if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_EXTERNAL)
+                {
+                    readNextToken();
+                }
+
+                if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_VALID_FOR)
+                {
+                    pd.flags |= PredicateFlags::validFor;
+
+                    readNextToken();
+                    if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+                        return false; // а пришло хз что
+
+                    if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_COMMA
+                                                  , true /* readNextOnStart */
+                                                  , [&]() { pd.validForList.push_back(extractIdentifierName(m_pTokenInfo)); } ))
+                        return false;
+
+                    if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
+                        return false; // а пришло хз что
+
+                    // Нужно проверить на пустоту список valid-for
+
+                    if (pd.validForList.empty())
+                    {
+                        // BaseClass::logSimpleMessage(getFullPos(), m_pTokenInfo->tokenType, "valid-for", "empty 'valid-for' list");
+                        BaseClass::logSimpleMessage(m_tokenPos, m_pTokenInfo->tokenType, "valid-for", "empty 'valid-for' list");
+                        return false;
+                    }
+
+                    readNextToken(); // скипнули закрывающую скобку
+                }
+            }
+
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+            {
+                readNextToken();
+                if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
+                    return false; // а пришло хз что
+                pd.description = extractLiteral(m_pTokenInfo);
+            }
+
+            sm.addDefinition(pd);
+            readNextToken();
+
+            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
+                return false;
+
+            continue;
+
+        }
+
         return false;
     }
 
@@ -1212,6 +1379,8 @@ public:
     bool parseInheritanceOverrideFlags(InheritanceOverrideFlags &parsedOverrideFlags)
     {
         bool waitComma = false;
+
+        std::size_t cnt = 0;
         
         for( m_pTokenInfo = BaseClass::waitForSignificantTokenChecked( &m_tokenPos, ParserWaitForTokenFlags::none) // пропустили открывающую скобку
            ; umba::TheValue(m_pTokenInfo->tokenType).oneOf( UFSM_TOKEN_OP_COMMA
@@ -1253,8 +1422,15 @@ public:
             }
         }
 
-       // Пришел неизвестный токен, но то, что пришло, было у нужном порядке через запятые, а пришедший токен проверяем выше, после возврата
-       return true;
+        if (!cnt)
+        {
+            // BaseClass::logSimpleMessage(getFullPos(), m_pTokenInfo->tokenType, "override-list", "empty 'override' list");
+            BaseClass::logSimpleMessage(m_tokenPos, m_pTokenInfo->tokenType, "override-list", "empty 'override' list");
+            return false;
+        }
+
+        // Пришел неизвестный токен, но то, что пришло, было у нужном порядке через запятые, а пришедший токен проверяем выше, после возврата
+        return true;
     }
 
     //----------------------------------------------------------------------------
