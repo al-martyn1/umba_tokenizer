@@ -41,6 +41,19 @@ namespace ufsm {
 //----------------------------------------------------------------------------
 
 
+//!!! В definitions нельзя добавлять переходы. Сейчас это не проверяется
+
+//!!! Целевое состояние перехода может быть self - надо обработать
+// Тут ещё такой нюанс. Если используется self - то действия состояния (state actions) -
+// используются действия self-enter/self-leave. Если целевым состоянием перехода задано
+// именованное состояние, то, даже если целевое состояние совпадает с исходным,
+// то используются действия enter/leave.
+
+//!!! Если у нас список исходных состояний, или там есть ANY-состояние, а в качестве
+// целевого состояния задан self - то всё нормально, сложно-составной переход будет разложен
+// на элементарные, с одним исх. состоянием, и с одним событием, и там self будет понятно куда
+// переходит.
+
 
 struct ParsingContext
 {
@@ -1153,20 +1166,6 @@ public:
         if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
             return false; // а пришло хз что
 
-        // struct PredicateDefinition
-        // {
-        //     PositionInfo    positionInfo;
-        //     std::string     name        ;
-        //     std::string     description ;
-        //     PredicateFlags  flags = PredicateFlags::none;
-        //     LogicExpression expression  ;
-        //     std::vector<std::string>   validForList; 
-
-        // greenLightIsOn  : external valid-for {toggleGreen} - "Checks the GREEN light is ON";
-        // yellowLightIsOn : external valid-for {toggleYellow} - "Checks the YELLOW light is ON";
-        // redLightIsOn    : external - "Checks the YELLOW light is ON"; // valid-for {toggleYellow}
-        // yellowOrGreenLightIsOn = yellowLightIsOn | greenLightIsOn;
-
         while(true)
         {
             // Ждём идентификатор или конец блока
@@ -1184,14 +1183,14 @@ public:
 
             readNextToken();
 
-            bool hasExpression = false;
+            //bool hasExpression = false;
 
             if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_ASSIGN)
             {
                 if (!readLogicExpression(pd.expression, true /* readNextOnStart */ ))
                     return false;
 
-                hasExpression = true;
+                //hasExpression = true;
             }
             else if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
             {
@@ -1241,6 +1240,9 @@ public:
                 pd.description = extractLiteral(m_pTokenInfo);
             }
 
+            // if (hasExpression)
+            // {}
+
             sm.addDefinition(pd);
             readNextToken();
 
@@ -1254,8 +1256,321 @@ public:
         return false;
     }
 
-    bool parseStateMachineTransitions(StateMachineDefinition &  /* sm */ )
+    // СписокИсхСостояний - Состояние1 [, Состояние2 [, Состояние3... ] ]
+    // СостояниеN         - */Состояние/!Состояние
+    // СписокСобытий      - Событие1 [, Событие2 [, Событие3... ] ]
+    // СобытиеN           - */Событие/!Событие
+    template<typename HandlerType>
+    bool parseStateOrEventsListWithAny(HandlerType handler)
     {
+        bool notFlag = false;
+        while(true)
+        {
+            notFlag = false;
+
+            auto positionInfo = getFullPos();
+
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_NOT || m_pTokenInfo->tokenType==UFSM_TOKEN_OP_NOT_ALTER)
+            {
+                notFlag = true;
+                readNextToken();
+            }
+
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_ANY)
+            {
+                if (notFlag)
+                {
+                    BaseClass::logSimpleMessage(m_tokenPos, m_pTokenInfo->tokenType, "not-any", "the ANY ('*') value cannot be used with negation");
+                    return false;
+                }
+
+                if (!handler(positionInfo, notFlag, m_pTokenInfo->tokenType, std::string()))
+                    return false;
+            }
+            else if (m_pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_IDENTIFIER)
+            {
+                if (!handler(positionInfo, notFlag, m_pTokenInfo->tokenType, extractIdentifierName(m_pTokenInfo)))
+                    return false;
+            }
+            else
+            {
+                return checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_ANY, UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ );
+            }
+
+            readNextToken();
+
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COMMA)
+                continue;
+
+            return true;
+        }
+
+        // UFSM_TOKEN_OP_ANY
+        // UFSM_TOKEN_OP_COMMA
+        // UMBA_TOKENIZER_TOKEN_IDENTIFIER
+    }
+
+    bool parseStateMachineTransitions(StateMachineDefinition &sm)
+    {
+        // Пропускаем ключевое слово transitions, вычитываем следующий токен - должна быть открывающая фигурная скобка
+        readNextToken();
+
+        TransitionFlags commonFlags = TransitionFlags::none; // conditional
+
+        if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON) // optional sequence
+        {
+            readNextToken();
+            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_OVERRIDE} /* , "'display-options' directive: invalid option value" */ ))
+                return false; // а пришло хз что
+            commonFlags |= TransitionFlags::override;
+            readNextToken();
+        }
+
+        if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+            return false; // а пришло хз что
+
+        // turnedOff : cmdStopTraffic   -> trafficStopped;
+        // turnedOff : cmdAllowTraffic  -> trafficAllowed;
+        // turnedOff : * -> self; // cmdTurnOff,cmdUncontrolledMode и пр -> turnedOff
+        //  
+        // trafficAllowed : cmdStopTraffic      -> stopNotice;
+        // trafficAllowed : * -> self; // cmdAllowTraffic и пр -> trafficAllowed, 
+        //  
+        // stopNotice : tmToggleGreen ?  greenLightIsOn -> self : greenOff;
+        // stopNotice : tmToggleGreen ? !greenLightIsOn -> self : greenOn;
+        // stopNotice : tmStopTraffic                   -> trafficStopped;
+        // stopNotice : * -> self;
+        //  
+        // trafficStopped : cmdAllowTraffic -> trafficAllowed;
+        // trafficStopped : cmdTurnOff      -> turnedOff;
+        // trafficStopped : * -> self;
+        //  
+        // * : cmdUncontrolledMode -> turnedOff;
+        // * : cmdTurnOff          -> turnedOff;
+        // * : tmAlivePoll -> self : reportAlive;
+
+        // State1, State2 : Event          -> TargetState ? Condition - "Описание"
+        // *, State2      : Event          -> TargetState ? Condition - "Описание"
+        // *, !State2     : Event1, Event2 -> TargetState ? Condition - "Описание"
+        // *, !State2     : *              -> TargetState ? Condition - "Описание"
+
+        // Синтаксис описания переходов:
+        // СписокИсхСостояний : СписокСобытий [? ДопУсловие] -> ЦелевоеСостояние [? ДопУсловие] [- Описание];
+        // где
+        //   СписокИсхСостояний - Состояние1 [, Состояние2 [, Состояние3... ] ]
+        //   СостояниеN         - */Состояние/!Состояние
+        //   СписокСобытий      - Событие1 [, Событие2 [, Событие3... ] ]
+        //   СобытиеN           - */Событие/!Событие
+
+        // struct TransitionDefinition
+        // {
+        //     PositionInfo               positionInfo;
+        //     std::string                description ;
+        //     TransitionSourceStates     sourceStates; 
+        //     TransitionEvents           events      ;
+        //     TransitionFlags            flags;
+        //     LogicExpression            additionalCondition;
+
+        while(true)
+        {
+            // Ждём конец блока
+            readNextToken();
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_BRACKET_SCOPE_CLOSE)
+                return true;
+
+            // if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
+            //     return false; // а пришло хз что
+
+            TransitionDefinition td;
+            td.positionInfo = getFullPos();
+            // td.name  = extractIdentifierName(m_pTokenInfo);
+            td.flags = commonFlags;
+
+            if (!parseStateOrEventsListWithAny( [&](PositionInfo positionInfo, bool bNot, auto tokenType, const std::string &ident)
+                {
+
+                    TransitionSourceState tss;
+                    tss.positionInfo = positionInfo;
+                    tss.flags = TransitionSourceStateFlags::none;
+                    // TransitionSourceStateFlags flags = TransitionSourceStateFlags::none;
+                    if (tokenType==UFSM_TOKEN_OP_ANY)
+                    {
+                        if (bNot)
+                            throw std::runtime_error("something goes wrong while calling parseStateOrEventsListWithAny");
+                
+                        if (td.sourceStates.checkForAny())
+                        {
+                            BaseClass::logSimpleMessage(positionInfo.pos, m_pTokenInfo->tokenType, "already-any", "the ANY ('*') value already in list");
+                            return false;
+                        }
+
+                        if (!td.sourceStates.empty())
+                        {
+                            BaseClass::logSimpleMessage(positionInfo.pos, m_pTokenInfo->tokenType, "first-any", "the ANY ('*') value must be added first");
+                            return false;
+                        }
+                
+                        tss.flags |= TransitionSourceStateFlags::any;
+                    }
+                    else // identifier
+                    {
+                        if (bNot!=td.sourceStates.checkForAny())
+                        {
+                            // есть отрицание, но нет ANY
+                            // нет отрицания, но есть ANY
+                            // Итого в список мы можем добавить
+                            //   если есть ANY - только с отрицанием
+                            //   если нет ANY  - только без отрицания
+                            if (bNot)
+                                BaseClass::logSimpleMessage(positionInfo.pos, m_pTokenInfo->tokenType, "missing-any", "the ANY ('*') value must be first in list before adding exclusions");
+                            else
+                                BaseClass::logSimpleMessage(positionInfo.pos, m_pTokenInfo->tokenType, "already-any", "adding normal value (with no exclusion) to list with ANY ('*') is wrong");
+
+                            return false;
+                        }
+
+                        if (bNot)
+                            tss.flags |= TransitionSourceStateFlags::excluded;
+
+                        tss.name = ident;
+                    }
+
+                    td.sourceStates.push_back(tss);
+
+                    return true;
+                }
+               ))
+            {
+                return false;
+            }
+
+            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_COLON} /* , "'display-options' directive: invalid option value" */ ))
+                return false;
+
+            readNextToken();
+
+
+            if (!parseStateOrEventsListWithAny( [&](PositionInfo positionInfo, bool bNot, auto tokenType, const std::string &ident)
+                {
+
+                    TransitionEvent te;
+                    te.positionInfo = positionInfo;
+                    te.flags = TransitionEventFlags::none;
+                    // TransitionSourceStateFlags flags = TransitionSourceStateFlags::none;
+                    if (tokenType==UFSM_TOKEN_OP_ANY)
+                    {
+                        if (bNot)
+                            throw std::runtime_error("something goes wrong while calling parseStateOrEventsListWithAny");
+                
+                        if (td.events.checkForAny())
+                        {
+                            BaseClass::logSimpleMessage(positionInfo.pos, m_pTokenInfo->tokenType, "already-any", "the ANY ('*') value already in list");
+                            return false;
+                        }
+
+                        if (!td.events.empty())
+                        {
+                            BaseClass::logSimpleMessage(positionInfo.pos, m_pTokenInfo->tokenType, "first-any", "the ANY ('*') value must be added first");
+                            return false;
+                        }
+                
+                        te.flags |= TransitionEventFlags::any;
+                    }
+                    else // identifier
+                    {
+                        if (bNot!=td.events.checkForAny())
+                        {
+                            // есть отрицание, но нет ANY
+                            // нет отрицания, но есть ANY
+                            // Итого в список мы можем добавить
+                            //   если есть ANY - только с отрицанием
+                            //   если нет ANY  - только без отрицания
+                            if (bNot)
+                                BaseClass::logSimpleMessage(positionInfo.pos, m_pTokenInfo->tokenType, "missing-any", "the ANY ('*') value must be first in list before adding exclusions");
+                            else
+                                BaseClass::logSimpleMessage(positionInfo.pos, m_pTokenInfo->tokenType, "already-any", "adding normal value (with no exclusion) to list with ANY ('*') is wrong");
+
+                            return false;
+                        }
+
+                        if (bNot)
+                            te.flags |= TransitionEventFlags::excluded;
+
+                        te.name = ident;
+                    }
+
+                    td.events.push_back(te);
+
+                    return true;
+                }
+               ))
+            {
+                return false;
+            }
+
+
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_TRANSITION_CONDITION)
+            {
+                readNextToken();
+
+                // Читаем условие
+                if (!readLogicExpression(td.additionalCondition, true /* readNextOnStart */ ))
+                    return false;
+
+                td.flags |= TransitionFlags::conditional;
+
+                //readNextToken();
+            }
+
+            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_TRANSITION_ARROW} /* , "'display-options' directive: invalid option value" */ ))
+                return false;
+
+            readNextToken();
+
+
+            if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ ))
+                return false;
+
+            td.targetState = extractIdentifierName(m_pTokenInfo);
+
+            readNextToken();
+
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_TRANSITION_CONDITION)
+            {
+                if ((td.flags&TransitionFlags::conditional)!=0)
+                {
+                    BaseClass::logSimpleMessage(m_tokenPos, m_pTokenInfo->tokenType, "already-tr-condition", "transition condition is already set");
+                    return false;
+                }
+
+                readNextToken();
+
+                // Читаем условие
+                if (!readLogicExpression(td.additionalCondition, true /* readNextOnStart */ ))
+                    return false;
+
+                td.flags |= TransitionFlags::conditional;
+
+                //readNextToken();
+            }
+
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+            {
+                readNextToken();
+                if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
+                    return false; // а пришло хз что
+                td.description = extractLiteral(m_pTokenInfo);
+                readNextToken();
+            }
+
+            sm.addDefinition(td);
+
+            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
+                return false;
+            
+            //readNextToken();
+        }
+
         return false;
     }
 

@@ -354,6 +354,7 @@
 // https://en.cppreference.com/w/cpp/language/operator_member_access
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_STRUCTURE_DEREFERENCE                    (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x180u)   /*  ->   */
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_MEMBER_OF_POINTER                        (UMBA_TOKENIZER_TOKEN_OPERATOR_STRUCTURE_DEREFERENCE)
+#define UMBA_TOKENIZER_TOKEN_OPERATOR_POINTER_TO_MEMBER_ACCESS                 (UMBA_TOKENIZER_TOKEN_OPERATOR_STRUCTURE_DEREFERENCE)
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_POINTER_TO_MEMBER_OF_POINTER             (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x181u)   /*  ->*  */ /* Member of object   selected by pointer-to-member b of object pointed to by a 'a->*b' */
 #define UMBA_TOKENIZER_TOKEN_OPERATOR_POINTER_TO_MEMBER_OF_OBJECT              (UMBA_TOKENIZER_TOKEN_OPERATOR_FIRST+0x182u)   /*  .*   */ /* Member of object a selected by pointer-to-member b 'a.*b' */
 

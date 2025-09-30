@@ -68,19 +68,22 @@ makeTokenizerBuilder()
                           .addNumbersPrefix(make_string<StringType>("0X"), UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_HEX, true) // allowUseExistingToken
                           #endif
 
-                          .addOperator(make_string<StringType>("-"   ), UFSM_TOKEN_OP_DESCR_FOLLOWS)
-                          .addOperator(make_string<StringType>("*"   ), UFSM_TOKEN_OP_ANY          )
-                          .addOperator(make_string<StringType>("~"   ), UFSM_TOKEN_OP_NOT          )
-                          .addOperator(make_string<StringType>("&"   ), UFSM_TOKEN_OP_AND          )
-                          .addOperator(make_string<StringType>("|"   ), UFSM_TOKEN_OP_OR           )
-                          .addOperator(make_string<StringType>("!"   ), UFSM_TOKEN_OP_NOT_ALTER    )
-                          .addOperator(make_string<StringType>("&&"  ), UFSM_TOKEN_OP_AND_ALTER    )
-                          .addOperator(make_string<StringType>("||"  ), UFSM_TOKEN_OP_OR_ALTER     )
-                          .addOperator(make_string<StringType>("="   ), UFSM_TOKEN_OP_ASSIGN       )
-                          .addOperator(make_string<StringType>(":"   ), UFSM_TOKEN_OP_COLON        )
-                          .addOperator(make_string<StringType>(";"   ), UFSM_TOKEN_OP_SEMICOLON    )
-                          .addOperator(make_string<StringType>(","   ), UFSM_TOKEN_OP_COMMA        )
-                          .addOperator(make_string<StringType>("::"  ), UFSM_TOKEN_OP_SCOPE        )
+                          .addOperator(make_string<StringType>("-" ), UFSM_TOKEN_OP_DESCR_FOLLOWS       )
+                          .addOperator(make_string<StringType>("*" ), UFSM_TOKEN_OP_ANY                 )
+                          .addOperator(make_string<StringType>("~" ), UFSM_TOKEN_OP_NOT                 )
+                          .addOperator(make_string<StringType>("&" ), UFSM_TOKEN_OP_AND                 )
+                          .addOperator(make_string<StringType>("|" ), UFSM_TOKEN_OP_OR                  )
+                          .addOperator(make_string<StringType>("!" ), UFSM_TOKEN_OP_NOT_ALTER           )
+                          .addOperator(make_string<StringType>("&&"), UFSM_TOKEN_OP_AND_ALTER           )
+                          .addOperator(make_string<StringType>("||"), UFSM_TOKEN_OP_OR_ALTER            )
+                          .addOperator(make_string<StringType>("=" ), UFSM_TOKEN_OP_ASSIGN              )
+                          .addOperator(make_string<StringType>(":" ), UFSM_TOKEN_OP_COLON               )
+                          .addOperator(make_string<StringType>(";" ), UFSM_TOKEN_OP_SEMICOLON           )
+                          .addOperator(make_string<StringType>("," ), UFSM_TOKEN_OP_COMMA               )
+                          .addOperator(make_string<StringType>("::"), UFSM_TOKEN_OP_SCOPE               )
+                          .addOperator(make_string<StringType>("->"), UFSM_TOKEN_OP_TRANSITION_ARROW    )
+                          .addOperator(make_string<StringType>("?" ), UFSM_TOKEN_OP_TRANSITION_CONDITION)
+                          
 
                           .template addStringLiteralParser<CppStringLiteralParser>( UMBA_TOKENIZER_TOKEN_STRING_LITERAL
                                                                                   , { make_string<StringType>("\"")   // UMBA_TOKENIZER_TOKEN_STRING_LITERAL itself

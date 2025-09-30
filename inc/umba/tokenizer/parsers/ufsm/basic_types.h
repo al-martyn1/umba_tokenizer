@@ -148,8 +148,8 @@ struct PredicateDefinition
 
     PredicateFlags  flags = PredicateFlags::none;
 
-    /*! Выражение для пользовательского (не external)  предиката */
-    LogicExpression expression  ;
+    /*! Выражение для пользовательского (не external) предиката */
+    LogicExpression expression  ; // всегда установлено для пользовательского предиката
     //LogicExpression expressionSmp; // simplified
 
     /*! Список событий, для которых предикат может быть использован. 
@@ -210,10 +210,12 @@ struct TransitionSourceStates
 
     void append   ( const TransitionSourceState &st);
     void push_back( const TransitionSourceState &st);
+    std::size_t size () const { return list.size (); }
+    bool        empty() const { return list.empty(); }
 
     std::vector<TransitionSourceState> getSortedStates() const;
 
-    // returns true if no one or more ANYs found
+    // returns true if any number of ANYs found
     bool checkForAny( bool *pHasNormalAny=0
                     , bool *pHasExcludedAny=0) const;
 
@@ -267,10 +269,12 @@ struct TransitionEvents
 
     void append   ( const TransitionEvent &st);
     void push_back( const TransitionEvent &st);
+    std::size_t size () const { return list.size (); }
+    bool        empty() const { return list.empty(); }
 
     std::vector<TransitionEvent> getSortedEvents() const;
 
-    // returns true if no one or more ANYs found
+    // returns true if any number of ANYs found
     bool checkForAny( bool *pHasNormalAny=0
                     , bool *pHasExcludedAny=0) const;
 
@@ -286,10 +290,12 @@ struct TransitionEvents
 struct TransitionDefinition
 {
     PositionInfo               positionInfo;
+    std::string                description ;
     TransitionSourceStates     sourceStates; 
     TransitionEvents           events      ;
     TransitionFlags            flags;
     LogicExpression            additionalCondition;
+    std::string                targetState ;
 
 
     std::string additionalConditionAsString() const;

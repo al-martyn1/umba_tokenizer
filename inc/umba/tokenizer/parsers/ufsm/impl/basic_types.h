@@ -378,7 +378,7 @@ bool TransitionSourceStates::checkForAny(bool *pHasNormalAny, bool *pHasExcluded
     if (pHasExcludedAny)
        *pHasExcludedAny = hasExcludedAny;
 
-    return anyCount <= 1;
+    return anyCount > 0;
 }
 
 inline
@@ -498,7 +498,7 @@ bool TransitionEvents::checkForAny(bool *pHasNormalAny, bool *pHasExcludedAny) c
     if (pHasExcludedAny)
        *pHasExcludedAny = hasExcludedAny;
  
-    return anyCount <= 1;
+    return anyCount > 0;
 }
 
 inline
