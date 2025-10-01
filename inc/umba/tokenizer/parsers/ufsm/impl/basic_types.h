@@ -593,7 +593,7 @@ std::string TransitionDefinition::additionalConditionAsString() const
     // Хотя данный флаг обычно должен проверяться до вызова additionalConditionAsString
     // на всякий случай вернём пустую строку, если он не установлен
     // Чтобы избежать преобразования в строку пустого выражения (а то мало ли что)
-    if ((flags&TransitionFlags::conditional)!=0)
+    if ((flags&TransitionFlags::conditional)==0)
         return std::string();
     return LogicExpressionEvaluator(makeLogicExpressionOperatorTraits()).toString(additionalCondition);
 }

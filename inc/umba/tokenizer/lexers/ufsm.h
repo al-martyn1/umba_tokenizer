@@ -70,12 +70,15 @@ makeTokenizerBuilder()
 
                           .addOperator(make_string<StringType>("-" ), UFSM_TOKEN_OP_DESCR_FOLLOWS       )
                           .addOperator(make_string<StringType>("*" ), UFSM_TOKEN_OP_ANY                 )
+
                           .addOperator(make_string<StringType>("~" ), UFSM_TOKEN_OP_NOT                 )
                           .addOperator(make_string<StringType>("&" ), UFSM_TOKEN_OP_AND                 )
                           .addOperator(make_string<StringType>("|" ), UFSM_TOKEN_OP_OR                  )
-                          .addOperator(make_string<StringType>("!" ), UFSM_TOKEN_OP_NOT_ALTER           )
-                          .addOperator(make_string<StringType>("&&"), UFSM_TOKEN_OP_AND_ALTER           )
-                          .addOperator(make_string<StringType>("||"), UFSM_TOKEN_OP_OR_ALTER            )
+
+                          .addOperator(make_string<StringType>("!" ), UFSM_TOKEN_OP_NOT                 , true /* allowUseExistingToken */ ) // UFSM_TOKEN_OP_NOT_ALTER
+                          .addOperator(make_string<StringType>("&&"), UFSM_TOKEN_OP_AND                 , true /* allowUseExistingToken */ ) // UFSM_TOKEN_OP_AND_ALTER
+                          .addOperator(make_string<StringType>("||"), UFSM_TOKEN_OP_OR                  , true /* allowUseExistingToken */ ) // UFSM_TOKEN_OP_OR_ALTER 
+
                           .addOperator(make_string<StringType>("=" ), UFSM_TOKEN_OP_ASSIGN              )
                           .addOperator(make_string<StringType>(":" ), UFSM_TOKEN_OP_COLON               )
                           .addOperator(make_string<StringType>(";" ), UFSM_TOKEN_OP_SEMICOLON           )
@@ -155,6 +158,8 @@ struct TokenizerConfigurator
                                                                                     , {"s-leave"         , UFSM_TOKEN_KWD_SELF_LEAVE   }
 
                                                                                     , {"inherits"        , UFSM_TOKEN_KWD_INHERITS     }
+
+                                                                                    , {"self"            , UFSM_TOKEN_KWD_SELF         }
 
                                                                                     // , {""                , UFSM_TOKEN_KWD_CALL         }
                                                                                     // , {""                , UFSM_TOKEN_KWD_BEFORE       }

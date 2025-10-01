@@ -4,3 +4,4 @@ none                            = 0
 inherited                            // Set when the transition is inherited
 override                             // Set when the transition overrides inherited
 conditional
+selfTarget

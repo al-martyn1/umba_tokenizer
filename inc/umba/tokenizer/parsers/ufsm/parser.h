@@ -520,43 +520,70 @@ public:
     {
         switch(tk)
         {
-            case UFSM_TOKEN_KWD_NAMESPACE        : return "namespace";
-            case UFSM_TOKEN_KWD_FSM              : return "state-machine";
-            case UFSM_TOKEN_KWD_DEFINITIONS      : return "definitions";
-            case UFSM_TOKEN_BRACKET_SCOPE_OPEN   : return "scope-open-bracket";
-            case UFSM_TOKEN_BRACKET_SCOPE_CLOSE  : return "scope-close-bracket";
+            case UFSM_TOKEN_KWD_NAMESPACE           : return "namespace";
+            case UFSM_TOKEN_KWD_FSM                 : return "state-machine";
+            case UFSM_TOKEN_KWD_DEFINITIONS         : return "definitions";
+            case UFSM_TOKEN_BRACKET_SCOPE_OPEN      : return "scope-open-bracket";
+            case UFSM_TOKEN_BRACKET_SCOPE_CLOSE     : return "scope-close-bracket";
 
-            case UMBA_TOKENIZER_TOKEN_IDENTIFIER : return "identifier";
+            case UMBA_TOKENIZER_TOKEN_IDENTIFIER    : return "identifier";
             case UMBA_TOKENIZER_TOKEN_STRING_LITERAL: return "string-literal";
 
-            case UFSM_TOKEN_KWD_EVENTS           : return "events";
-            case UFSM_TOKEN_KWD_ACTIONS          : return "actions";
-            case UFSM_TOKEN_KWD_STATES           : return "states";
-            case UFSM_TOKEN_KWD_PREDICATES       : return "predicates";
-            case UFSM_TOKEN_KWD_TRANSITIONS      : return "transitios";
-            case UFSM_TOKEN_KWD_ALL              : return "all";
+            case UFSM_TOKEN_KWD_EVENTS              : return "events";
+            case UFSM_TOKEN_KWD_ACTIONS             : return "actions";
+            case UFSM_TOKEN_KWD_STATES              : return "states";
+            case UFSM_TOKEN_KWD_PREDICATES          : return "predicates";
+            case UFSM_TOKEN_KWD_TRANSITIONS         : return "transitios";
+            case UFSM_TOKEN_KWD_ALL                 : return "all";
 
-            case UFSM_TOKEN_KWD_USES             : return "uses";
-            case UFSM_TOKEN_KWD_INHERITS         : return "inherits";
-            case UFSM_TOKEN_KWD_OVERRIDE         : return "override";
+            case UFSM_TOKEN_KWD_USES                : return "uses";
+            case UFSM_TOKEN_KWD_INHERITS            : return "inherits";
+            case UFSM_TOKEN_KWD_OVERRIDE            : return "override";
 
-            case UFSM_TOKEN_KWD_GENERATED        : return "generated";
-            case UFSM_TOKEN_KWD_GENERATES        : return "generates";
+            case UFSM_TOKEN_KWD_GENERATED           : return "generated";
+            case UFSM_TOKEN_KWD_GENERATES           : return "generates";
             //case          : return "";
 
-            case UFSM_TOKEN_OP_SCOPE             : return "op-scope-resolution";
-            case UFSM_TOKEN_OP_COMMA             : return "comma";
-            case UFSM_TOKEN_OP_COLON             : return "colon";
-            case UFSM_TOKEN_OP_SEMICOLON         : return "semicolon";
-            case UFSM_TOKEN_OP_DESCR_FOLLOWS     : return "description-separator";
-            case UFSM_TOKEN_OP_ANY               : return "op-any";
-            case UFSM_TOKEN_OP_NOT               : return "op-not";
-            case UFSM_TOKEN_OP_AND               : return "op-and";
-            case UFSM_TOKEN_OP_OR                : return "op-or";
-            case UFSM_TOKEN_OP_NOT_ALTER         : return "op-not";
-            case UFSM_TOKEN_OP_AND_ALTER         : return "op-and";
-            case UFSM_TOKEN_OP_OR_ALTER          : return "op-or";
-            case UFSM_TOKEN_OP_ASSIGN            : return "op-assign";
+            case UFSM_TOKEN_KWD_SELF                : return "self";
+            
+
+            case UFSM_TOKEN_OP_DESCR_FOLLOWS        : return "description-separator";
+            case UFSM_TOKEN_OP_ANY                  : return "op-any";
+            case UFSM_TOKEN_OP_NOT                  : return "op-not";
+            case UFSM_TOKEN_OP_AND                  : return "op-and";
+            case UFSM_TOKEN_OP_OR                   : return "op-or";
+            case UFSM_TOKEN_OP_NOT_ALTER            : return "op-not";
+            case UFSM_TOKEN_OP_AND_ALTER            : return "op-and";
+            case UFSM_TOKEN_OP_OR_ALTER             : return "op-or";
+            case UFSM_TOKEN_OP_ASSIGN               : return "op-assign";
+            case UFSM_TOKEN_OP_COLON                : return "colon";
+            case UFSM_TOKEN_OP_COMMA                : return "comma";
+            case UFSM_TOKEN_OP_SCOPE                : return "op-scope-resolution";
+            case UFSM_TOKEN_OP_SEMICOLON            : return "semicolon";
+            case UFSM_TOKEN_OP_TRANSITION_ARROW     : return "transition-arrow";
+            case UFSM_TOKEN_OP_TRANSITION_CONDITION : return "transition-condition";
+
+
+
+// #define UFSM_TOKEN_OP_DESCR_FOLLOWS              UMBA_TOKENIZER_TOKEN_OPERATOR_SUBTRACTION   /* Description follows (also separator for kebab names) */
+// #define UFSM_TOKEN_OP_ANY                        UMBA_TOKENIZER_TOKEN_OPERATOR_MULTIPLICATION
+// #define UFSM_TOKEN_OP_NOT                        UMBA_TOKENIZER_TOKEN_OPERATOR_BITWISE_NOT
+// #define UFSM_TOKEN_OP_AND                        UMBA_TOKENIZER_TOKEN_OPERATOR_BITWISE_AND
+// #define UFSM_TOKEN_OP_OR                         UMBA_TOKENIZER_TOKEN_OPERATOR_BITWISE_OR 
+// #define UFSM_TOKEN_OP_NOT_ALTER                  UMBA_TOKENIZER_TOKEN_OPERATOR_LOGICAL_NOT
+// #define UFSM_TOKEN_OP_AND_ALTER                  UMBA_TOKENIZER_TOKEN_OPERATOR_LOGICAL_AND
+// #define UFSM_TOKEN_OP_OR_ALTER                   UMBA_TOKENIZER_TOKEN_OPERATOR_LOGICAL_OR 
+// #define UFSM_TOKEN_OP_ASSIGN                     UMBA_TOKENIZER_TOKEN_OPERATOR_ASSIGNMENT
+// #define UFSM_TOKEN_OP_COLON                      UMBA_TOKENIZER_TOKEN_OPERATOR_COLON
+// #define UFSM_TOKEN_OP_COMMA                      UMBA_TOKENIZER_TOKEN_OPERATOR_COMMA
+// #define UFSM_TOKEN_OP_SCOPE                      UMBA_TOKENIZER_TOKEN_OPERATOR_SCOPE_RESOLUTION
+// #define UFSM_TOKEN_OP_SEMICOLON                  UMBA_TOKENIZER_TOKEN_OPERATOR_SEMICOLON
+// // -> - "transition operator" или "transition arrow"
+// #define UFSM_TOKEN_OP_TRANSITION_ARROW           UMBA_TOKENIZER_TOKEN_OPERATOR_POINTER_TO_MEMBER_ACCESS
+// #define UFSM_TOKEN_OP_TRANSITION_CONDITION       UMBA_TOKENIZER_TOKEN_OPERATOR_QMARK
+
+
+
 
             /*
             case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR  : return "type"; // return "char"  ; 
@@ -1511,15 +1538,11 @@ public:
 
             if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_TRANSITION_CONDITION)
             {
-                readNextToken();
-
                 // Читаем условие
                 if (!readLogicExpression(td.additionalCondition, true /* readNextOnStart */ ))
                     return false;
 
                 td.flags |= TransitionFlags::conditional;
-
-                //readNextToken();
             }
 
             if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_TRANSITION_ARROW} /* , "'display-options' directive: invalid option value" */ ))
@@ -1527,11 +1550,17 @@ public:
 
             readNextToken();
 
-
-            if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ ))
-                return false;
-
-            td.targetState = extractIdentifierName(m_pTokenInfo);
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_SELF || m_pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_IDENTIFIER)
+            {
+                if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_SELF)
+                {
+                    td.flags |= TransitionFlags::selfTarget;
+                }
+                else // identifier
+                {
+                    td.targetState = extractIdentifierName(m_pTokenInfo);
+                }
+            }
 
             readNextToken();
 
@@ -1543,15 +1572,19 @@ public:
                     return false;
                 }
 
-                readNextToken();
-
                 // Читаем условие
                 if (!readLogicExpression(td.additionalCondition, true /* readNextOnStart */ ))
                     return false;
 
                 td.flags |= TransitionFlags::conditional;
+            }
 
-                //readNextToken();
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
+            {
+                if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_COMMA
+                                              , true /* readNextOnStart */
+                                              , [&]() { td.actionRefs.push_back(extractIdentifierName(m_pTokenInfo)); } ))
+                    return false;
             }
 
             if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)

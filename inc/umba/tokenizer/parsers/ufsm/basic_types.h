@@ -165,6 +165,48 @@ struct PredicateDefinition
 
 
 //----------------------------------------------------------------------------
+struct StateActionRefs
+{
+    std::vector<std::string>    list;
+
+    bool appendImpl(const std::string &actionName);
+    bool append    (const std::string &actionName);
+    bool push_back (const std::string &actionName);
+
+}; // struct StateActionRefs
+
+//----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
+struct StateDefinition
+{
+    PositionInfo    positionInfo;
+    std::string     name        ;
+    std::string     description ;
+
+    StateFlags      flags = StateFlags::none;
+
+    std::unordered_map<StateActionKind, StateActionRefs>   actionRefs; 
+
+
+public: // methods
+
+    std::string getCanonicalName() const { return name; }
+
+    bool addActionRef(StateActionKind ak, const std::string &actionName);
+
+}; // struct StateDefinition
+
+//----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
+using TransitionActionRefs = StateActionRefs;
+
+//----------------------------------------------------------------------------
 struct TransitionSourceState
 {
     PositionInfo    positionInfo;
@@ -296,6 +338,7 @@ struct TransitionDefinition
     TransitionFlags            flags;
     LogicExpression            additionalCondition;
     std::string                targetState ;
+    TransitionActionRefs       actionRefs  ;
 
 
     std::string additionalConditionAsString() const;
@@ -322,45 +365,6 @@ struct TransitionDefinition
     void push_back( const TransitionEvent &te);
 
 }; // struct TransitionDefinition
-
-//----------------------------------------------------------------------------
-
-
-
-//----------------------------------------------------------------------------
-struct StateActionRefs
-{
-    std::vector<std::string>    list;
-
-    bool appendImpl(const std::string &actionName);
-    bool append    (const std::string &actionName);
-    bool push_back (const std::string &actionName);
-
-}; // struct StateActionRefs
-
-//----------------------------------------------------------------------------
-
-
-
-//----------------------------------------------------------------------------
-struct StateDefinition
-{
-    PositionInfo    positionInfo;
-    std::string     name        ;
-    std::string     description ;
-
-    StateFlags      flags = StateFlags::none;
-
-    std::unordered_map<StateActionKind, StateActionRefs>   actionRefs; 
-
-
-public: // methods
-
-    std::string getCanonicalName() const { return name; }
-
-    bool addActionRef(StateActionKind ak, const std::string &actionName);
-
-}; // struct StateDefinition
 
 //----------------------------------------------------------------------------
 

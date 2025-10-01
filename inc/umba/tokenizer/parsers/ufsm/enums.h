@@ -413,7 +413,8 @@ enum class TransitionFlags : std::uint32_t
     none          = 0x0000 /*!<  */,
     inherited     = 0x0001 /*!< Set when the transition is inherited */,
     override      = 0x0002 /*!< Set when the transition overrides inherited */,
-    conditional   = 0x0004 /*!<  */
+    conditional   = 0x0004 /*!<  */,
+    selfTarget    = 0x0008 /*!<  */
 
 }; // enum 
 //#!
@@ -426,6 +427,7 @@ MARTY_CPP_ENUM_FLAGS_SERIALIZE_BEGIN( TransitionFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( TransitionFlags::none          , "None"        );
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( TransitionFlags::inherited     , "Inherited"   );
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( TransitionFlags::override      , "Override"    );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( TransitionFlags::selfTarget    , "SelfTarget"  );
 MARTY_CPP_ENUM_FLAGS_SERIALIZE_END( TransitionFlags, std::map, 1 )
 
 MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( TransitionFlags, std::map, 1 )
@@ -434,6 +436,9 @@ MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( TransitionFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionFlags::none          , "none"        );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionFlags::inherited     , "inherited"   );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionFlags::override      , "override"    );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionFlags::selfTarget    , "self-target" );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionFlags::selfTarget    , "self_target" );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionFlags::selfTarget    , "selftarget"  );
 MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( TransitionFlags, std::map, 1 )
 
 

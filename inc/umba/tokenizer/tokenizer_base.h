@@ -241,6 +241,20 @@ public: // depending types
     }; // struct RawData
 
     //------------------------------
+
+    // #include "umba/pushpack1.h"
+    struct OperatorData
+    {
+        string_type  value;
+
+        StringType asString() const
+        {
+            return value;
+        }
+
+    }; // struct CommentData
+
+    //------------------------------
     struct StringLiteralData
     {
         string_type          value;
@@ -329,8 +343,10 @@ public: // depending types
                     std::size_t selfSize() const { return sizeof(*this) + sizeof(DataType); } \
                 }
 
+
     UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(CommentData              );
     UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(RawData                  );
+    UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(OperatorData             );
     UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(IdentifierData           );
     UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(StringLiteralData        );
     UMBA_TOKENIZER_BASE_DECLARE_DATA_HOLDER(IntegerNumericLiteralData);
@@ -348,6 +364,7 @@ public: // depending types
     using TokenParsedData = std::variant< EmptyData
                                         , CommentDataHolder
                                         , RawDataHolder
+                                        , OperatorDataHolder
                                         , IdentifierDataHolder
                                         , StringLiteralDataHolder
                                         , IntegerNumericLiteralDataHolder
@@ -362,6 +379,8 @@ public: // depending types
     
     using comment_data_type                         = CommentData                    ;
     using raw_data_type                             = RawData                        ;
+
+    using operator_data_type                        = OperatorData                   ;
     
     using identifier_data_type                      = IdentifierData                 ;
     using string_literal_data_type                  = StringLiteralData              ;
@@ -1303,7 +1322,7 @@ public: // methods - методы собственно разбора
                          return true; // Пока считаем, что всё нормально
                      }
 
-                     if (!parsingHandlerLambda(curPayload, tokenStartIt, itEnd)) // выплюнули текущий оператор
+                     if (!parsingOperatorHandlerLambda(curPayload, tokenStartIt, itEnd)) // выплюнули текущий оператор !!!
                          return false;
                      if (!parsingHandlerLambda(UMBA_TOKENIZER_TOKEN_CTRL_FIN, it, itEnd))
                          return false;
@@ -1959,7 +1978,7 @@ public: // methods - методы собственно разбора
                             //break;
                         }
 
-                        if (!parsingHandlerLambda(curPayload, tokenStartIt, it)) // выплюнули текущий оператор
+                        if (!parsingOperatorHandlerLambda(curPayload, tokenStartIt, it)) // выплюнули текущий оператор !!!
                             return false;
                         tokenStartIt = it; // Сохранили начало нового токена
 
@@ -2250,6 +2269,30 @@ protected: // methods - хандлеры из "грязного" проекта,
 
         return bRes;
     }
+
+    [[nodiscard]]
+    bool parsingOperatorHandlerLambda( payload_type tokenType, InputIteratorType inputDataBegin, InputIteratorType inputDataEnd
+                                     ) const
+    {
+        if (inputDataBegin==inputDataEnd)
+            return true;
+        MessagesStringType msg;
+        bool bRes = static_cast<const TBase*>(this)->hadleToken(curPosAtLineBeginning, tokenType
+                                                               , inputDataBegin, inputDataEnd
+                                                               , OperatorDataHolder(OperatorData{makeString(inputDataBegin, inputDataEnd)})
+                                                               , msg
+                                                               );
+        // TokenParsedData StringLiteralData
+        checkLineStart(tokenType);
+
+        if (!bRes)
+        {
+            reportHandleTokenErrorLambda(tokenType, inputDataBegin, inputDataEnd, msg);
+        }
+
+        return bRes;
+    }
+
 
     [[nodiscard]]
     bool parsingNumberHandlerLambda(payload_type tokenType, InputIteratorType inputDataBegin, InputIteratorType inputDataEnd, InputIteratorType itEnd) const
