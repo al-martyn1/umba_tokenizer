@@ -177,343 +177,6 @@ public:
         m_pTokenInfo = BaseClass::waitForSignificantTokenChecked( &m_tokenPos, readFlags);
     }
 
-    // m_pTokenInfo = BaseClass::waitForSignificantTokenChecked( &m_tokenPos, ParserWaitForTokenFlags::none);
-    // readNextToken();
-    
-    
-
-
-//    template<typename TVal>
-//    using TheVal = umba::TheValue<TVal>;
-
-
-    // void setDiagramTitle(const std::string &t)
-    // {
-    //      diagram.title = t;
-    // }
-
-    // PacketDiagramType getDiagram() const
-    // {
-    //     auto diagramCopy = diagram;
-    //     diagramCopy.removeEmptyOrgs();
-    //     return diagramCopy;
-    // }
-
-
-    // bool addDiagramItem(PacketDiagramItemType item)
-    // {
-    //     try
-    //     {
-    //         return addDiagramItemImpl(item);
-    //     }
-    //     catch(const marty::mem::address_wrap &)
-    //     {
-    //         return BaseClass::logMessage( item.pTokenInfo, "address-wrap", "address wrapping detected. Check your 'org' directives" ), false;
-    //     }
-    // }
-
-    // bool addDiagramItemImpl(PacketDiagramItemType item)
-    // {
-    //     if (item.text.empty() && item.itemType!=EPacketDiagramItemType::org) // Для org директив имя/текст необязателен
-    //     {
-    //         BaseClass::logMessage(item.pTokenInfo, "diagram", "data entry name is empty");
-    //         return false;
-    //     }
-    //  
-    //     auto fieldId = item.getFieldId();
-    //     if (fieldId.empty() || fieldId=="_")
-    //     {
-    //         if (item.itemType==EPacketDiagramItemType::org)
-    //         {
-    //             if (fieldId=="_")
-    //                return BaseClass::logMessage(item.pTokenInfo, "diagram", "'org' directive name contains only insignificant symbols"), false;
-    //             // Анонимный ORG - генерим имя на базе текущего заголовка диаграмы
-    //             item.text = diagram.generateOrgName(orgCounter);
-    //             item.textGenerated = true;
-    //             fieldId = item.getFieldId();
-    //         }
-    //         else
-    //         {
-    //             BaseClass::logMessage(item.pTokenInfo, "diagram", "data entry name is empty or contains only insignificant symbols");
-    //             return false;
-    //         }
-    //     }
-    //  
-    //     // С наличием имени поля и годного идентификатора этого поля разобрались
-    //  
-    //     std::unordered_map<std::string, std::size_t> &entriesMap = (item.itemType==EPacketDiagramItemType::org) ? diagram.orgNames : diagram.entryNames;
-    //  
-    //     std::string entryTypeStr = (item.itemType==EPacketDiagramItemType::org) ? "'org' directive" : "data entry";
-    //  
-    //     if (entriesMap.find(fieldId)!=entriesMap.end())
-    //     {
-    //         BaseClass::logMessage( item.pTokenInfo, "diagram", entryTypeStr + " with same name already exists ('$(Name)')"
-    //                                , umba::FormatMessage<std::string>().arg("Name", item.text)
-    //                                                                    .values()
-    //                              );
-    //         return false;
-    //     }
-    //  
-    //     entriesMap[fieldId] = diagram.data.size();
-    //  
-    //  
-    //  
-    //     std::uint64_t calculatedStart = 0;
-    //  
-    //     // Все адреса у нас не абсолютные, а относительно базы.
-    //     // Директива/запись org задаёт новую базу
-    //     if (!diagram.data.empty())
-    //     {
-    //         if (diagram.data.back().itemType==EPacketDiagramItemType::org)
-    //             calculatedStart = 0;
-    //         else
-    //             calculatedStart = diagram.data.back().addressRange.end+1;
-    //     }
-    //  
-    //     if (item.itemType==EPacketDiagramItemType::range)
-    //     {
-    //         if (item.addressRange.start>item.addressRange.end)
-    //         {
-    //             BaseClass::logMessage( item.pTokenInfo, "diagram", "entry '$(Name)': range start offset is greater than range end offset"
-    //                                  , umba::FormatMessage<std::string>().arg("Name", item.text).values()
-    //                                  );
-    //             return false;
-    //         }
-    //     }
-    //  
-    //     if (item.itemType==EPacketDiagramItemType::singleValue || item.itemType==EPacketDiagramItemType::range)
-    //     {
-    //         if (item.addressRange.start!=calculatedStart)
-    //         {
-    //             if (item.addressRange.start<calculatedStart)
-    //             {
-    //                 std::string msg = std::string("entry '$(Name)': ") 
-    //                                 + (item.itemType==EPacketDiagramItemType::singleValue ? "entry" : "range start")
-    //                                 + " offset value is less than previous value end+1 ($(Start) < $(End))";
-    //                 BaseClass::logMessage( item.pTokenInfo, "diagram", msg
-    //                                      , umba::FormatMessage<std::string>().arg("Name" , item.text)
-    //                                                                          .arg("Start", item.addressRange.start)
-    //                                                                          .arg("End"  , calculatedStart)
-    //                                                                          .values()
-    //                                      );
-    //             }
-    //             else
-    //             {
-    //                 BaseClass::logMessage(item.pTokenInfo, "diagram", "entry '$(Name)': gap detected: previous entry '$(PrevName)' ends with $(PrevEnd), but current entry starts with $(CurStart) instead of $(ExpectedStart)"
-    //                                      , umba::FormatMessage<std::string>().arg("Name"    , item.text)
-    //                                                                          .arg("PrevName", diagram.data.back().text)
-    //                                                                          .arg("PrevEnd" , diagram.data.back().addressRange.end)
-    //                                                                          .arg("CurStart", item.addressRange.start)
-    //                                                                          .arg("ExpectedStart", calculatedStart)
-    //                                                                          .values()
-    //                                      );
-    //             }
-    //  
-    //             return false;
-    //         }
-    //     }
-    //  
-    //     if (item.itemType==EPacketDiagramItemType::org)
-    //     {
-    //         // Вычислить новый org
-    //         // std::uint64_t baseAddress = diagram.calcBaseAddress();
-    //         auto baseIt = diagram.getBaseAddressIterator();
-    //  
-    //         switch(item.orgType)
-    //         {
-    //             case EOrgType::orgAuto:
-    //             {
-    //                 // item.orgAddress = baseAddress + calculatedStart;
-    //                 baseIt += std::int64_t(calculatedStart);
-    //                 auto addressInfo = baseIt.getAddressInfo();
-    //                 item.orgAddress  = addressInfo.base;
-    //                 item.orgOffset   = addressInfo.offset;
-    //                 break;
-    //             }
-    //  
-    //             case EOrgType::orgAbs : // Ничего не делаем, задан абсолютный адрес
-    //                 baseIt = diagram.createConstMemoryIterator(item);
-    //                 break;
-    //  
-    //             case EOrgType::orgRel :
-    //             {
-    //                 //item.orgAddress += baseAddress; // прибавили базовый адрес, который высчитан по предыдущим org директивам
-    //                 baseIt += std::int64_t(item.orgAddress);
-    //                 auto addressInfo = baseIt.getAddressInfo();
-    //                 item.orgAddress  = addressInfo.base;
-    //                 item.orgOffset   = addressInfo.offset;
-    //                 break;
-    //             }
-    //  
-    //             case EOrgType::invalid  : [[fallthrough]];
-    //  
-    //             default:
-    //                 return BaseClass::logMessage(item.pTokenInfo, "diagram", "'org': invalid 'org' type"), false;
-    //  
-    //         }
-    //  
-    //         auto itemAddrIt = diagram.createConstMemoryIterator(item); // итератор для вновь добавляемого элемента - итератор ORG'а
-    //         auto calculatedFinalAddressIt = diagram.getBaseAddressIterator() + std::int64_t(calculatedStart); // итератор подсчитанного адреса для вновь добавляемого элемента
-    //         // auto calculatedFinalAddress = baseAddress+calculatedStart;
-    //         // // Проверить, не налез ли он на уже размеченную память
-    //         // if (item.orgAddress<calculatedFinalAddress)
-    //         if (std::uint64_t(itemAddrIt) < std::uint64_t(calculatedFinalAddressIt))
-    //         {
-    //             // попадает в уже размеченную память - falls into already mapped memory
-    //             // попадает в уже неразмеченную память - ends up in already unallocated memory
-    //             // 
-    //             BaseClass::logMessage(item.pTokenInfo, "diagram", "'org' address hits into previous layout");
-    //             return false;
-    //         }
-    //  
-    //         // Если новый org создаёт gap - добавить fill
-    //         if (std::uint64_t(itemAddrIt)>std::uint64_t(calculatedFinalAddressIt) && !diagram.data.empty()) // а данные не пусты, значит, надо заполнить место
-    //         {
-    //             std::size_t gapSize = std::uint64_t(itemAddrIt) - std::uint64_t(calculatedFinalAddressIt); // от итератора ORG отнимаем итератор подсчитанного адреса для вновь добавляемого элемента
-    //  
-    //             auto gapItem = PacketDiagramItemType();
-    //  
-    //             auto addressInfo   = calculatedFinalAddressIt.getAddressInfo();
-    //             gapItem.orgAddress = addressInfo.base;
-    //             gapItem.orgOffset  = addressInfo.offset;
-    //  
-    //             gapItem.itemType   = EPacketDiagramItemType::range;
-    //             gapItem.fillEntry  = true; // поле для заполнения
-    //  
-    //             gapItem.addressRange.start = calculatedStart;
-    //             gapItem.addressRange.end   = gapItem.addressRange.start + gapSize - 1;
-    //  
-    //             gapItem.pTokenInfo = item.pTokenInfo;
-    //  
-    //             gapItem.blockMode  = true;
-    //  
-    //             // Вроде всё необходимое задано для гэп записи
-    //  
-    //             gapItem.text = "Fill_" + std::to_string(diagram.fillEntryCounter);
-    //             ++diagram.fillEntryCounter;
-    //  
-    //             diagram.data.emplace_back(gapItem); // Добавляем gap fill
-    //         }
-    //  
-    //         // Установить lastOrg. Задаём абсолютное значение
-    //  
-    //         diagram.lastOrg       = item.orgAddress;
-    //         diagram.lastOrgOffset = item.orgOffset ;
-    //     }
-    //  
-    //     // Вроде всё проверили
-    //  
-    //     // Теперь фиксим поля
-    //  
-    //     if (item.itemType==EPacketDiagramItemType::explicitType)
-    //     {
-    //         auto baseIt = diagram.getBaseAddressIterator();
-    //         baseIt += std::int64_t(calculatedStart);
-    //         //baseIt += std::int64_t(item.getTypeFieldSize()-1);
-    //  
-    //         auto addressInfo = baseIt.getAddressInfo();
-    //         item.orgAddress  = addressInfo.base;
-    //         item.orgOffset   = addressInfo.offset;
-    //  
-    //         item.addressRange.start = calculatedStart;
-    //         item.addressRange.end   = item.addressRange.start + item.getTypeFieldSize()-1;
-    //     }
-    //  
-    //     else if (item.itemType==EPacketDiagramItemType::singleValue)
-    //     {
-    //         auto baseIt = diagram.getBaseAddressIterator();
-    //         baseIt += std::int64_t(calculatedStart);
-    //  
-    //         auto addressInfo = baseIt.getAddressInfo();
-    //         item.orgAddress  = addressInfo.base;
-    //         item.orgOffset   = addressInfo.offset;
-    //  
-    //         item.addressRange.end = item.addressRange.start;
-    //     }
-    //  
-    //     else if (item.itemType==EPacketDiagramItemType::range)
-    //     {
-    //         // auto rangeSize = item.addressRange.end - item.addressRange.start + 1;
-    //     
-    //         auto baseIt = diagram.getBaseAddressIterator();
-    //         baseIt += std::int64_t(calculatedStart);
-    //  
-    //         auto addressInfo = baseIt.getAddressInfo();
-    //         item.orgAddress  = addressInfo.base;
-    //         item.orgOffset   = addressInfo.offset;
-    //     }
-    //  
-    //     else if (item.itemType==EPacketDiagramItemType::org)
-    //     {
-    //     }
-    //  
-    //     // Если никаких данных не было, и добавляемый элемент - не org, надо вставить org 0
-    //     if (diagram.data.empty() && item.itemType!=EPacketDiagramItemType::org)
-    //     {
-    //         PacketDiagramItemType orgItem;
-    //         orgItem.pTokenInfo    = item.pTokenInfo;
-    //         orgItem.itemType      = EPacketDiagramItemType::org;
-    //         orgItem.orgType       = EOrgType::orgAbs;
-    //         orgItem.text          = diagram.generateOrgName(orgCounter);
-    //         orgItem.textGenerated = true;
-    //         orgItem.addressRange.start = 0;
-    //         orgItem.addressRange.end   = 0;
-    //         orgItem.orgAddress         = 0;
-    //         orgItem.orgOffset          = 0;
-    //  
-    //         diagram.data.emplace_back(orgItem);
-    //         diagram.orgAddress    = 0;
-    //         diagram.orgOffset     = 0;
-    //         diagram.lastOrg       = 0;
-    //         diagram.lastOrgOffset = 0;
-    //     }
-    //  
-    //     if (item.itemType==EPacketDiagramItemType::org && diagram.orgAddress==std::uint64_t(-1))
-    //     {
-    //         diagram.orgAddress = item.orgAddress;
-    //         diagram.orgOffset  = item.orgOffset ;
-    //     }
-    //  
-    //  
-    //     diagram.data.emplace_back(item);
-    //  
-    //     return true;
-    // }
-
-
-    // static bool isAnyType(umba::tokenizer::payload_type tk)
-    // {
-    //     switch(tk)
-    //     {
-    //         case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR  : return true;
-    //         case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8  : return true;
-    //         case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT16 : return true;
-    //         case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT32 : return true;
-    //         case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT64 : return true;
-    //         case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8 : return true;
-    //         case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT16: return true;
-    //         case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT32: return true;
-    //         case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64: return true;
-    //         default: return false;
-    //     }
-    // }
-
-    // static bool isAnyNumber(umba::tokenizer::payload_type tk)
-    // {
-    //     switch(tk)
-    //     {
-    //         case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_BIN: return true;
-    //         //case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_BIN: return true;
-    //         case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC: return true;
-    //         //case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC: return true;
-    //         case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_OCT: return true;
-    //         case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_HEX: return true;
-    //         //case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_HEX: return true;
-    //         case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_OCT|UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_FLAG_MISS_DIGIT: return true;
-    //         default: return false;
-    //     }
-    // }
-
 
     static
     std::string getTokenIdStr(umba::tokenizer::payload_type tk)
@@ -563,71 +226,6 @@ public:
             case UFSM_TOKEN_OP_TRANSITION_ARROW     : return "transition-arrow";
             case UFSM_TOKEN_OP_TRANSITION_CONDITION : return "transition-condition";
 
-
-
-// #define UFSM_TOKEN_OP_DESCR_FOLLOWS              UMBA_TOKENIZER_TOKEN_OPERATOR_SUBTRACTION   /* Description follows (also separator for kebab names) */
-// #define UFSM_TOKEN_OP_ANY                        UMBA_TOKENIZER_TOKEN_OPERATOR_MULTIPLICATION
-// #define UFSM_TOKEN_OP_NOT                        UMBA_TOKENIZER_TOKEN_OPERATOR_BITWISE_NOT
-// #define UFSM_TOKEN_OP_AND                        UMBA_TOKENIZER_TOKEN_OPERATOR_BITWISE_AND
-// #define UFSM_TOKEN_OP_OR                         UMBA_TOKENIZER_TOKEN_OPERATOR_BITWISE_OR 
-// #define UFSM_TOKEN_OP_NOT_ALTER                  UMBA_TOKENIZER_TOKEN_OPERATOR_LOGICAL_NOT
-// #define UFSM_TOKEN_OP_AND_ALTER                  UMBA_TOKENIZER_TOKEN_OPERATOR_LOGICAL_AND
-// #define UFSM_TOKEN_OP_OR_ALTER                   UMBA_TOKENIZER_TOKEN_OPERATOR_LOGICAL_OR 
-// #define UFSM_TOKEN_OP_ASSIGN                     UMBA_TOKENIZER_TOKEN_OPERATOR_ASSIGNMENT
-// #define UFSM_TOKEN_OP_COLON                      UMBA_TOKENIZER_TOKEN_OPERATOR_COLON
-// #define UFSM_TOKEN_OP_COMMA                      UMBA_TOKENIZER_TOKEN_OPERATOR_COMMA
-// #define UFSM_TOKEN_OP_SCOPE                      UMBA_TOKENIZER_TOKEN_OPERATOR_SCOPE_RESOLUTION
-// #define UFSM_TOKEN_OP_SEMICOLON                  UMBA_TOKENIZER_TOKEN_OPERATOR_SEMICOLON
-// // -> - "transition operator" или "transition arrow"
-// #define UFSM_TOKEN_OP_TRANSITION_ARROW           UMBA_TOKENIZER_TOKEN_OPERATOR_POINTER_TO_MEMBER_ACCESS
-// #define UFSM_TOKEN_OP_TRANSITION_CONDITION       UMBA_TOKENIZER_TOKEN_OPERATOR_QMARK
-
-
-
-
-            /*
-            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_CHAR  : return "type"; // return "char"  ; 
-            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT8  : return "type"; // return "int8"  ; 
-            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT16 : return "type"; // return "int16" ; 
-            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT32 : return "type"; // return "int32" ; 
-            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_INT64 : return "type"; // return "int64" ; 
-            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT8 : return "type"; // return "uint8" ; 
-            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT16: return "type"; // return "uint16"; 
-            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT32: return "type"; // return "uint32"; 
-            case MERMAID_PACKET_DIAGRAM_TOKEN_TYPE_UINT64: return "type"; // return "uint64"; 
-            */
-
-            #if 0
-            case UMBA_TOKENIZER_TOKEN_RAW_DATA           : return "raw-data";
-            case UMBA_TOKENIZER_TOKEN_IDENTIFIER         : return "identifier";
-            case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_BIN: return "number";
-            //case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_BIN: return "number";
-            case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC: return "number";
-            //case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_DEC: return "number";
-            case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_OCT: return "number";
-            case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_HEX: return "number";
-            //case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_HEX: return "number";
-            case UMBA_TOKENIZER_TOKEN_INTEGRAL_NUMBER_OCT|UMBA_TOKENIZER_TOKEN_NUMBER_LITERAL_FLAG_MISS_DIGIT: return "number";
-            case UMBA_TOKENIZER_TOKEN_OPERATOR_SINGLE_LINE_COMMENT_FIRST: return "comment";
-            case UMBA_TOKENIZER_TOKEN_STRING_LITERAL     : return "string";
-            case UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_OPEN : return "array-size-start-bracket";
-            case UMBA_TOKENIZER_TOKEN_SQUARE_BRACKET_CLOSE: return "array-size-end-bracket";
-            case UMBA_TOKENIZER_TOKEN_LINEFEED : return "linefeed";
-            case UMBA_TOKENIZER_TOKEN_SPACE    : return "space";
-            case UMBA_TOKENIZER_TOKEN_TAB      : return "tab";
-            case UMBA_TOKENIZER_TOKEN_FORM_FEED: return "form-feed";
-            case MERMAID_TOKEN_OPERATOR_EXTRA  : return "extra-options-operator";
-            
-            case UMBA_TOKENIZER_TOKEN_CTRL_FIN: return "EOF";
-
-            case MERMAID_TOKEN_OPERATOR_RANGE: return "range-operator";
-            case MERMAID_TOKEN_OPERATOR_FOLLOW_DELIMITER: return "follow-delimiter";
-
-            // case : return "";
-            // case : return "";
-            // case : return "";
-            // case : return "";
-            #endif
 
             default: 
                  #if 0
@@ -1669,11 +1267,6 @@ public:
     {
         fqn.clear();
 
-        // if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_COMMA
-        //                               , true /* readNextOnStart */
-        //                               , [&]() { ad.basicActions.emplace_back(extractIdentifierName(m_pTokenInfo)); } ))
-        //    return false;
-
         bool waitSep = false;
 
         if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_SCOPE)
@@ -1692,31 +1285,6 @@ public:
                                       , [&]() { fqn.append(extractIdentifierName(m_pTokenInfo)); } 
                                       , waitSep ))
             return false;
-
-        #if 0
-        // В начале цикла - не вычитываем, так как у нас уже идентификатор или разделитель NS
-        for( // m_pTokenInfo = BaseClass::waitForSignificantTokenChecked( &m_tokenPos, ParserWaitForTokenFlags::none)
-           ; umba::TheValue(m_pTokenInfo->tokenType).oneOf(UFSM_TOKEN_OP_SCOPE, UMBA_TOKENIZER_TOKEN_IDENTIFIER)
-           ; m_pTokenInfo = BaseClass::waitForSignificantTokenChecked( &m_tokenPos, ParserWaitForTokenFlags::none)
-           )
-        {
-            if (waitSep)
-            {
-                if (m_pTokenInfo->tokenType!=UFSM_TOKEN_OP_SCOPE)
-                    return true;
-                // if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SCOPE} /* , "'display-options' directive: invalid option value" */ ))
-                //     return false; // пришло что-то другое - ошибка
-                waitSep = false;
-            }
-            else // ждём имя (идентификатор), после скоуп-разделителя или в начале
-            {
-                if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ ))
-                    return false; // а пришло хз что
-                fqn.append(extractIdentifierName(m_pTokenInfo));
-                waitSep = true;
-            }
-        }
-        #endif
 
        // Пришел неизвестный токен, но то, что пришло, было у нужном порядке через '::', а пришедший токен проверяем выше, после возврата
        return true;
@@ -1799,9 +1367,6 @@ public:
             }
 
             // Тут ждём идентификатор
-            // FullQualifiedName fqn;
-            // InheritanceOverrideFlags overrideFlags = InheritanceOverrideFlags::none;
-            // PositionInfo positionInfo;
             ParentListEntry ple;
             ple.flags = inheritanceListMode==InheritanceListMode::uses ? ParentListEntryFlags::uses : ParentListEntryFlags::inherits;
 
@@ -1842,41 +1407,6 @@ public:
                     readNextToken(); 
                 }
 
-                // if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
-                //     return false;
-                // if (!parseInheritanceOverrideFlags(ple.overrideFlags))
-                //     return false;
-                // if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
-                //     return false;
-                // readNextToken(); 
-
-                // Если имя абсолютное - проверяем наличие с корня
-                // Если имя относительное, то пытаемся найти относительно текущего NS,
-                // если не нашли, то ищем от корня
-
-                // NamespaceDefinition* pCurNs = getCurrentNamespace();
-                //  
-                // FullQualifiedName foundName;
-                // NamespaceEntryKind parentKind = pCurNs->findAnyDefinition( ple.name, ctx.curNsName, &ctx.rootNs, &foundName);
-                // switch(parentKind)
-                // {
-                //     case NamespaceEntryKind::none         : // ple.name not found
-                //          BaseClass::logSimpleMessage(ple.positionInfo.pos, UMBA_TOKENIZER_TOKEN_IDENTIFIER /* tokenType */, "definition-not-found", "'definitions' or 'state-machine' not found");
-                //          return false;
-                //  
-                //     case NamespaceEntryKind::nsDefinition : // definitions or state-machine expected, but found namespace 
-                //          BaseClass::logSimpleMessage(ple.positionInfo.pos, UMBA_TOKENIZER_TOKEN_IDENTIFIER /* tokenType */, "definition-not-found", "expected 'definitions' or 'state-machine' name, but found namespace");
-                //          return false;
-                //  
-                //     case NamespaceEntryKind::fsmDefinition: // OK
-                //          ple.name = foundName; // задаём полное имя
-                //          break;
-                //  
-                //     case NamespaceEntryKind::invalid      : // 
-                //          throw std::runtime_error("Something goes wrong");
-                // }
-                //  
-                // sm.parents[ple.name.getCanonicalName()] = ple;
             }
             else
             {
@@ -1927,15 +1457,7 @@ public:
 
                 sm.description = extractLiteral(m_pTokenInfo);
                 readNextToken(); 
-
-                // После описания должна идти открывающая скобка
-                // if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
-                //     return false;
             }
-
-            // // Тут должна быть открывающая скобка
-            // if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
-            //     return false;
 
             return true;
         }
@@ -1990,10 +1512,6 @@ public:
         // Тут у нас должна быть открывающая блок скобка
         if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
             return false;
-
-        // Пропускаем открывающую скобку
-        // m_pTokenInfo = 
-        // readNextToken(); 
 
         if (!parseStateMachineBody(sm))
             return false;
@@ -2135,15 +1653,6 @@ public:
             if (!m_pTokenInfo)
                 return false;
     
-            // // FIN может быть и в конце выражения, если последняя строка не заканчивается переводом строки, это нормально
-            // if (m_pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
-            //     return true; // normal stop
-            //  
-            // if (m_pTokenInfo->tokenType!=UMBA_TOKENIZER_TOKEN_LINEFEED) // Разбор выражения закончился не строкой?
-            // {
-            //     expectedReachedMsg(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_LINEFEED} /* , msg */ );
-            //     return false;
-            // }
         }
 
         return false;
