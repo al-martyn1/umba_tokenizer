@@ -68,6 +68,9 @@ struct StateMachineDefinition
 
 protected: // methods
 
+    template<typename StreamType>
+    StreamType& print(StreamType& oss, std::size_t indendSize) const;
+
     // Данный метод проверяет только существование определения в рамках текущего определения FSM
     template< typename ErrorType
             , typename ValueType
@@ -141,6 +144,9 @@ struct NamespaceDefinition
 
 
 public: // methods
+
+    template<typename StreamType>
+    StreamType& print(StreamType& oss, std::size_t indendSize) const;
 
     iterator find(const std::string &n)
     {

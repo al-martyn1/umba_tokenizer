@@ -38,6 +38,9 @@ struct FullQualifiedName
     using const_iterator  = typename std::vector<std::string>::const_iterator;
 
 
+    static inline std::string namespaceSeparator = "::"; // Можно переопределять, но только глобально
+
+
 public: // methods
 
     std::size_t size() const  { return name.size(); }
@@ -172,6 +175,8 @@ struct StateActionRefs
     bool appendImpl(const std::string &actionName);
     bool append    (const std::string &actionName);
     bool push_back (const std::string &actionName);
+    bool empty() const;
+    std::size_t size() const;
 
 }; // struct StateActionRefs
 
@@ -196,6 +201,9 @@ public: // methods
     std::string getCanonicalName() const { return name; }
 
     bool addActionRef(StateActionKind ak, const std::string &actionName);
+
+    template<typename StreamType>
+    StreamType& print(StreamType& oss, std::size_t indendSize) const;
 
 }; // struct StateDefinition
 

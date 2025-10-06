@@ -83,6 +83,7 @@ Generator: Umba Brief Scanner
 
 # inc/umba/tokenizer/parsers/ufsm
 
+- `traffic_lights.ufsm` - 
 - `types.h` - Типы для парсера ufsm
 
 # inc/umba/tokenizer/parsers

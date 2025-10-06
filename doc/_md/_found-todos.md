@@ -4,19 +4,19 @@ Generator: Umba Brief Scanner
 
 # inc/umba/tokenizer
 
-- [ ] `[inc/umba/tokenizer/tokenizer_base.h:558]`
+- [ ] `[inc/umba/tokenizer/tokenizer_base.h:579]`
   Надо определится, что делать в tokenize в raw режиме. См там коментарии
 
-- [ ] `[inc/umba/tokenizer/tokenizer_base.h:1257]`
+- [ ] `[inc/umba/tokenizer/tokenizer_base.h:1280]`
   У нас был встречен символ разделяющий целую и дробную часть плавающего числа,
   но без целой части. Пока просто съедаем его, но вообще этот символ может быть
   оператором, надо это обработать Например, это может быть паскалевский `End.`
   (End с точкой)
 
-- [ ] `[inc/umba/tokenizer/tokenizer_base.h:1296]`
+- [ ] `[inc/umba/tokenizer/tokenizer_base.h:1319]`
   Надо уточнить, что за комент
 
-- [ ] `[inc/umba/tokenizer/tokenizer_base.h:2070]`
+- [ ] `[inc/umba/tokenizer/tokenizer_base.h:2093]`
   Разобраться с continuation
 
 - [ ] `[inc/umba/tokenizer/tokenizer_builder.h:216]`
@@ -56,14 +56,14 @@ Generator: Umba Brief Scanner
 - [ ] `[inc/umba/tokenizer/token_collection.h:299]`
   запретить копирование
 
-- [ ] `[inc/umba/tokenizer/token_collection.h:751]`
+- [ ] `[inc/umba/tokenizer/token_collection.h:764]`
   может не надо в getTokenImpl проверять доступность? Или пофик, одно условие,
   зато peekToken() упрощается
 
-- [ ] `[inc/umba/tokenizer/token_collection.h:826]`
+- [ ] `[inc/umba/tokenizer/token_collection.h:839]`
   Вот тут надо вычитать следующий токен из входного текста
 
-- [ ] `[inc/umba/tokenizer/token_collection.h:873]`
+- [ ] `[inc/umba/tokenizer/token_collection.h:886]`
   надо как-то просигналить, потому что снаружы мы генерим только ошибки
   синтаксического анализа а ошибки лексера генерируются им самим. Но раз лексер
   вернул true, то там ошибки не было, но, тем не менее, финальный токен не

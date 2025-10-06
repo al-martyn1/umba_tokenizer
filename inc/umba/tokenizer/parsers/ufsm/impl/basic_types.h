@@ -114,19 +114,19 @@ inline bool FullQualifiedName::isAbsolute() const { return (flags&FullQualifiedN
 inline
 std::string FullQualifiedName::getCanonicalName() const
 {
-    static const std::string sep = "::";
+    //static const std::string sep = "::";
     std::string resName;
 
     // Делаем всегда полностью квалифицированное имя от корня
     for(const auto &n : name)
     {
-        resName.append(sep);
+        resName.append(namespaceSeparator);
         resName.append(n);
     }
 
     // Если имя не абсолютное, и в начале лежит scope access
     // второй символ не сравниваем, потому что не факт, что он есть, правильно вообще сделать startsWidth
-    if (!isAbsolute() && resName.size()>2 && resName[0]==sep[0]) 
+    if (!isAbsolute() && resName.size()>2 && resName[0]==namespaceSeparator[0]) 
     {
         resName.erase(0, sep.size());
     }
@@ -693,6 +693,8 @@ bool StateActionRefs::appendImpl(const std::string &actionName)
 
 inline bool StateActionRefs::append   ( const std::string &actionName) { return appendImpl(actionName); }
 inline bool StateActionRefs::push_back( const std::string &actionName) { return appendImpl(actionName); }
+inline bool StateActionRefs::empty() const       { return list.empty(); }
+inline std::size_t StateActionRefs::size() const { return list.size (); }
 
 //----------------------------------------------------------------------------
 

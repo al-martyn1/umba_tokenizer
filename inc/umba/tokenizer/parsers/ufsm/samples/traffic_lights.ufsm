@@ -427,14 +427,21 @@ uses TrafficLightCommands,
     predicates
     {
         greenLightIsOn  : external valid-for {toggleGreen} - "Checks the GREEN light is ON";
+    }
+
+    predicates : override
+    {
         yellowLightIsOn : external valid-for {toggleYellow} - "Checks the YELLOW light is ON";
     }
 
-    states
+    states : override
     {
         turnedOff : initial - "Traffic Light is turned OFF"
         { enter: turnOff; }
+    }
 
+    states 
+    {
         allowWarning { enter: runAllowWarning; }
 
         trafficAllowed - "Informs road users that they are can go"
