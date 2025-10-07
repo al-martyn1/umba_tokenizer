@@ -11,9 +11,11 @@
 
 #include <exception>
 #include <map>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 
 
@@ -153,6 +155,10 @@ MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( ActionFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( ActionFlags::external    , "external"  );
 MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( ActionFlags, std::map, 1 )
 
+MARTY_CPP_ENUM_FLAGS_SERIALIZE_SET(ActionFlags, std::set)
+
+MARTY_CPP_ENUM_FLAGS_DESERIALIZE_SET(ActionFlags, std::set)
+
 
 //#!EventFlags
 enum class EventFlags : std::uint32_t
@@ -187,6 +193,10 @@ MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( EventFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( EventFlags::external    , "external"  );
 MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( EventFlags, std::map, 1 )
 
+MARTY_CPP_ENUM_FLAGS_SERIALIZE_SET(EventFlags, std::set)
+
+MARTY_CPP_ENUM_FLAGS_DESERIALIZE_SET(EventFlags, std::set)
+
 
 //#!FullQualifiedNameFlags
 enum class FullQualifiedNameFlags : std::uint32_t
@@ -211,6 +221,10 @@ MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( FullQualifiedNameFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( FullQualifiedNameFlags::none       , "none"     );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( FullQualifiedNameFlags::absolute   , "absolute" );
 MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( FullQualifiedNameFlags, std::map, 1 )
+
+MARTY_CPP_ENUM_FLAGS_SERIALIZE_SET(FullQualifiedNameFlags, std::set)
+
+MARTY_CPP_ENUM_FLAGS_DESERIALIZE_SET(FullQualifiedNameFlags, std::set)
 
 
 //#!InheritanceOverrideFlags
@@ -252,6 +266,10 @@ MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( InheritanceOverrideFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( InheritanceOverrideFlags::predicates    , "predicates"  );
 MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( InheritanceOverrideFlags, std::map, 1 )
 
+MARTY_CPP_ENUM_FLAGS_SERIALIZE_SET(InheritanceOverrideFlags, std::set)
+
+MARTY_CPP_ENUM_FLAGS_DESERIALIZE_SET(InheritanceOverrideFlags, std::set)
+
 
 //#!ParentListEntryFlags
 enum class ParentListEntryFlags : std::uint32_t
@@ -279,6 +297,10 @@ MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( ParentListEntryFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( ParentListEntryFlags::uses       , "uses"     );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( ParentListEntryFlags::inherits   , "inherits" );
 MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( ParentListEntryFlags, std::map, 1 )
+
+MARTY_CPP_ENUM_FLAGS_SERIALIZE_SET(ParentListEntryFlags, std::set)
+
+MARTY_CPP_ENUM_FLAGS_DESERIALIZE_SET(ParentListEntryFlags, std::set)
 
 
 //#!PredicateFlags
@@ -316,6 +338,10 @@ MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( PredicateFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PredicateFlags::validFor    , "validfor"  );
 MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( PredicateFlags, std::map, 1 )
 
+MARTY_CPP_ENUM_FLAGS_SERIALIZE_SET(PredicateFlags, std::set)
+
+MARTY_CPP_ENUM_FLAGS_DESERIALIZE_SET(PredicateFlags, std::set)
+
 
 //#!StateFlags
 enum class StateFlags : std::uint32_t
@@ -350,6 +376,10 @@ MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( StateFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( StateFlags::final       , "final"     );
 MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( StateFlags, std::map, 1 )
 
+MARTY_CPP_ENUM_FLAGS_SERIALIZE_SET(StateFlags, std::set)
+
+MARTY_CPP_ENUM_FLAGS_DESERIALIZE_SET(StateFlags, std::set)
+
 
 //#!StateMachineFlags
 enum class StateMachineFlags : std::uint32_t
@@ -376,6 +406,10 @@ MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( StateMachineFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( StateMachineFlags::stateMachine   , "state_machine" );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( StateMachineFlags::stateMachine   , "statemachine"  );
 MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( StateMachineFlags, std::map, 1 )
+
+MARTY_CPP_ENUM_FLAGS_SERIALIZE_SET(StateMachineFlags, std::set)
+
+MARTY_CPP_ENUM_FLAGS_DESERIALIZE_SET(StateMachineFlags, std::set)
 
 
 //#!TransitionEventFlags
@@ -404,6 +438,10 @@ MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( TransitionEventFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionEventFlags::any        , "any"      );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionEventFlags::excluded   , "excluded" );
 MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( TransitionEventFlags, std::map, 1 )
+
+MARTY_CPP_ENUM_FLAGS_SERIALIZE_SET(TransitionEventFlags, std::set)
+
+MARTY_CPP_ENUM_FLAGS_DESERIALIZE_SET(TransitionEventFlags, std::set)
 
 
 //#!TransitionFlags
@@ -441,6 +479,10 @@ MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( TransitionFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionFlags::selfTarget    , "selftarget"  );
 MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( TransitionFlags, std::map, 1 )
 
+MARTY_CPP_ENUM_FLAGS_SERIALIZE_SET(TransitionFlags, std::set)
+
+MARTY_CPP_ENUM_FLAGS_DESERIALIZE_SET(TransitionFlags, std::set)
+
 
 //#!TransitionSourceStateFlags
 enum class TransitionSourceStateFlags : std::uint32_t
@@ -468,6 +510,10 @@ MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( TransitionSourceStateFlags, std::map, 1 
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionSourceStateFlags::any        , "any"      );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( TransitionSourceStateFlags::excluded   , "excluded" );
 MARTY_CPP_ENUM_FLAGS_DESERIALIZE_END( TransitionSourceStateFlags, std::map, 1 )
+
+MARTY_CPP_ENUM_FLAGS_SERIALIZE_SET(TransitionSourceStateFlags, std::set)
+
+MARTY_CPP_ENUM_FLAGS_DESERIALIZE_SET(TransitionSourceStateFlags, std::set)
 
 } // namespace ufsm
 } // namespace tokenizer

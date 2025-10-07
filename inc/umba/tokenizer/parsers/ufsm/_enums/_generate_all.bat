@@ -11,7 +11,8 @@
 @rem set EXTRA=--enum-flags=extra
 @rem set FLAGENUM_EXTRA=--enum-flags=serialize-set,deserialize-set
 
-@set FLAGS=--enum-flags=flags
+@rem set FLAGENUM_EXTRA=--enum-flags=serialize-set,deserialize-set
+@set FLAGS=--enum-flags=flags,serialize-set,deserialize-set
 @set DECL=--enum-flags=type-decl
 @set CLS=--enum-flags=enum-class
 @set DECLCLS=--enum-flags=type-decl,enum-class
@@ -30,7 +31,7 @@
 
 @set SNIPPETOPTIONS_GEN_FLAGS=--enum-flags=0 --enum-flags=type-decl,serialize,deserialize,lowercase,enum-class,fmt-hex %VALUES_CAMEL% %SERIALIZE_PASCAL% --enum-serialize-style=All
 
-@set FLAGS=--enum-flags=flags
+@set FLAGS=--enum-flags=flags,serialize-set,deserialize-set
 
 @rem --override-template-parameter=EnumNameFormat:E$(ENAMNAME)                                                ^
 

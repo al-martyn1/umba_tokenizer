@@ -62,14 +62,11 @@ struct StateMachineDefinition
     insertion_ordered_map<EventDefinition     >    events     ;
     insertion_ordered_map<ActionDefinition    >    actions    ;
     insertion_ordered_map<PredicateDefinition >    predicates ;
-    insertion_ordered_map<TransitionDefinition>    transitions;
     insertion_ordered_map<StateDefinition     >    states     ;
+    insertion_ordered_map<TransitionDefinition>    transitions;
 
 
 protected: // methods
-
-    template<typename StreamType>
-    StreamType& print(StreamType& oss, std::size_t indendSize) const;
 
     // Данный метод проверяет только существование определения в рамках текущего определения FSM
     template< typename ErrorType
@@ -89,6 +86,9 @@ protected: // methods
 
 public: // methods
 
+    template<typename StreamType>
+    StreamType& print(StreamType& oss, std::size_t indendSize=0) const;
+
     // Тут проблема только в том, что мы сначала читаем определение, разбираем в нём ошибки,
     // а потом - добавляем, и у нас может выскочить ошибка, что такое определение уже есть.
     // Т.е. мы сначала вылижем определение, а потом окажется, что оно уже есть.
@@ -96,8 +96,8 @@ public: // methods
     void addDefinition(const EventDefinition      &v) { addDefinitionImpl<already_declared_error >(v, events     ); }
     void addDefinition(const ActionDefinition     &v) { addDefinitionImpl<already_declared_error >(v, actions    ); }
     void addDefinition(const PredicateDefinition  &v) { addDefinitionImpl<already_declared_error >(v, predicates ); }
-    void addDefinition(const TransitionDefinition &v) { addDefinitionImpl<already_declared_error >(v, transitions); }
     void addDefinition(const StateDefinition      &v) { addDefinitionImpl<already_declared_error >(v, states     ); }
+    void addDefinition(const TransitionDefinition &v) { addDefinitionImpl<already_declared_error >(v, transitions); }
 
     // Ещё нам надо будет потом мержить и наследовать
 
@@ -127,6 +127,10 @@ std::string getNamespaceEntryKindString(const NamespaceEntry &e);
 PositionInfo getNamespaceEntryPositionInfo(const NamespaceEntry &e);
 StateMachineFlags getNamespaceEntryStateMachineFlags(const NamespaceEntry &e);
 
+template<typename StreamType>
+StreamType& print(StreamType &oss, const NamespaceEntry &e, std::size_t indendSize=0u);
+
+
 //----------------------------------------------------------------------------
 
 
@@ -146,7 +150,7 @@ struct NamespaceDefinition
 public: // methods
 
     template<typename StreamType>
-    StreamType& print(StreamType& oss, std::size_t indendSize) const;
+    StreamType& print(StreamType& oss, std::size_t indendSize=0) const;
 
     iterator find(const std::string &n)
     {

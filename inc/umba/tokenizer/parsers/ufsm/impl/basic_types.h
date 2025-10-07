@@ -126,9 +126,12 @@ std::string FullQualifiedName::getCanonicalName() const
 
     // Если имя не абсолютное, и в начале лежит scope access
     // второй символ не сравниваем, потому что не факт, что он есть, правильно вообще сделать startsWidth
-    if (!isAbsolute() && resName.size()>2 && resName[0]==namespaceSeparator[0]) 
+    if ( !isAbsolute() && resName.size()>2 
+       //&& resName[0]==namespaceSeparator[0]
+      && resName.compare(0, namespaceSeparator.size(), namespaceSeparator)==0
+       ) 
     {
-        resName.erase(0, sep.size());
+        resName.erase(0, namespaceSeparator.size());
     }
 
     return resName;
