@@ -104,12 +104,14 @@
 
 ## inc/umba/tokenizer/parsers/ufsm
 
+- `inserters.h` - Инсертеры - оператор вывода в поток
 - `parser.h` - Парсер языка Umba FSM
 
 ## inc/umba/tokenizer/parsers/ufsm/samples
 
 - `concept.ufsm` -
 - `elevator.ufsm` -
+- `http.ufsm` -
 - `traffic_lights.ufsm` -
 
 ## inc/umba/tokenizer/parsers/ufsm
@@ -128,7 +130,7 @@
 - `string_literal_parsing.h` - Интерфейс парсера строковых литералов ITokenizerLiteralParser, реализации парсеров SimpleQuotedStringLiteralParser и CppEscapedSimpleQuotedStringLiteralParser. Внутренний хидер.
 - `token_collection.h` - Коллекция токенов.
 - `token_filters.h` - Сборник всех фильтров токенизера
-- `tokenizer.h` - Шаблонный класс Tokenizer, фвляется typedef'ом для класса TokenizerFunctionHandlers, в котором используются обработчики на базе std::function. Внутренний хидер.
+- `tokenizer.h` - Шаблонный класс Tokenizer, является typedef'ом для класса TokenizerFunctionHandlers, в котором используются обработчики на базе std::function. Внутренний хидер.
 - `tokenizer_base.h` - Реализация токенизера. Внутренний хидер.
 - `tokenizer_builder.h` - TokenizerBuilder - создание токенизера. Для создания поисковых trie в токенизере используются TrieBuilder'ы. Внутренний хидер.
 - `tokenizer_function_handlers.h` - TokenizerFunctionHandlers - токенизатор с обработчиками std::function. Внутренний хидер.

@@ -137,8 +137,8 @@ definitions TrafficLightEventsActions
 // Пешеходный светофор
 state-machine TrafficLightPedestrian : 
 //inherits TrafficLightBase,
-uses TrafficLightCommands override{events},
-     TrafficLightEventsActions override {events,actions} // возможные коллизии молча переписываются более поздними значениями
+uses TrafficLightCommands override:{events},
+     TrafficLightEventsActions override:{events,actions} // возможные коллизии молча переписываются более поздними значениями
 - "Pedestrian Traffic Light (Red-Green)"
 {
     /*

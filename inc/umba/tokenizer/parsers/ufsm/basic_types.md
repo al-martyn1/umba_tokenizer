@@ -757,6 +757,8 @@ struct StateActionRefs
     bool appendImpl(const std::string &actionName);
     bool append    (const std::string &actionName);
     bool push_back (const std::string &actionName);
+    bool empty() const;
+    std::size_t size() const;
 
 }; // struct StateActionRefs
 ```
@@ -796,6 +798,9 @@ public: // methods
     std::string getCanonicalName() const { return name; }
 
     bool addActionRef(StateActionKind ak, const std::string &actionName);
+
+    template<typename StreamType>
+    StreamType& print(StreamType& oss, std::size_t indendSize) const;
 
 }; // struct StateDefinition
 ```

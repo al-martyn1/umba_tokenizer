@@ -1,0 +1,6 @@
+#!ufsm
+
+namespace samples::http
+{
+
+} // namespace samples::http

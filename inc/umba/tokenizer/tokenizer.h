@@ -1,5 +1,5 @@
 /*! \file
-    \brief Шаблонный класс Tokenizer, фвляется typedef'ом для класса TokenizerFunctionHandlers, в котором используются обработчики на базе std::function. Внутренний хидер.
+    \brief Шаблонный класс Tokenizer, является typedef'ом для класса TokenizerFunctionHandlers, в котором используются обработчики на базе std::function. Внутренний хидер.
  */
 #pragma once
 

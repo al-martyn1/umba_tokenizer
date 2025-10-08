@@ -122,7 +122,7 @@ StreamType& operator<<(StreamType &oss, const ParentListEntry &v)
         if ((v.overrideFlags&InheritanceOverrideFlags::transitions)!=0)
             flagStrs.push_back("transitions");
 
-        oss << "{" << utils::mergeString(flagStrs, std::string(",")) << "}";
+        oss << " override:{" << utils::mergeString(flagStrs, std::string(",")) << "}";
     }
 
     return oss;
@@ -193,7 +193,7 @@ StreamType& operator<<(StreamType &oss, const PredicateDefinition &v)
         if ((v.flags&PredicateFlags::validFor)!=0)
         {
             oss << " valid-for ";
-            utils::mergeString(v.validForList, std::string(", "));
+            oss << "{" << utils::mergeString(v.validForList, std::string(", ")) << "}";
         }
     }
     else
@@ -238,7 +238,7 @@ StreamType& StateDefinition::print(StreamType& oss, std::size_t indendSize) cons
         oss << " - " << "\"" << marty_cpp::cEscapeString(description) << "\"";
 
     oss << "\n";
-    oss << indend << "{";
+    oss << indend << "{\n";
 
     auto kinds = std::array<StateActionKind, 4>{ StateActionKind::stateEnter
                                                , StateActionKind::stateLeave
@@ -266,7 +266,7 @@ StreamType& StateDefinition::print(StreamType& oss, std::size_t indendSize) cons
         oss << ": " << it->second << ";\n";
     }
 
-    oss << indend << "}\n\n";
+    oss << indend << "}\n";
 
     return oss;
 }
@@ -412,6 +412,8 @@ void splitByOverrideFlag(const ContainerType &vals, std::vector<ContainerType> &
             collector.clear();
             bOverride = newOverride;
         }
+
+        collector[kvIt->first] = kvIt->second;
     }
 
     if (!collector.empty())
@@ -459,7 +461,7 @@ void printDefinitionsSection(StreamType &oss, const ContainerType &sec, const st
         if constexpr (has_print_method_v<ItemType, StreamType>)
         {
             val.print(oss, indendSize+4);
-            oss << "\n";
+            // oss << "\n"; // метод print печатает что-то многострочное, и сам добавляет перевод строки
         }
         else
         {

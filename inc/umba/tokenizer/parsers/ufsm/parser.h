@@ -1296,7 +1296,7 @@ public:
     {
         bool waitComma = false;
 
-        std::size_t cnt = 0;
+        std::size_t flagsCount = 0;
         
         for( m_pTokenInfo = BaseClass::waitForSignificantTokenChecked( &m_tokenPos, ParserWaitForTokenFlags::none) // пропустили открывающую скобку
            ; umba::TheValue(m_pTokenInfo->tokenType).oneOf( UFSM_TOKEN_OP_COMMA
@@ -1323,12 +1323,12 @@ public:
                 InheritanceOverrideFlags newFlagVal = InheritanceOverrideFlags::none;
                 switch(m_pTokenInfo->tokenType)
                 {
-                    case UFSM_TOKEN_KWD_ACTIONS    : newFlagVal = InheritanceOverrideFlags::actions    ; break;
-                    case UFSM_TOKEN_KWD_EVENTS     : newFlagVal = InheritanceOverrideFlags::events     ; break;
-                    case UFSM_TOKEN_KWD_PREDICATES : newFlagVal = InheritanceOverrideFlags::predicates ; break;
-                    case UFSM_TOKEN_KWD_STATES     : newFlagVal = InheritanceOverrideFlags::states     ; break;
-                    case UFSM_TOKEN_KWD_TRANSITIONS: newFlagVal = InheritanceOverrideFlags::transitions; break;
-                    case UFSM_TOKEN_KWD_ALL        : newFlagVal = InheritanceOverrideFlags::all        ; break;
+                    case UFSM_TOKEN_KWD_ACTIONS    : ++flagsCount; newFlagVal = InheritanceOverrideFlags::actions    ; break;
+                    case UFSM_TOKEN_KWD_EVENTS     : ++flagsCount; newFlagVal = InheritanceOverrideFlags::events     ; break;
+                    case UFSM_TOKEN_KWD_PREDICATES : ++flagsCount; newFlagVal = InheritanceOverrideFlags::predicates ; break;
+                    case UFSM_TOKEN_KWD_STATES     : ++flagsCount; newFlagVal = InheritanceOverrideFlags::states     ; break;
+                    case UFSM_TOKEN_KWD_TRANSITIONS: ++flagsCount; newFlagVal = InheritanceOverrideFlags::transitions; break;
+                    case UFSM_TOKEN_KWD_ALL        : ++flagsCount; newFlagVal = InheritanceOverrideFlags::all        ; break;
                 };
 
                 //!!! Нужно проверить наличие этого флага, если уже установлен, то это ошибка
@@ -1338,7 +1338,7 @@ public:
             }
         }
 
-        if (!cnt)
+        if (!flagsCount)
         {
             // BaseClass::logSimpleMessage(getFullPos(), m_pTokenInfo->tokenType, "override-list", "empty 'override' list");
             BaseClass::logSimpleMessage(m_tokenPos, m_pTokenInfo->tokenType, "override-list", "empty 'override' list");
@@ -1398,7 +1398,6 @@ public:
                     if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
                         return false; // а пришло хз
 
-                    readNextToken(); 
                     if (!parseInheritanceOverrideFlags(ple.overrideFlags))
                         return false;
 
