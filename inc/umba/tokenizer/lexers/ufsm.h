@@ -144,6 +144,7 @@ struct TokenizerConfigurator
                                                                                     , {"external"        , UFSM_TOKEN_KWD_EXTERNAL     }
                                                                                     , {"initial"         , UFSM_TOKEN_KWD_INITIAL      }
                                                                                     , {"final"           , UFSM_TOKEN_KWD_FINAL        }
+                                                                                    , {"error"           , UFSM_TOKEN_KWD_ERROR        }
                                                                                     //, {"valid"           , UFSM_TOKEN_KWD_VALID        }
                                                                                     //, {"for"             , UFSM_TOKEN_KWD_FOR          }
                                                                                     , {"valid-for"       , UFSM_TOKEN_KWD_VALID_FOR    }

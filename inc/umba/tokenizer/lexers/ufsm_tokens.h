@@ -45,6 +45,7 @@
 #define UFSM_TOKEN_KWD_GENERATED                 ((UFSM_TOKEN_SET_KEYWORDS)+0x0016)
 #define UFSM_TOKEN_KWD_GENERATES                 ((UFSM_TOKEN_SET_KEYWORDS)+0x0017)
 #define UFSM_TOKEN_KWD_SELF                      ((UFSM_TOKEN_SET_KEYWORDS)+0x0018)
+#define UFSM_TOKEN_KWD_ERROR                     ((UFSM_TOKEN_SET_KEYWORDS)+0x0019)
 
 
 

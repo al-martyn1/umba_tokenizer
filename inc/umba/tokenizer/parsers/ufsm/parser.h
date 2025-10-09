@@ -629,11 +629,17 @@ public:
             if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
             {
                 readNextToken(); // вычитываем следующий токен
-                // может быть только признак initial/final
-                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_INITIAL, UFSM_TOKEN_KWD_FINAL} /* , "'display-options' directive: invalid option value" */ ))
+                // может быть только признак initial/final/error
+                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_INITIAL, UFSM_TOKEN_KWD_FINAL, UFSM_TOKEN_KWD_ERROR} /* , "'display-options' directive: invalid option value" */ ))
                     return false; // а пришло хз что
 
-                sd.flags |= m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_INITIAL ? StateFlags::initial : StateFlags::final;
+                if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_INITIAL)
+                    sd.flags |= StateFlags::initial;
+                else if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_FINAL)
+                    sd.flags |= StateFlags::final;
+                else // UFSM_TOKEN_KWD_ERROR
+                    sd.flags |= StateFlags::final | StateFlags::error;
+
                 readNextToken();
             }
 
@@ -646,46 +652,57 @@ public:
                 readNextToken();
             }
 
-            // Теперь ожидаем блок с различными типами действий: enter/leave/self-enter/self-leave
-            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
-                return false; // а пришло хз что
-                
-            while(true)
+            // Теперь ожидаем блок с различными типами действий: enter/leave/self-enter/self-leave,
+            // или ожидаем завершение выражения точкой с запятой
+
+            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_SEMICOLON)
             {
-                // Ждём идентификатор типа действия или конец блока
-                readNextToken();
-                if (m_pTokenInfo->tokenType==UFSM_TOKEN_BRACKET_SCOPE_CLOSE)
-                    break;
-  
-                // Ждём идентификатор типа действия
-                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_ENTER, UFSM_TOKEN_KWD_LEAVE, UFSM_TOKEN_KWD_SELF_ENTER, UFSM_TOKEN_KWD_SELF_LEAVE} /* , "'display-options' directive: invalid option value" */ ))
-                    return false; // а пришло хз что
-
-                StateActionKind saKind = StateActionKind::none;
-
-                switch(m_pTokenInfo->tokenType)
+                // ничего не делаем
+            }
+            else if (m_pTokenInfo->tokenType==UFSM_TOKEN_BRACKET_SCOPE_OPEN)
+            {
+                while(true)
                 {
-                    case UFSM_TOKEN_KWD_ENTER     : saKind = StateActionKind::stateEnter; break;
-                    case UFSM_TOKEN_KWD_LEAVE     : saKind = StateActionKind::stateLeave; break;
-                    case UFSM_TOKEN_KWD_SELF_ENTER: saKind = StateActionKind::selfEnter ; break;
-                    case UFSM_TOKEN_KWD_SELF_LEAVE: saKind = StateActionKind::selfLeave ; break;
-                }
-
-                readNextToken();
-                // Ждем разделитель перед списком действий
-                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_COLON} /* , "'display-options' directive: invalid option value" */ ))
+                    // Ждём идентификатор типа действия или конец блока
+                    readNextToken();
+                    if (m_pTokenInfo->tokenType==UFSM_TOKEN_BRACKET_SCOPE_CLOSE)
+                        break;
+      
+                    // Ждём идентификатор типа действия
+                    if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_ENTER, UFSM_TOKEN_KWD_LEAVE, UFSM_TOKEN_KWD_SELF_ENTER, UFSM_TOKEN_KWD_SELF_LEAVE} /* , "'display-options' directive: invalid option value" */ ))
+                        return false; // а пришло хз что
+    
+                    StateActionKind saKind = StateActionKind::none;
+    
+                    switch(m_pTokenInfo->tokenType)
+                    {
+                        case UFSM_TOKEN_KWD_ENTER     : saKind = StateActionKind::stateEnter; break;
+                        case UFSM_TOKEN_KWD_LEAVE     : saKind = StateActionKind::stateLeave; break;
+                        case UFSM_TOKEN_KWD_SELF_ENTER: saKind = StateActionKind::selfEnter ; break;
+                        case UFSM_TOKEN_KWD_SELF_LEAVE: saKind = StateActionKind::selfLeave ; break;
+                    }
+    
+                    readNextToken();
+                    // Ждем разделитель перед списком действий
+                    if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_COLON} /* , "'display-options' directive: invalid option value" */ ))
+                        return false; // а пришло хз что
+                    
+                    if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_COMMA
+                                                  , true /* readNextOnStart */
+                                                  , [&]() { sd.actionRefs[saKind].push_back(extractIdentifierName(m_pTokenInfo)); } ))
+                        return false;
+    
+                    // Тут у нас должна быть точка с запятой
+                    if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
+                        return false; // а пришло хз что
+    
+                } // while(true)
+            }    
+            else
+            {
+                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN, UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
                     return false; // а пришло хз что
-                
-                if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_COMMA
-                                              , true /* readNextOnStart */
-                                              , [&]() { sd.actionRefs[saKind].push_back(extractIdentifierName(m_pTokenInfo)); } ))
-                    return false;
-
-                // Тут у нас должна быть точка с запятой
-                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
-                    return false; // а пришло хз что
-
-            } // while(true)
+            }
 
             sm.addDefinition(sd);
 
@@ -863,16 +880,13 @@ public:
                 if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
                     return false; // а пришло хз что
                 pd.description = extractLiteral(m_pTokenInfo);
+                readNextToken();
             }
-
-            // if (hasExpression)
-            // {}
-
-            sm.addDefinition(pd);
-            readNextToken();
 
             if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
                 return false;
+
+            sm.addDefinition(pd);
 
             continue;
 

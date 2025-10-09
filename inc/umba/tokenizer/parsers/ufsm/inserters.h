@@ -226,25 +226,27 @@ StreamType& StateDefinition::print(StreamType& oss, std::size_t indendSize) cons
 
     oss << indend << name;
 
-    if ((flags&(StateFlags::initial| StateFlags::final))!=0)
+    if ((flags&(StateFlags::error))!=0)
     {
-        if ((flags&StateFlags::initial)!=0)
-            oss << ": " << "initial";
-        else
-            oss << ": " << "final";
+        oss << ": " << "error";
+    }
+    else if ((flags&(StateFlags::initial))!=0)
+    {
+        oss << ": " << "initial";
+    }
+    else if ((flags&(StateFlags::final))!=0)
+    {
+        oss << ": " << "final";
     }
 
     if (!description.empty())
         oss << " - " << "\"" << marty_cpp::cEscapeString(description) << "\"";
 
-    oss << "\n";
-    oss << indend << "{\n";
 
-    auto kinds = std::array<StateActionKind, 4>{ StateActionKind::stateEnter
-                                               , StateActionKind::stateLeave
-                                               , StateActionKind::selfEnter
-                                               , StateActionKind::selfLeave
+    auto kinds = std::array<StateActionKind, 4>{ StateActionKind::stateEnter, StateActionKind::stateLeave
+                                               , StateActionKind::selfEnter , StateActionKind::selfLeave
                                                };
+    bool hasActionKinds = false;
 
     for(auto k: kinds)
     {
@@ -254,19 +256,47 @@ StreamType& StateDefinition::print(StreamType& oss, std::size_t indendSize) cons
 
         switch(k)
         {
-            case StateActionKind::stateEnter: oss << indend << "    " << "enter"     ; break;
-            case StateActionKind::stateLeave: oss << indend << "    " << "leave"     ; break;
-            case StateActionKind::selfEnter : oss << indend << "    " << "self-enter"; break;
-            case StateActionKind::selfLeave : oss << indend << "    " << "self-leave"; break;
+            case StateActionKind::stateEnter: if (!it->second.empty()) hasActionKinds = true; break;
+            case StateActionKind::stateLeave: if (!it->second.empty()) hasActionKinds = true; break;
+            case StateActionKind::selfEnter : if (!it->second.empty()) hasActionKinds = true; break;
+            case StateActionKind::selfLeave : if (!it->second.empty()) hasActionKinds = true; break;
             case StateActionKind::none      : continue;
             case StateActionKind::invalid   : continue;
             default: continue;
         }
-
-        oss << ": " << it->second << ";\n";
     }
 
-    oss << indend << "}\n";
+    if (!hasActionKinds)
+    {
+        oss << ";\n";
+    }
+    else
+    {
+        oss << "\n";
+        oss << indend << "{\n";
+    
+        for(auto k: kinds)
+        {
+            auto it = actionRefs.find(k);
+            if (it==actionRefs.end())
+                continue;
+    
+            switch(k)
+            {
+                case StateActionKind::stateEnter: oss << indend << "    " << "enter"     ; break;
+                case StateActionKind::stateLeave: oss << indend << "    " << "leave"     ; break;
+                case StateActionKind::selfEnter : oss << indend << "    " << "self-enter"; break;
+                case StateActionKind::selfLeave : oss << indend << "    " << "self-leave"; break;
+                case StateActionKind::none      : continue;
+                case StateActionKind::invalid   : continue;
+                default: continue;
+            }
+    
+            oss << ": " << it->second << ";\n";
+        }
+    
+        oss << indend << "}\n";
+    }
 
     return oss;
 }

@@ -1,6 +1,194 @@
-#!ufsm
+// #!ufsm
+
+// Что-о по-русски
 
 namespace samples::http
 {
 
+state-machine HttpParser
+{
+    events
+    {
+        // Если у нас событие "символьное" - приход символа,
+        // может, это стоит помечать атрибутом `char`?
+        // Если есть хоть одно символьное событие,
+        // тогда заводим внутреннюю переменную eventChar,
+        // и автоматом генерим метод для такого события,
+        // он кладёт входной символ в переменную eventChar
+        // и запускает обработку события
+
+        inputChar : external /* char */ - "Input char received";
+    }
+
+    predicates
+    {
+        allowFolding : external - "Разрешена ли поддержка folding-а заголовков";
+
+
+        // Тут, наверное, было бы интересно объявлять не внешние предикаты,
+        // а присваивать наборы символов из базового ASCII.
+        // Наборы символов задавать как состоящие из отдельных символов, так и из
+        // групповых - это диапазоны, классы символов
+        // TODO: Нужно реализовать разбор таких строк
+        // Примеры:
+        // isAsciiPrnChar  = "\a![\x00-\x20]" - все символы базовой ASCII (7 бит), исключая диапазон от нуля до пробела
+        // isAnyPrnChar    = "\*![\x00-\x20]" - все символы (8 бит), исключая диапазон от нуля до пробела
+        // isDigit         = "0-9"
+        // isDigit         = "\d"
+        // isHexDigit      = "\da-fA-f"
+        // isAlphaUpper    = "A-Z";
+        // isAlphaLower    = "a-z";
+        // isAlpha = isAlphaUpper | isAlphaLower;
+
+        // При генерации мы делаем так:
+        //  - создаём таблицу из 128ми элементов - с флагами. 
+        //    Тип флагов зависит от количества символьных предикатов, больше 64х (uint64_t) флагов сделать не получиться;
+        //    !!! Или таблица на 256 символов? Лучше так, да.
+        //  - для каждого "символьного" предиката генерируем соответствующий флаг;
+        //  - заполняем таблицу флагами, индексом служит код символа;
+        //  - нужно как-то получить информацию, где брать код символа.
+        //    Есть варик генерить, описал выше.
+        //    Тогда если предикат символьный, то char берём оттуда;
+        //  - для каждого "символьного" предиката генерим предикатную функцию.
+        //    Предикатная функция извлекает флаги из массива флагов,
+        //    и проверяет наличие во флагах "своего" флага.
+        //    
+
+        isPrnChar    : external valid-for{inputChar} - "Любой печатный символ, кроме пробела и табуляции";
+        isSpaceChar  : external valid-for{inputChar};
+        isTabChar    : external valid-for{inputChar};
+        isSpace      = isSpaceChar | isTabChar;
+        isCr         : external valid-for{inputChar};
+        isLf         : external valid-for{inputChar};
+        isColon      : external valid-for{inputChar};
+    }
+
+    states
+    {
+        METHOD : initial - "Чтение HTTP-метода"; // Если нет блока с действиями по enter/leave/self-enter/self-leave, то выражение заканчиваем semicolon'ом.
+        URI              - "Чтение URI (пути к ресурсу)";
+        VERSION          - "Чтение версии HTTP-протокола";
+        HEADER_NAME      - "Чтение имени заголовка";
+        HEADER_VALUE     - "Чтение значения заголовка";
+
+        // Тут хорошо бы добавить флаг `error` в дополнение к `initial` и `final`
+        // Должно означать конечное состояние с ошибкой, тогда как простой final - это нормальный останов
+        HEADERS_END  : final - "Обнаружен конец заголовков (успешное завершение)";
+        ERROR        : error - "Состояние ошибки";
+    }
+
+    actions
+    {
+        collectChar          : external - "Накопить текущий входной символ в буфере";
+        designateMethod      : external - "Зафиксировать метод (по накопленному имени найти константу и/или скопировать имя метода в буфер метода)";
+        designateURI         : external - "Зафиксировать URI (скопировать URI в буфер URI)";
+        designateVersion     : external - "Зафиксировать версию (скопировать версию в буфер версии)";
+        designateHeaderName  : external - "Зафиксировать имя заголовка";
+        designateHeaderValue : external - "Зафиксировать значение заголовка";
+        collectHeader        : external - "Накопить заголовок (сохранить пару имя/значение в векторе заголовков)";
+    }
+
+    transitions
+    {
+        // СписокИсхСостояний : СписокСобытий [? ДопУсловие] -> ЦелевоеСостояние [? ДопУсловие] [: СписокДействий] [- Описание];
+
+
+        METHOD : inputChar ? isPrnChar -> self : collectChar;
+        METHOD : inputChar ? isSpace   -> URI  : designateMethod;
+        METHOD : inputChar             -> ERROR: status400;
+
+
+    }
+
+
+    // Продолжение actions, выделено отдельно, чтобы не мозолило глаза
+    actions
+    {
+        // https://ru.wikipedia.org/wiki/%D0%A1%D0%BF%D0%B8%D1%81%D0%BE%D0%BA_%D0%BA%D0%BE%D0%B4%D0%BE%D0%B2_%D1%81%D0%BE%D1%81%D1%82%D0%BE%D1%8F%D0%BD%D0%B8%D1%8F_HTTP
+
+        // 1xx: Informational (информационные):
+        status100 - "Continue";
+        status101 - "Switching Protocols";
+        status102 - "Processing";
+        status103 - "Early Hints";
+        // 2xx: Success (успешно):
+        status200 - "OK";
+        status201 - "Created";
+        status202 - "Accepted";
+        status203 - "Non-Authoritative Information";
+        status204 - "No Content";
+        status205 - "Reset Content";
+        status206 - "Partial Content";
+        status207 - "Multi-Status";
+        status208 - "Already Reported";
+        status226 - "IM Used";
+        // 3xx: Redirection (перенаправление):
+        status300 - "Multiple Choices";
+        status301 - "Moved Permanently";
+        status302 - "Found";
+        status303 - "See Other";
+        status304 - "Not Modified";
+        status305 - "Use Proxy";
+        status306 - "Reserved"; // — зарезервировано (код использовался только в ранних спецификациях)[3];
+        status307 - "Temporary Redirect";
+        status308 - "Permanent Redirect";
+        // 4xx: Client Error (ошибка клиента):
+        status400 - "Bad Request";
+        status401 - "Unauthorized";
+        status402 - "Payment Required";
+        status403 - "Forbidden";
+        status404 - "Not Found";
+        status405 - "Method Not Allowed";
+        status406 - "Not Acceptable";
+        status407 - "Proxy Authentication Required";
+        status408 - "Request Timeout";
+        status409 - "Conflict";
+        status410 - "Gone";
+        status411 - "Length Required";
+        status412 - "Precondition Failed";
+        status413 - "Payload Too Large";
+        status414 - "URI Too Long";
+        status415 - "Unsupported Media Type";
+        status416 - "Range Not Satisfiable";
+        status417 - "Expectation Failed";
+        status418 - "I’m a teapot";
+        status419 - "Authentication Timeout";
+        status421 - "Misdirected Request";
+        status422 - "Unprocessable Entity";
+        status423 - "Locked";
+        status424 - "Failed Dependency";
+        status425 - "Too Early";
+        status426 - "Upgrade Required";
+        status428 - "Precondition Required";
+        status429 - "Too Many Requests";
+        status431 - "Request Header Fields Too Large";
+        status449 - "Retry With";
+        status451 - "Unavailable For Legal Reasons";
+        status499 - "Client Closed Request";
+        // 5xx: Server Error (ошибка сервера):
+        status500 - "Internal Server Error";
+        status501 - "Not Implemented";
+        status502 - "Bad Gateway";
+        status503 - "Service Unavailable";
+        status504 - "Gateway Timeout";
+        status505 - "HTTP Version Not Supported";
+        status506 - "Variant Also Negotiates";
+        status507 - "Insufficient Storage";
+        status508 - "Loop Detected";
+        status509 - "Bandwidth Limit Exceeded";
+        status510 - "Not Extended";
+        status511 - "Network Authentication Required";
+        status520 - "Unknown Error";
+        status521 - "Web Server Is Down";
+        status522 - "Connection Timed Out";
+        status523 - "Origin Is Unreachable";
+        status524 - "A Timeout Occurred";
+        status525 - "SSL Handshake Failed";
+        status526 - "Invalid SSL Certificate";
+
+    } // actions
+
+} // state-machine HttpParser
+
 } // namespace samples::http
+

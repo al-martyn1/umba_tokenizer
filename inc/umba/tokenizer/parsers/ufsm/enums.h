@@ -351,7 +351,8 @@ enum class StateFlags : std::uint32_t
     inherited   = 0x0001 /*!< Set when the state is inherited */,
     override    = 0x0002 /*!< Set when the state overrides inherited */,
     initial     = 0x0004 /*!<  */,
-    final       = 0x0008 /*!<  */
+    final       = 0x0008 /*!<  */,
+    error       = 0x0010 /*!<  */
 
 }; // enum 
 //#!
@@ -362,6 +363,7 @@ MARTY_CPP_ENUM_FLAGS_SERIALIZE_BEGIN( StateFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( StateFlags::invalid     , "Invalid"   );
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( StateFlags::initial     , "Initial"   );
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( StateFlags::none        , "None"      );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( StateFlags::error       , "Error"     );
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( StateFlags::inherited   , "Inherited" );
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( StateFlags::override    , "Override"  );
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( StateFlags::final       , "Final"     );
@@ -371,6 +373,7 @@ MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( StateFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( StateFlags::invalid     , "invalid"   );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( StateFlags::initial     , "initial"   );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( StateFlags::none        , "none"      );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( StateFlags::error       , "error"     );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( StateFlags::inherited   , "inherited" );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( StateFlags::override    , "override"  );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( StateFlags::final       , "final"     );
