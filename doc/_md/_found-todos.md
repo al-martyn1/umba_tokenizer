@@ -77,3 +77,27 @@ Generator: Umba Brief Scanner
   Вообще, по уму, надо бы сделать энум со значениями inDefine, inPragma, inError,
   inWarning, inCondition
 
+
+
+# inc/umba/tokenizer/parsers/ufsm
+
+- [ ] `[inc/umba/tokenizer/parsers/ufsm/http.ufsm:30]`
+  Нужно реализовать разбор таких строк Примеры: isAsciiPrnChar  =
+  "\a![\x00-\x20]" - все символы базовой ASCII (7 бит), исключая диапазон от нуля
+  до пробела isAnyPrnChar    = "\*![\x00-\x20]" - все символы (8 бит), исключая
+  диапазон от нуля до пробела isDigit         = "0-9" isDigit         = "\d"
+  isHexDigit      = "\da-fA-f" isAlphaUpper    = "A-Z"; isAlphaLower    = "a-z";
+  isAlpha = isAlphaUpper | isAlphaLower;
+
+
+
+# inc/umba/tokenizer/parsers/ufsm/samples
+
+- [ ] `[inc/umba/tokenizer/parsers/ufsm/samples/http.ufsm:32]`
+  Нужно реализовать разбор таких строк Примеры: isAsciiPrnChar  =
+  "\a![\x00-\x20]" - все символы базовой ASCII (7 бит), исключая диапазон от нуля
+  до пробела isAnyPrnChar    = "\*![\x00-\x20]" - все символы (8 бит), исключая
+  диапазон от нуля до пробела isDigit         = "0-9" isDigit         = "\d"
+  isHexDigit      = "\da-fA-f" isAlphaUpper    = "A-Z"; isAlphaLower    = "a-z";
+  isAlpha = isAlphaUpper | isAlphaLower;
+
