@@ -12,15 +12,20 @@
 #include "c_char_class.h"
 //
 
+#include <array>
 #include <cstdint>
 #include <climits>
+#include <initializer_list>
 #include <type_traits>
 #include <string>
+#include <set>
+#include <unordered_set>
 #include <iostream>
 #include <iomanip>
 #include <exception>
 #include <stdexcept>
-#include <array>
+#include <vector>
+#include <utility>
 
 
 
@@ -765,6 +770,675 @@ umba::tokenizer::CharClass getCharClass(char ch)
 
 
 
+//----------------------------------------------------------------------------
+// Новое, для разбора строк-выражений, определяющих набор символов
+
+// umba::tokenizer::char_class::utils::
+namespace char_class {
+namespace utils {
+
+//----------------------------------------------------------------------------
+// Объединение множеств - Union of sets
+// Пересечение множеств - Intersection of sets
+
+//----------------------------------------------------------------------------
+inline
+std::unordered_set<std::uint8_t> makeCharSetsUnion(std::unordered_set<std::uint8_t> s1, const std::unordered_set<std::uint8_t> &s2)
+{
+    s1.insert(s2.begin(), s2.end());
+    return s1;
+}
+
+//----------------------------------------------------------------------------
+inline
+std::unordered_set<std::uint8_t> makeCharSetsUnion(std::unordered_set<std::uint8_t> s1, const std::unordered_set<std::uint8_t> &s2, const std::unordered_set<std::uint8_t> &s3)
+{
+    s1.insert(s2.begin(), s2.end());
+    s1.insert(s3.begin(), s3.end());
+    return s1;
+}
+
+//----------------------------------------------------------------------------
+inline
+std::unordered_set<std::uint8_t> makeCharSetsUnion(std::unordered_set<std::uint8_t> s1, const std::unordered_set<std::uint8_t> &s2, const std::unordered_set<std::uint8_t> &s3, const std::unordered_set<std::uint8_t> &s4)
+{
+    s1.insert(s2.begin(), s2.end());
+    s1.insert(s3.begin(), s3.end());
+    s1.insert(s4.begin(), s4.end());
+    return s1;
+}
+
+//----------------------------------------------------------------------------
+inline
+std::unordered_set<std::uint8_t> makeCharSetsIntersection(const std::unordered_set<std::uint8_t> &set1, const std::unordered_set<std::uint8_t> &set2)
+{
+    std::unordered_set<std::uint8_t> resSet;
+    for(auto s : set1)
+    {
+        if (set2.find(s)!=set2.end())
+            resSet.insert(s);
+    }
+    return resSet;
+}
+
+//----------------------------------------------------------------------------
+inline
+std::unordered_set<std::uint8_t> makeCharSetsSubtraction(std::unordered_set<std::uint8_t> set1, const std::unordered_set<std::uint8_t> &set2)
+{
+    for(auto s : set2)
+    {
+        if (set1.find(s)!=set1.end())
+            set1.erase(s);
+    }
+    return set1;
+}
+
+//----------------------------------------------------------------------------
+inline
+std::unordered_set<std::uint8_t> makeCharSet(std::uint8_t from, std::uint8_t to)
+{
+    std::size_t szFrom = from;
+    std::size_t szTo   = to  ;
+
+    UMBA_ASSERT(szFrom<=szTo);
+
+    ++szTo;
+
+    std::unordered_set<std::uint8_t> res;
+
+    for(std::size_t i=szFrom; i!=szTo; ++i)
+        res.insert(std::uint8_t(i));
+
+    return res;
+}
+
+//----------------------------------------------------------------------------
+inline
+std::unordered_set<std::uint8_t> makeCharSet(std::initializer_list<std::uint8_t> elements)
+{
+    return std::unordered_set<std::uint8_t>(elements);
+}
+
+//----------------------------------------------------------------------------
+inline
+std::unordered_set<std::uint8_t> makeFullCharSet()
+{
+    return makeCharSet(0u, 0xFFu);
+}
+
+//----------------------------------------------------------------------------
+inline
+const std::unordered_set<std::uint8_t>& getFullCharSet()
+{
+    static std::unordered_set<std::uint8_t> s = makeFullCharSet();
+    return s;
+}
+
+//----------------------------------------------------------------------------
+inline
+std::unordered_set<std::uint8_t> invertCharSet(const std::unordered_set<std::uint8_t> &set)
+{
+    std::unordered_set<std::uint8_t> resSet;
+
+    auto fullSet = getFullCharSet();
+
+    for(auto s: fullSet)
+    {
+        if (set.find(s)==set.end())
+            resSet.insert(s);
+    }
+
+    return resSet;
+}
+
+//----------------------------------------------------------------------------
+inline
+std::unordered_set<std::uint8_t> makeCharSetInverted(std::uint8_t from, std::uint8_t to)
+{
+    return invertCharSet(makeCharSet(from, to));
+}
+
+//----------------------------------------------------------------------------
+inline
+std::unordered_set<std::uint8_t> makeCharSetInverted(std::initializer_list<std::uint8_t> elements)
+{
+    return invertCharSet(makeCharSet(elements));
+}
+
+//----------------------------------------------------------------------------
+inline
+const std::unordered_set<std::uint8_t>& getEmptyCharSet()
+{
+    static std::unordered_set<std::uint8_t> s;
+    return s;
+}
+
+//----------------------------------------------------------------------------
+inline
+char digitToHexChar(int d)
+{
+    if (d<0)
+        return 'X';
+    if (d<=9)
+        return '0'+char(d);
+    if (d<=15)
+        return 'A'+char(d)-10;
+
+    return 'X';
+}
+
+//----------------------------------------------------------------------------
+inline
+std::string byteToHexString(std::uint8_t b)
+{
+    std::string res;
+    res.append(1, digitToHexChar((b>>4)&0xF));
+    res.append(1, digitToHexChar((b   )&0xF));
+    return res;
+}
+
+//----------------------------------------------------------------------------
+inline
+int hexCharToDigit(char ch)
+{
+    if (ch>='0' && ch<='9')
+        return ch - '0';
+    if (ch>='A' && ch<='F')
+        return ch - 'A' + 10;
+    if (ch>='a' && ch<='f')
+        return ch - 'a' + 10;
+
+    return -1;
+}
+
+//----------------------------------------------------------------------------
+inline
+std::string makePredicateCharCharClassString(std::uint8_t ch, bool caretOnly=false)
+{
+    switch(ch)
+    {
+        // \cX - Каретная нотация
+        //     https://ru.wikipedia.org/wiki/%D0%9A%D0%B0%D1%80%D0%B5%D1%82%D0%BD%D0%B0%D1%8F_%D0%BD%D0%BE%D1%82%D0%B0%D1%86%D0%B8%D1%8F
+        //     https://en.wikipedia.org/wiki/C0_and_C1_control_codes
+        case   0: return "\\c@";
+        case   1: return "\\cA";
+        case   2: return "\\cB";
+        case   3: return "\\cC";
+        case   4: return "\\cD";
+        case   5: return "\\cE";
+        case   6: return "\\cF";
+        case   7: if (caretOnly) return "\\cG"; return "\\a"; // \a
+        case   8: if (caretOnly) return "\\cH"; return "\\b"; // \b
+        case   9: if (caretOnly) return "\\cI"; return "\\t"; // \t
+        case  10: if (caretOnly) return "\\cJ"; return "\\n"; // \n
+        case  11: if (caretOnly) return "\\cK"; return "\\v"; // \v
+        case  12: if (caretOnly) return "\\cL"; return "\\f"; // \f
+        case  13: if (caretOnly) return "\\cM"; return "\\r"; // \r
+        case  14: return "\\cN";
+        case  15: return "\\cO";
+        case  16: return "\\cP";
+        case  17: return "\\cQ";
+        case  18: return "\\cR";
+        case  19: return "\\cS";
+        case  20: return "\\cT";
+        case  21: return "\\cU";
+        case  22: return "\\cV";
+        case  23: return "\\cW";
+        case  24: return "\\cX";
+        case  25: return "\\cY";
+        case  26: return "\\cZ";
+        case  27: if (caretOnly) return "\\c["; return "\\e";  // \e
+        case  28: return "\\c/"; // Тут замена на символ деления, по сравнению со стандартной нотацией
+        case  29: return "\\c]";
+        case  30: return "\\c^";
+        case  31: return "\\c_";
+        case 127: return "\\c?";
+        case  45: return "\\-" ; // минус-дефис
+        case  92: return "\\\\"; // бэкслеш
+        case  96: return "\\`" ; // бэктик `
+        case  39: return "\\\'"; // apos '
+        case  34: return "\\\""; // quot "
+        case  91: return "\\[" ; // [
+        case  93: return "\\]" ; // ]
+
+        default:  if (ch<127)
+                  {
+                      return std::string(1, char(ch));
+                  }
+                  else
+                  {
+                      std::string resStr = "\\x";
+                      resStr.append(byteToHexString(ch));
+                      return resStr;
+                  }
+    }
+}
+
+//----------------------------------------------------------------------------
+inline
+int caretCharToChar(char ch)
+{
+    switch(ch)
+    {
+        case '@': return   0;
+        case 'A': return   1;
+        case 'B': return   2;
+        case 'C': return   3;
+        case 'D': return   4;
+        case 'E': return   5;
+        case 'F': return   6;
+        case 'G': return   7;
+        case 'H': return   8;
+        case 'I': return   9;
+        case 'J': return  10;
+        case 'K': return  11;
+        case 'L': return  12;
+        case 'M': return  13;
+        case 'N': return  14;
+        case 'O': return  15;
+        case 'P': return  16;
+        case 'Q': return  17;
+        case 'R': return  18;
+        case 'S': return  19;
+        case 'T': return  20;
+        case 'U': return  21;
+        case 'V': return  22;
+        case 'W': return  23;
+        case 'X': return  24;
+        case 'Y': return  25;
+        case 'Z': return  26;
+        case '[': return  27;
+        case '/': return  28; // Тут замена на символ деления, по сравнению со стандартной нотацией
+        case ']': return  29;
+        case '^': return  30;
+        case '_': return  31;
+        case '?': return 127;
+        default : return  -1;
+    }
+}
+
+//----------------------------------------------------------------------------
+inline
+int escapedCharToChar(char ch)
+{
+    switch(ch)
+    {
+        case 'a' : return  7; // \a
+        case 'b' : return  8; // \b
+        case 't' : return  9; // \t
+        case 'n' : return 10; // \n
+        case 'v' : return 11; // \v
+        case 'f' : return 12; // \f
+        case 'r' : return 13; // \r
+        case 'e' : return 27; // \e
+        case '-' : return 45; // минус-дефис
+        case '\\': return 92; // бэкслеш
+        case '`' : return 96; // бэктик `
+        case '\'': return 39; // apos '
+        case '\"': return 34; // quot "
+        case '[' : return 91; // [
+        case ']' : return 93; // ]
+        default  : return -1;
+    }
+}
+
+//----------------------------------------------------------------------------
+inline
+bool escapedCharClassToCharSet(char ch, std::unordered_set<std::uint8_t> &s)
+{
+    switch(ch)
+    {
+                                        // \t   \n   \v   \f   \r 
+        case 's': s = makeCharSet        ({ 9u, 10u, 11u, 12u, 13u}); return true;
+        case 'S': s = makeCharSetInverted({ 9u, 10u, 11u, 12u, 13u}); return true;
+
+        case 'd': s = makeCharSet        ('0', '9'); return true;
+        case 'D': s = makeCharSetInverted('0', '9'); return true;
+
+        case 'w': s =               makeCharSetsUnion(makeCharSet('a','z'), makeCharSet('A','Z'), makeCharSet('0','9'), makeCharSet({'_'})) ; return true;
+        case 'W': s = invertCharSet(makeCharSetsUnion(makeCharSet('a','z'), makeCharSet('A','Z'), makeCharSet('0','9'), makeCharSet({'_'}))); return true;
+
+        case 'l': s =               makeCharSetsUnion(makeCharSet('a','z'), makeCharSet('A','Z')) ; return true;
+        case 'L': s = invertCharSet(makeCharSetsUnion(makeCharSet('a','z'), makeCharSet('A','Z'))); return true;
+
+        case '*': s = makeFullCharSet(); return true;
+
+        default : return false;
+    }
+}
+
+//----------------------------------------------------------------------------
+inline
+std::set<std::uint8_t> makeOrdered(const std::unordered_set<std::uint8_t> &s)
+{
+    return std::set<std::uint8_t>(s.begin(), s.end());
+}
+
+//----------------------------------------------------------------------------
+inline
+std::string makePredicateCharClassString(const std::set<std::uint8_t> &charSet)
+{
+    if (charSet.empty())
+        return std::string();
+
+    auto charSetVec = std::vector<std::uint8_t>(charSet.begin(), charSet.end());
+    std::vector< std::pair<std::size_t, std::size_t> > ranges;
+    ranges.emplace_back(0u,0u);
+
+    std::size_t idx = 1u;
+
+    for(; idx!=charSetVec.size(); ++idx)
+    {
+        if (charSetVec[idx]==charSetVec[idx-1] + 1)
+        {
+            ranges.back().second = idx;
+        }
+        else
+        {
+            ranges.emplace_back(idx,idx);
+        }
+    }
+
+    std::string resStr;
+
+    for(auto r: ranges)
+    {
+        if (r.first==r.second)
+        {
+            resStr.append(makePredicateCharCharClassString(charSetVec[r.first]));
+        }
+        else
+        {
+            resStr.append(makePredicateCharCharClassString(charSetVec[r.first]));
+            resStr.append("-");
+            resStr.append(makePredicateCharCharClassString(charSetVec[r.second]));
+        }
+    }
+
+    return resStr;
+}
+
+//----------------------------------------------------------------------------
+inline
+std::string makePredicateCharClassString(const std::unordered_set<std::uint8_t> &charSet)
+{
+    return makePredicateCharClassString(makeOrdered(charSet));
+}
+
+//----------------------------------------------------------------------------
+inline
+bool parseCharClassDefinition( const std::string &str
+                             , std::unordered_set<std::uint8_t> &resSet
+                             , std::size_t *pLastProcessedPos=0
+                             , std::size_t startPos = 0
+                             , bool returnOnCloseBracket = false
+                             )
+{
+    enum State
+    {
+        stInitial  ,
+        stNormal   ,
+        stGotEscape,  // был получен escape символ - backslash
+        stGotCaret ,  // началась caret-последовательность - "\c"
+        stGotHex   ,  // началась HEX-последоватеьность - "\x"
+        stGotHex2  ,  // ждём второй символ HEX-кода - "\xH"
+        stGotRange
+    };
+
+    resSet.clear();
+
+    int rangeStartChar = -1;
+    // Когда добавляем char - задаём
+    // Когда добавляем set  - сбрасываем
+    // В остальных случаях  - не трогаем
+
+    auto err      = [&](std::size_t i) { if (pLastProcessedPos) *pLastProcessedPos = i; return false; };
+    auto ok       = [&](std::size_t i) { if (pLastProcessedPos) *pLastProcessedPos = i; return true ; };
+    auto th       = [&](std::size_t i)
+    {
+        throw std::runtime_error("error at pos " + std::to_string(i) + ", rest line: " + std::string(&str[i]));
+    };
+
+    auto insertRange = [&](char ch, auto idx) -> bool
+    {
+        if (rangeStartChar<0)
+            return err(idx);
+
+        if (rangeStartChar>ch)
+            return err(idx);
+
+        auto s = makeCharSet(std::uint8_t(rangeStartChar), std::uint8_t(ch));
+        resSet = makeCharSetsUnion(resSet, s);
+        rangeStartChar = -1;
+
+        return ok(idx);
+    };
+
+    auto insertCh = [&](char ch, auto idx) -> bool
+    {
+        if (rangeStartChar<0) // добавляем одиночный символ
+        {
+            resSet.insert(std::uint8_t(ch));
+            rangeStartChar = ch;
+            return ok(idx);
+        }
+        else
+        {
+            return insertRange(ch, idx);
+        }
+    };
+
+    State        st  = stInitial;
+    //PrevCharType pvt = pvtUnknown;
+
+    int hexDigit = 0;
+    // bool bRangeMode = false;
+
+
+    // Специальные символы у нас:
+    //   минус/дефис - обозначает:
+    //     диапазон
+    //     вычитание множеств, если за ним следует квадратная скобка, открывающая определение множества
+    //   закрывающая квадратная скобка
+    //  пока вроде всё
+
+    std::size_t idx = startPos;
+
+    for(; idx!=str.size(); ++idx)
+    {
+        char ch = str[idx];
+
+        switch(st)
+        {
+            case stInitial:
+            {
+                if (ch=='\\')
+                    st  = stGotEscape;
+
+                else if (ch=='-') // или для минуса-дефиса сделать на старте исключение? наверное не стоит
+                    return err(idx); // у нас ситуация на старте, ни диапазон, ни вычитание не возможны
+
+                else if (ch==']')
+                {
+                    if (returnOnCloseBracket)
+                        return ok(idx);
+                }
+
+                else // просто символ
+                {
+                    st  = stNormal;
+                    if (!insertCh(ch, idx))
+                        return err(idx);
+                }
+
+                break;
+            }
+
+            case stNormal:
+            {
+                if (ch=='\\')
+                    st  = stGotEscape;
+
+                else if (ch=='-') // у нас либо диапазон, либо начало "вычитания" множеств
+                    st  = stGotRange;
+
+                else if (ch==']')
+                {
+                    if (returnOnCloseBracket)
+                        return ok(idx);
+                }
+
+                else // просто символ
+                {
+                    if (!insertCh(ch, idx))
+                        return err(idx);
+                }
+                break;
+            }
+        
+            case stGotEscape:
+            {
+                if (ch=='c') // "caret" escape sequence // \cX 
+                    st  = stGotCaret;
+
+                else if (ch=='x') // \xhh \xd \xD 
+                    st  = stGotHex  ;
+
+                else // вероятно, обычная escape sequence, или escape sequence класса символа
+                {
+                    auto escapedChar = escapedCharToChar(ch);
+                    if (escapedChar>=0) // обычная escape-последовательность - \X
+                    {
+                        st  = stNormal;
+                        if (!insertCh(char(escapedChar), idx))
+                            return err(idx);
+                    }
+                    else
+                    {
+                        std::unordered_set<std::uint8_t> escapedCharSet;
+                        if (escapedCharClassToCharSet(ch, escapedCharSet))
+                        {
+                            // нормальный char-класс приехал, объединяем с существующим, и пилим по нормасу дальше
+                            st  = stNormal;
+                            rangeStartChar = -1;
+                            resSet = makeCharSetsUnion(resSet, escapedCharSet);
+                        }
+
+                        else
+                            return err(idx); // что-то пошло не так
+                    }
+
+                }
+
+                break;
+            }
+        
+            case stGotCaret:
+            {
+                auto caretChar = caretCharToChar(ch);
+
+                if (caretChar<0)
+                    return err(idx); // что-то пошло не так
+
+                if (!insertCh(char(caretChar), idx))
+                    return err(idx);
+
+                st  = stNormal;
+
+                break;
+            }
+        
+            case stGotHex:
+            {
+                if (ch=='d')
+                {
+                    auto s = makeCharSetsUnion(makeCharSet('a','f'), makeCharSet('A','F'), makeCharSet('0','9'));
+                    resSet = makeCharSetsUnion(resSet, s);
+                    rangeStartChar = -1;
+                }
+                else if (ch=='D')
+                {
+                    auto s = makeCharSetsUnion(makeCharSet('a','f'), makeCharSet('A','F'), makeCharSet('0','9'));
+                    resSet = makeCharSetsUnion(resSet, invertCharSet(s));
+                    rangeStartChar = -1;
+                }
+                else
+                {
+                    int d = hexCharToDigit(ch);
+                    if (d<0 || d>15)
+                        return err(idx);
+                    st  = stGotHex2;
+                    hexDigit = d;
+                }
+                break;
+            }
+        
+            case stGotHex2:
+            {
+                int d = hexCharToDigit(ch);
+                if (d<0 || d>15)
+                    return err(idx);
+                st  = stNormal;
+                if (!insertCh(char(std::uint8_t((hexDigit<<4)+d)), idx))
+                    return err(idx);
+                break;
+            }
+        
+            case stGotRange:
+            {
+                if (ch=='[') // У нас тут вычитание
+                {
+                    std::unordered_set<std::uint8_t> tmpSet;
+                    if (!parseCharClassDefinition(str, tmpSet, &idx, idx+1, true  /* returnOnCloseBracket */ ))
+                        return err(idx);
+
+                    resSet = makeCharSetsSubtraction(resSet, tmpSet);
+                    rangeStartChar = -1;
+                }
+                else // обычный символ или escape-последовательность как завершение диапазона
+                {
+                    if (rangeStartChar<0) // но у нас нет начала диапазноа
+                        return err(idx);
+
+                    if (ch=='\\')
+                        st  = stGotEscape;
+
+                    else
+                    {
+                        if (!insertRange(ch, idx))
+                            return err(idx);
+                    }
+                }
+
+                break;
+            }
+
+            default: return err(idx); // хз чо
+        
+        } // switch(st)
+    
+    } // for(; idx!=str.size(); ++idx)
+
+    return ok(idx);
+}
+
+//----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
+
+} // namespace utils
+} // namespace char_class
+// umba::tokenizer::char_class::utils::
+
+//----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
+
 } // namespace tokenizer
 } // namespace umba
+// umba::tokenizer::
 

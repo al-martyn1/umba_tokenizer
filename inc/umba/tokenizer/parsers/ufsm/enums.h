@@ -122,6 +122,64 @@ MARTY_CPP_ENUM_CLASS_DESERIALIZE_BEGIN( InheritanceListMode, std::map, 1 )
 MARTY_CPP_ENUM_CLASS_DESERIALIZE_END( InheritanceListMode, std::map, 1 )
 
 
+//#!PredicateCharClass
+enum class PredicateCharClass : std::uint32_t
+{
+    invalid       = (std::uint32_t)(-1) /*!<  */,
+    all           = 0x0000 /*!<  */,
+    digitDec      = 0x0001 /*!<  */,
+    notDigitDec   = 0x0002 /*!<  */,
+    digitHex      = 0x0003 /*!<  */,
+    notDigitHex   = 0x0004 /*!<  */,
+    space         = 0x0005 /*!<  */,
+    notSpace      = 0x0006 /*!<  */,
+    word          = 0x0007 /*!<  */,
+    notWord       = 0x0008 /*!<  */
+
+}; // enum 
+//#!
+
+MARTY_CPP_MAKE_ENUM_IS_FLAGS_FOR_NON_FLAGS_ENUM(PredicateCharClass)
+
+MARTY_CPP_ENUM_CLASS_SERIALIZE_BEGIN( PredicateCharClass, std::map, 1 )
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PredicateCharClass::notDigitHex   , "NotDigitHex" );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PredicateCharClass::invalid       , "Invalid"     );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PredicateCharClass::notSpace      , "NotSpace"    );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PredicateCharClass::all           , "All"         );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PredicateCharClass::digitDec      , "DigitDec"    );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PredicateCharClass::space         , "Space"       );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PredicateCharClass::notDigitDec   , "NotDigitDec" );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PredicateCharClass::digitHex      , "DigitHex"    );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PredicateCharClass::word          , "Word"        );
+    MARTY_CPP_ENUM_CLASS_SERIALIZE_ITEM( PredicateCharClass::notWord       , "NotWord"     );
+MARTY_CPP_ENUM_CLASS_SERIALIZE_END( PredicateCharClass, std::map, 1 )
+
+MARTY_CPP_ENUM_CLASS_DESERIALIZE_BEGIN( PredicateCharClass, std::map, 1 )
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::notDigitHex   , "not-digit-hex" );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::notDigitHex   , "not_digit_hex" );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::notDigitHex   , "notdigithex"   );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::invalid       , "invalid"       );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::notSpace      , "not-space"     );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::notSpace      , "not_space"     );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::notSpace      , "notspace"      );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::all           , "all"           );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::digitDec      , "digit-dec"     );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::digitDec      , "digit_dec"     );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::digitDec      , "digitdec"      );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::space         , "space"         );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::notDigitDec   , "not-digit-dec" );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::notDigitDec   , "not_digit_dec" );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::notDigitDec   , "notdigitdec"   );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::digitHex      , "digit-hex"     );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::digitHex      , "digit_hex"     );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::digitHex      , "digithex"      );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::word          , "word"          );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::notWord       , "not-word"      );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::notWord       , "not_word"      );
+    MARTY_CPP_ENUM_CLASS_DESERIALIZE_ITEM( PredicateCharClass::notWord       , "notword"       );
+MARTY_CPP_ENUM_CLASS_DESERIALIZE_END( PredicateCharClass, std::map, 1 )
+
+
 //#!ActionFlags
 enum class ActionFlags : std::uint32_t
 {

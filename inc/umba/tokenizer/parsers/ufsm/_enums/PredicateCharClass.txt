@@ -1,0 +1,11 @@
+invalid=-1
+all            = 0
+digitDec
+notDigitDec
+digitHex
+notDigitHex
+space
+notSpace
+word
+notWord
+
