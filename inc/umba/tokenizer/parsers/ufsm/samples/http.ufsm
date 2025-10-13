@@ -54,13 +54,13 @@ state-machine HttpParser
         //    и проверяет наличие во флагах "своего" флага.
         //    
 
-        isPrnChar    : external valid-for{inputChar} - "Любой печатный символ, кроме пробела и табуляции";
-        isSpaceChar  : external valid-for{inputChar};
-        isTabChar    : external valid-for{inputChar};
-        isSpace      = isSpaceChar | isTabChar;
-        isCr         : external valid-for{inputChar};
-        isLf         : external valid-for{inputChar};
-        isColon      : external valid-for{inputChar};
+        isPrnChar    = `!-\xFF-[\c?]` valid-for{inputChar} - "Любой печатный символ, кроме пробела и табуляции";
+        isSpaceChar  = ` ` valid-for{inputChar};
+        isTabChar    = `\t` valid-for{inputChar};
+        isSpace      = ` \t`; // isSpaceChar | isTabChar;
+        isCr         = `\r` valid-for{inputChar};
+        isLf         = `\n` valid-for{inputChar};
+        isColon      = `:` valid-for{inputChar};
     }
 
     states

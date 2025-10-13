@@ -205,8 +205,9 @@
 
 #define UMBA_TOKENIZER_TOKEN_STRING_LITERAL                                           0x3000u
 #define UMBA_TOKENIZER_TOKEN_CHAR_LITERAL                                             0x3001u
-#define UMBA_TOKENIZER_TOKEN_ANGLE_BACKETS_STRING_LITERAL                             0x3002u
-#define UMBA_TOKENIZER_TOKEN_RAW_STRING_LITERAL                                       0x3003u
+#define UMBA_TOKENIZER_TOKEN_BACKTICK_LITERAL                                         0x3002u
+#define UMBA_TOKENIZER_TOKEN_ANGLE_BACKETS_STRING_LITERAL                             0x3003u
+#define UMBA_TOKENIZER_TOKEN_RAW_STRING_LITERAL                                       0x3004u
 
 #define UMBA_TOKENIZER_TOKEN_STRING_USER_LITERAL_FIRST                                0x3010u
 #define UMBA_TOKENIZER_TOKEN_STRING_USER_LITERAL_LAST                                 UMBA_TOKENIZER_TOKEN_LITERAL_LAST

@@ -157,7 +157,8 @@ struct PredicateDefinition
 
     /*! Список событий, для которых предикат может быть использован. 
         Актуален только если установлен флаг PredicateFlags::validFor */
-    std::vector<std::string>   validForList; 
+    std::vector<std::string>          validForList; 
+    std::unordered_set<std::uint8_t>  charSet;
 
     std::string getCanonicalName() const { return name; }
 

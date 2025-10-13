@@ -35,8 +35,9 @@ template< typename CharType                     //!< Input chars type
 umba::tokenizer::TokenizerBuilder<CharType, UserDataType, CharClassTableType, TrieVectorType, StringType, MessagesStringType, InputIteratorType, InputIteratorTraits, TokenizerType>
 makeTokenizerBuilder()
 {
-    using CppStringLiteralParser     = CppEscapedSimpleQuotedStringLiteralParser<CharType, MessagesStringType, InputIteratorType, InputIteratorTraits>;
-    using AngleBracketsLiteralParser = SimpleQuotedStringLiteralParser<CharType, MessagesStringType, InputIteratorType, InputIteratorTraits>;
+    using CppStringLiteralParser      = CppEscapedSimpleQuotedStringLiteralParser<CharType, MessagesStringType, InputIteratorType, InputIteratorTraits>;
+    //using AngleBracketsLiteralParser = SimpleQuotedStringLiteralParser<CharType, MessagesStringType, InputIteratorType, InputIteratorTraits>;
+    using BacktickStringLiteralParser = BacktickQuotedCharClassStringLiteralParser<CharType, MessagesStringType, InputIteratorType, InputIteratorTraits>;
 
     using umba::string_plus::make_string;
 
@@ -93,6 +94,11 @@ makeTokenizerBuilder()
                                                                                     //, make_string<StringType>("\'")   // UMBA_TOKENIZER_TOKEN_CHAR_LITERAL (UMBA_TOKENIZER_TOKEN_STRING_LITERAL+1)
                                                                                     }
                                                                                   )
+                          .template addStringLiteralParser<BacktickStringLiteralParser>( UMBA_TOKENIZER_TOKEN_BACKTICK_LITERAL
+                                                                                  , { make_string<StringType>("`")
+                                                                                    }
+                                                                                  )
+
                           //.template addStringLiteralParser< AngleBracketsLiteralParser >(UMBA_TOKENIZER_TOKEN_ANGLE_BACKETS_STRING_LITERAL, { make_string<StringType>("<") } )
 
                           ;

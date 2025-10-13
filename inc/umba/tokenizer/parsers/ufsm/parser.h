@@ -191,6 +191,7 @@ public:
 
             case UMBA_TOKENIZER_TOKEN_IDENTIFIER    : return "identifier";
             case UMBA_TOKENIZER_TOKEN_STRING_LITERAL: return "string-literal";
+            case UMBA_TOKENIZER_TOKEN_BACKTICK_LITERAL: return "charset-definition";
 
             case UFSM_TOKEN_KWD_EVENTS              : return "events";
             case UFSM_TOKEN_KWD_ACTIONS             : return "actions";
@@ -829,10 +830,57 @@ public:
 
             if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_ASSIGN)
             {
-                if (!readLogicExpression(pd.expression, true /* readNextOnStart */ ))
-                    return false;
+                readNextToken();
 
-                //hasExpression = true;
+                if (m_pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_BACKTICK_LITERAL)
+                {
+                    pd.flags |= PredicateFlags::charSet;
+                    std::string bktckStr = extractLiteral(m_pTokenInfo);
+                    std::size_t errPos = 0;
+                    if (!char_class::utils::parseCharClassDefinition(bktckStr, pd.charSet, &errPos))
+                    {
+                        // Тупо прибавить позицию с ошибкой (+errPos) не прокатило, надо подумать, что не так
+                        BaseClass::logSimpleMessage(m_tokenPos /* +errPos */ , m_pTokenInfo->tokenType, "predicate-charset", "predicate char set definition is invalid");
+                        return false;
+                    }
+
+                    readNextToken();
+
+                    // !!! Дублирование кода, вынести в отдельную лямбду
+                    if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_VALID_FOR)
+                    {
+                        pd.flags |= PredicateFlags::validFor;
+    
+                        readNextToken();
+                        if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+                            return false; // а пришло хз что
+    
+                        if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_COMMA
+                                                      , true /* readNextOnStart */
+                                                      , [&]() { pd.validForList.push_back(extractIdentifierName(m_pTokenInfo)); } ))
+                            return false;
+    
+                        if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
+                            return false; // а пришло хз что
+    
+                        // Нужно проверить на пустоту список valid-for
+    
+                        if (pd.validForList.empty())
+                        {
+                            // BaseClass::logSimpleMessage(getFullPos(), m_pTokenInfo->tokenType, "valid-for", "empty 'valid-for' list");
+                            BaseClass::logSimpleMessage(m_tokenPos, m_pTokenInfo->tokenType, "valid-for", "empty 'valid-for' list");
+                            return false;
+                        }
+    
+                        readNextToken(); // скипнули закрывающую скобку
+                    }
+
+                }
+                else
+                {
+                    if (!readLogicExpression(pd.expression, false /* !readNextOnStart */ ))
+                        return false;
+                }
             }
             else if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
             {

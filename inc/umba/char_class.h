@@ -1201,10 +1201,10 @@ bool parseCharClassDefinition( const std::string &str
 
     auto insertRange = [&](char ch, auto idx) -> bool
     {
-        if (rangeStartChar<0)
+        if (std::uint8_t(rangeStartChar)<0u)
             return err(idx);
 
-        if (rangeStartChar>ch)
+        if (std::uint8_t(rangeStartChar)> std::uint8_t(ch))
             return err(idx);
 
         auto s = makeCharSet(std::uint8_t(rangeStartChar), std::uint8_t(ch));

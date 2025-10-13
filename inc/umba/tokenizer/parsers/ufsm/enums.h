@@ -369,7 +369,8 @@ enum class PredicateFlags : std::uint32_t
     inherited   = 0x0001 /*!< Set when the predicate is inherited */,
     override    = 0x0002 /*!< Set when the predicate overrides inherited */,
     external    = 0x0004 /*!<  */,
-    validFor    = 0x0008 /*!< valid-for list is actual */
+    validFor    = 0x0008 /*!< valid-for list is actual */,
+    charSet     = 0x0010 /*!< Char set predicate */
 
 }; // enum 
 //#!
@@ -378,6 +379,7 @@ MARTY_CPP_MAKE_ENUM_FLAGS(PredicateFlags)
 
 MARTY_CPP_ENUM_FLAGS_SERIALIZE_BEGIN( PredicateFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PredicateFlags::invalid     , "Invalid"   );
+    MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PredicateFlags::charSet     , "CharSet"   );
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PredicateFlags::none        , "None"      );
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PredicateFlags::inherited   , "Inherited" );
     MARTY_CPP_ENUM_FLAGS_SERIALIZE_ITEM( PredicateFlags::override    , "Override"  );
@@ -387,6 +389,9 @@ MARTY_CPP_ENUM_FLAGS_SERIALIZE_END( PredicateFlags, std::map, 1 )
 
 MARTY_CPP_ENUM_FLAGS_DESERIALIZE_BEGIN( PredicateFlags, std::map, 1 )
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PredicateFlags::invalid     , "invalid"   );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PredicateFlags::charSet     , "char-set"  );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PredicateFlags::charSet     , "char_set"  );
+    MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PredicateFlags::charSet     , "charset"   );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PredicateFlags::none        , "none"      );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PredicateFlags::inherited   , "inherited" );
     MARTY_CPP_ENUM_FLAGS_DESERIALIZE_ITEM( PredicateFlags::override    , "override"  );

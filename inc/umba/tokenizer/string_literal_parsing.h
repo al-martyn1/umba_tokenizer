@@ -640,6 +640,84 @@ public:
 
 
 
+//----------------------------------------------------------------------------
+//! Литерал парсер, считывающий backtick quoted строки.
+/*! Если после backslash идёт backtick, то он не считается за закрывающий backtick.
+    backslash экранирует backslash, т.е. `\`\\` закроется на последнем бэктике (второй - экранирован).
+    backslash'ы переносяться в выходную строку без изменений.
+*/
+
+template< typename CharType
+        , typename MessageStringType    = std::string // std::basic_string<CharType>
+        , typename InputIteratorType    = umba::iterator::TextPositionCountingIterator<CharType>
+        , typename InputIteratorTraits  = umba::iterator::TextIteratorTraits<InputIteratorType>
+        >
+class BacktickQuotedCharClassStringLiteralParser : public ITokenizerLiteralParser<CharType, MessageStringType, InputIteratorType, InputIteratorTraits>
+{
+
+protected:
+
+    enum State
+    {
+        stInitial,
+        stNormal,
+        stBackslash
+    };
+
+    State        st         = stInitial;
+
+public:
+
+    UMBA_RULE_OF_FIVE(BacktickQuotedCharClassStringLiteralParser, default, default, default, default, default);
+
+    void reset()
+    {
+        st         = stInitial;
+    }
+
+// enum class StringLiteralParsingResult : unsigned
+// {
+//     okContinue    , // Нормас, продолжаем парсить
+//     okStop        , // Нормас, обнаружен конец литерала
+//     warnContinue  , // Предупреждение - некорректная строка, но обработку можно продолжить
+//     warnStop      , // Предупреждение - некорректная строка, и производим нормальную обработку парсинга
+//     error           // Ошибка, останавливает парсинг
+
+
+    virtual StringLiteralParsingResult parseChar(InputIteratorType it, InputIteratorType itEnd, ITokenizerLiteralCharInserter<CharType> *pInserter, MessageStringType *pMsg) override
+    {
+        UMBA_USED(itEnd);
+        UMBA_USED(pMsg);
+
+        if (st==stInitial)
+        {
+            st = stNormal;
+        }
+        else if (st==stNormal)
+        {
+            if (*it=='\\')
+                st = stBackslash;
+
+            else if (*it=='`')
+                return StringLiteralParsingResult::okStop;
+
+            this->insertChar(pInserter, *it);
+
+        }
+        else // st==stBackslash
+        {
+            this->insertChar(pInserter, *it);
+            st = stNormal;
+        }
+
+        return StringLiteralParsingResult::okContinue;
+    }
+
+
+}; // class BacktickQuotedCharClassStringLiteralParser
+
+//----------------------------------------------------------------------------
+
 
 
 //----------------------------------------------------------------------------

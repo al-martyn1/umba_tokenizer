@@ -198,8 +198,10 @@ StreamType& operator<<(StreamType &oss, const PredicateDefinition &v)
     }
     else
     {
-        oss << " = " 
-            << LogicExpressionEvaluator(makeLogicExpressionOperatorTraits()).toString(v.expression);
+        if ((v.flags&PredicateFlags::charSet)!=0)
+            oss << " = `" << char_class::utils::makePredicateCharClassString(v.charSet) << "`";
+        else
+            oss << " = " << LogicExpressionEvaluator(makeLogicExpressionOperatorTraits()).toString(v.expression);
     }
 
     if (!v.description.empty())
