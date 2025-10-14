@@ -1194,10 +1194,10 @@ bool parseCharClassDefinition( const std::string &str
 
     auto err      = [&](std::size_t i) { if (pLastProcessedPos) *pLastProcessedPos = i; return false; };
     auto ok       = [&](std::size_t i) { if (pLastProcessedPos) *pLastProcessedPos = i; return true ; };
-    auto th       = [&](std::size_t i)
-    {
-        throw std::runtime_error("error at pos " + std::to_string(i) + ", rest line: " + std::string(&str[i]));
-    };
+    // auto th       = [&](std::size_t i)
+    // {
+    //     throw std::runtime_error("error at pos " + std::to_string(i) + ", rest line: " + std::string(&str[i]));
+    // };
 
     auto insertRange = [&](char ch, auto idx) -> bool
     {
