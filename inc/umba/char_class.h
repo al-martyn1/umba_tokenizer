@@ -20,6 +20,7 @@
 #include <string>
 #include <set>
 #include <unordered_set>
+#include <unordered_map>
 #include <iostream>
 #include <iomanip>
 #include <exception>
@@ -1116,6 +1117,42 @@ std::set<std::uint8_t> makeOrdered(const std::unordered_set<std::uint8_t> &s)
 
 //----------------------------------------------------------------------------
 inline
+constexpr
+std::uint16_t makeCharRangeKey(std::uint8_t ch1, std::uint8_t ch2)
+{
+    return std::uint16_t(std::uint16_t(std::uint16_t(ch1)<<8) | std::uint16_t(ch2));
+}
+
+//----------------------------------------------------------------------------
+inline
+constexpr
+std::uint16_t makeCharRangeKey(char ch1, char ch2)
+{
+    return makeCharRangeKey(std::uint8_t(ch1), std::uint8_t(ch2));
+}
+
+//----------------------------------------------------------------------------
+inline
+std::unordered_map<std::uint16_t, std::string> makeStdRangesMap()
+{
+    std::unordered_map<std::uint16_t, std::string> m;
+
+    m[makeCharRangeKey('\t','\r')] = "\\s";
+    m[makeCharRangeKey('0','9')  ] = "\\d";
+
+    return m;
+}
+
+//----------------------------------------------------------------------------
+inline
+const std::unordered_map<std::uint16_t, std::string>& getStdRangesMap()
+{
+    static std::unordered_map<std::uint16_t, std::string> m = makeStdRangesMap();
+    return m;
+}
+
+//----------------------------------------------------------------------------
+inline
 std::string makePredicateCharClassString(const std::set<std::uint8_t> &charSet)
 {
     if (charSet.empty())
@@ -1149,9 +1186,18 @@ std::string makePredicateCharClassString(const std::set<std::uint8_t> &charSet)
         }
         else
         {
-            resStr.append(makePredicateCharCharClassString(charSetVec[r.first]));
-            resStr.append("-");
-            resStr.append(makePredicateCharCharClassString(charSetVec[r.second]));
+            const auto &m = getStdRangesMap();
+            auto it = m.find(makeCharRangeKey(charSetVec[r.first], charSetVec[r.second]));
+            if (it!=m.end())
+            {
+                resStr.append(it->second);
+            }
+            else
+            {
+                resStr.append(makePredicateCharCharClassString(charSetVec[r.first]));
+                resStr.append("-");
+                resStr.append(makePredicateCharCharClassString(charSetVec[r.second]));
+            }
         }
     }
 
@@ -1192,6 +1238,8 @@ bool parseCharClassDefinition( const std::string &str
     // Когда добавляем set  - сбрасываем
     // В остальных случаях  - не трогаем
 
+    bool unclosedRange = false;
+
     auto err      = [&](std::size_t i) { if (pLastProcessedPos) *pLastProcessedPos = i; return false; };
     auto ok       = [&](std::size_t i) { if (pLastProcessedPos) *pLastProcessedPos = i; return true ; };
     // auto th       = [&](std::size_t i)
@@ -1201,6 +1249,9 @@ bool parseCharClassDefinition( const std::string &str
 
     auto insertRange = [&](char ch, auto idx) -> bool
     {
+        if (!unclosedRange)
+            return err(idx);
+
         if (std::uint8_t(rangeStartChar)<0u)
             return err(idx);
 
@@ -1210,16 +1261,18 @@ bool parseCharClassDefinition( const std::string &str
         auto s = makeCharSet(std::uint8_t(rangeStartChar), std::uint8_t(ch));
         resSet = makeCharSetsUnion(resSet, s);
         rangeStartChar = -1;
+        unclosedRange  = false;
 
         return ok(idx);
     };
 
     auto insertCh = [&](char ch, auto idx) -> bool
     {
-        if (rangeStartChar<0) // добавляем одиночный символ
+        // Нет открывающего диапазон символа, или нет незакрытого диапазона
+        if (rangeStartChar<0 || !unclosedRange) // добавляем одиночный символ
         {
             resSet.insert(std::uint8_t(ch));
-            rangeStartChar = ch;
+            rangeStartChar = std::uint8_t(ch);
             return ok(idx);
         }
         else
@@ -1394,19 +1447,29 @@ bool parseCharClassDefinition( const std::string &str
 
                     resSet = makeCharSetsSubtraction(resSet, tmpSet);
                     rangeStartChar = -1;
+                    unclosedRange  = false;
                 }
+
+                // st  = stNormal;
+
                 else // обычный символ или escape-последовательность как завершение диапазона
                 {
+                    if (unclosedRange) // у нас уже есть незакрытый диапазон
+                        return err(idx);
+
+                    unclosedRange = true;
+
                     if (rangeStartChar<0) // но у нас нет начала диапазноа
                         return err(idx);
 
                     if (ch=='\\')
                         st  = stGotEscape;
 
-                    else
+                    else // обычный символ
                     {
                         if (!insertRange(ch, idx))
                             return err(idx);
+                        st = stNormal;
                     }
                 }
 
