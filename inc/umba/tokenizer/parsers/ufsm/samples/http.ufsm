@@ -54,6 +54,34 @@ state-machine HttpParser
         //    и проверяет наличие во флагах "своего" флага.
         //    
 
+        isSet_s      = `\s`;
+        isSet_S      = `\S`;
+        isSet_d      = `\d`;
+        isSet_D      = `\D`;
+        isSet_w      = `\w`;
+        isSet_W      = `\W`;
+        isSet_l      = `\l`;
+        isSet_L      = `\L`;
+        isSet_m      = `\m`;
+        isSet_M      = `\M`;
+        isSet_j      = `\j`;
+        isSet_J      = `\J`;
+        isSet_k      = `\k`;
+        isSet_K      = `\K`;
+        isSet_z      = `\z`;
+        isSet_Z      = `\Z`;
+        isSet_i      = `\i`;
+        isSet_I      = `\I`;
+        isSet_h      = `\h`;
+        isSet_H      = `\H`;
+        isSet_q      = `\q`;
+        isSet_Q      = `\Q`;
+        isSet_o      = `\o`;
+        isSet_O      = `\O`;
+        isSet_afAF09 = `a-fA-F0-9`;
+        isBaseAsciiPrnChar  = `\i-[\c@- \c?]`;
+        isBaseAsciiPrnChar2 = `\i-[\c@-\_\c?]`;
+
         isPrnChar    = `!-\xFF-[\c?]` valid-for{inputChar} - "Любой печатный символ, кроме пробела и табуляции";
         isSpaceChar  = ` ` valid-for{inputChar};
         isTabChar    = `\t` valid-for{inputChar};

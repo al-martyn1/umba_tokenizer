@@ -13,9 +13,11 @@
 //
 
 #include <array>
+#include <algorithm>
 #include <cstdint>
 #include <climits>
 #include <initializer_list>
+#include <iterator>
 #include <type_traits>
 #include <string>
 #include <set>
@@ -783,6 +785,12 @@ namespace utils {
 // Пересечение множеств - Intersection of sets
 
 //----------------------------------------------------------------------------
+// Реально лень чот мутить на новых плюсах, проще раскопировать
+
+//----------------------------------------------------------------------------
+inline std::unordered_set<std::uint8_t> makeCharSetsUnion(std::unordered_set<std::uint8_t> s) { return s; }
+
+//----------------------------------------------------------------------------
 inline
 std::unordered_set<std::uint8_t> makeCharSetsUnion(std::unordered_set<std::uint8_t> s1, const std::unordered_set<std::uint8_t> &s2)
 {
@@ -806,6 +814,17 @@ std::unordered_set<std::uint8_t> makeCharSetsUnion(std::unordered_set<std::uint8
     s1.insert(s2.begin(), s2.end());
     s1.insert(s3.begin(), s3.end());
     s1.insert(s4.begin(), s4.end());
+    return s1;
+}
+
+//----------------------------------------------------------------------------
+inline
+std::unordered_set<std::uint8_t> makeCharSetsUnion(std::unordered_set<std::uint8_t> s1, const std::unordered_set<std::uint8_t> &s2, const std::unordered_set<std::uint8_t> &s3, const std::unordered_set<std::uint8_t> &s4, const std::unordered_set<std::uint8_t> &s5)
+{
+    s1.insert(s2.begin(), s2.end());
+    s1.insert(s3.begin(), s3.end());
+    s1.insert(s4.begin(), s4.end());
+    s1.insert(s5.begin(), s5.end());
     return s1;
 }
 
@@ -954,27 +973,28 @@ int hexCharToDigit(char ch)
 
 //----------------------------------------------------------------------------
 inline
-std::string makePredicateCharCharClassString(std::uint8_t ch, bool caretOnly=false)
+std::string makePredicateCharCharClassString(std::uint8_t ch, bool forceCaret=false)
 {
     switch(ch)
     {
         // \cX - Каретная нотация
         //     https://ru.wikipedia.org/wiki/%D0%9A%D0%B0%D1%80%D0%B5%D1%82%D0%BD%D0%B0%D1%8F_%D0%BD%D0%BE%D1%82%D0%B0%D1%86%D0%B8%D1%8F
         //     https://en.wikipedia.org/wiki/C0_and_C1_control_codes
-        case   0: return "\\c@";
+
+        case   0: if (forceCaret) return "\\c@"; return "\\0"; // \0
         case   1: return "\\cA";
         case   2: return "\\cB";
         case   3: return "\\cC";
         case   4: return "\\cD";
         case   5: return "\\cE";
         case   6: return "\\cF";
-        case   7: if (caretOnly) return "\\cG"; return "\\a"; // \a
-        case   8: if (caretOnly) return "\\cH"; return "\\b"; // \b
-        case   9: if (caretOnly) return "\\cI"; return "\\t"; // \t
-        case  10: if (caretOnly) return "\\cJ"; return "\\n"; // \n
-        case  11: if (caretOnly) return "\\cK"; return "\\v"; // \v
-        case  12: if (caretOnly) return "\\cL"; return "\\f"; // \f
-        case  13: if (caretOnly) return "\\cM"; return "\\r"; // \r
+        case   7: if (forceCaret) return "\\cG"; return "\\a"; // \a
+        case   8: if (forceCaret) return "\\cH"; return "\\b"; // \b
+        case   9: if (forceCaret) return "\\cI"; return "\\t"; // \t
+        case  10: if (forceCaret) return "\\cJ"; return "\\n"; // \n
+        case  11: if (forceCaret) return "\\cK"; return "\\v"; // \v
+        case  12: if (forceCaret) return "\\cL"; return "\\f"; // \f
+        case  13: if (forceCaret) return "\\cM"; return "\\r"; // \r
         case  14: return "\\cN";
         case  15: return "\\cO";
         case  16: return "\\cP";
@@ -988,11 +1008,12 @@ std::string makePredicateCharCharClassString(std::uint8_t ch, bool caretOnly=fal
         case  24: return "\\cX";
         case  25: return "\\cY";
         case  26: return "\\cZ";
-        case  27: if (caretOnly) return "\\c["; return "\\e";  // \e
+        case  27: if (forceCaret) return "\\c["; return "\\e";  // \e
         case  28: return "\\c/"; // Тут замена на символ деления, по сравнению со стандартной нотацией
         case  29: return "\\c]";
         case  30: return "\\c^";
         case  31: return "\\c_";
+        case  32: return "\\_" ;
         case 127: return "\\c?";
         case  45: return "\\-" ; // минус-дефис
         case  92: return "\\\\"; // бэкслеш
@@ -1064,6 +1085,7 @@ int escapedCharToChar(char ch)
 {
     switch(ch)
     {
+        case '0' : return  0; // \0
         case 'a' : return  7; // \a
         case 'b' : return  8; // \b
         case 't' : return  9; // \t
@@ -1079,6 +1101,7 @@ int escapedCharToChar(char ch)
         case '\"': return 34; // quot "
         case '[' : return 91; // [
         case ']' : return 93; // ]
+        case '_' : return 32; // ]
         default  : return -1;
     }
 }
@@ -1087,20 +1110,88 @@ int escapedCharToChar(char ch)
 inline
 bool escapedCharClassToCharSet(char ch, std::unordered_set<std::uint8_t> &s)
 {
+    // JavaScript/Руководство JavaScript/Регулярные выражения/Классы символов - https://developer.mozilla.org/ru/docs/Web/JavaScript/Guide/Regular_expressions/Character_classes
+
+    // придётся не занимать
+    // \u00a0 - \u 
+    // \p \P - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Unicode_character_class_escape
+
     switch(ch)
     {
+        // Доступны
+        //    d  ghijklm o q s   w yz
                                         // \t   \n   \v   \f   \r 
         case 's': s = makeCharSet        ({ 9u, 10u, 11u, 12u, 13u}); return true;
         case 'S': s = makeCharSetInverted({ 9u, 10u, 11u, 12u, 13u}); return true;
 
+        // Доступны
+        //    d  ghijklm o q     w yz
         case 'd': s = makeCharSet        ('0', '9'); return true;
         case 'D': s = makeCharSetInverted('0', '9'); return true;
 
+        // Доступны
+        //       g ijklm o q     w yz
+        case 'h': s =               makeCharSetsUnion(makeCharSet('a','f'), makeCharSet('A','F'), makeCharSet('0','9')) ; return true;
+        case 'H': s = invertCharSet(makeCharSetsUnion(makeCharSet('a','f'), makeCharSet('A','F'), makeCharSet('0','9'))); return true;
+
+        // Доступны
+        //       g ijklm o q     w yz
         case 'w': s =               makeCharSetsUnion(makeCharSet('a','z'), makeCharSet('A','Z'), makeCharSet('0','9'), makeCharSet({'_'})) ; return true;
         case 'W': s = invertCharSet(makeCharSetsUnion(makeCharSet('a','z'), makeCharSet('A','Z'), makeCharSet('0','9'), makeCharSet({'_'}))); return true;
 
+        // Доступны
+        //       g ijklm o q       yz
+        // a - alpha - уже занято, используем l - letter
         case 'l': s =               makeCharSetsUnion(makeCharSet('a','z'), makeCharSet('A','Z')) ; return true;
         case 'L': s = invertCharSet(makeCharSetsUnion(makeCharSet('a','z'), makeCharSet('A','Z'))); return true;
+
+        // Доступны
+        //       g ijk m o q       yz
+        // uppercase letter
+        case 'm': s =               makeCharSetsUnion(makeCharSet('A','Z')) ; return true;
+        case 'M': s = invertCharSet(makeCharSetsUnion(makeCharSet('A','Z'))); return true;
+
+        // Доступны
+        //       g ijk   o q       yz
+        // i - похожа на l, но ассоциация с int
+        // j - вроде не замазана ни в чем подозрительном
+        case 'j': s =               makeCharSetsUnion(makeCharSet('a','z')) ; return true;
+        case 'J': s = invertCharSet(makeCharSetsUnion(makeCharSet('a','z'))); return true;
+
+        // Доступны
+        //       g i k   o q       yz
+        // k - kebab style identifier
+        case 'k': s =               makeCharSetsUnion(makeCharSet('a','z'), makeCharSet('A','Z'), makeCharSet('0','9'), makeCharSet({'_'}), makeCharSet({'-'})) ; return true;
+        case 'K': s = invertCharSet(makeCharSetsUnion(makeCharSet('a','z'), makeCharSet('A','Z'), makeCharSet('0','9'), makeCharSet({'_'}), makeCharSet({'-'}))); return true;
+
+        // Доступны
+        //       g i     o q       yz
+        case 'z': s =               makeCharSetsUnion(makeCharSet('a','f'), makeCharSet('A','F')) ; return true;
+        case 'Z': s = invertCharSet(makeCharSetsUnion(makeCharSet('a','f'), makeCharSet('A','F'))); return true;
+
+        // Доступны
+        //       g i     o q       y 
+        // ASCII base - 0-127
+        case 'i': s =               makeCharSetsUnion(makeCharSet(std::uint8_t(0u), std::uint8_t(127u))) ; return true;
+        case 'I': s = invertCharSet(makeCharSetsUnion(makeCharSet(std::uint8_t(0u), std::uint8_t(127u)))); return true;
+
+        // Доступны
+        //       g       o q       y 
+
+        // Хочу 
+        // пунктуацию/punctuation
+        // quotation
+
+        // Доступны
+        //       g       o         y 
+        case 'q': s =               makeCharSetsUnion(makeCharSet({'\'', '\"'})) ; return true;
+        case 'Q': s = invertCharSet(makeCharSetsUnion(makeCharSet({'\'', '\"'}))); return true;
+
+        // Доступны
+        //       g                 y 
+        case 'o': s =               makeCharSetsUnion(makeCharSet({'!', ',', '.', ':', ';', '?'})) ; return true;
+        case 'O': s = invertCharSet(makeCharSetsUnion(makeCharSet({'!', ',', '.', ':', ';', '?'}))); return true;
+
 
         case '*': s = makeFullCharSet(); return true;
 
@@ -1116,39 +1207,275 @@ std::set<std::uint8_t> makeOrdered(const std::unordered_set<std::uint8_t> &s)
 }
 
 //----------------------------------------------------------------------------
-inline
-constexpr
-std::uint16_t makeCharRangeKey(std::uint8_t ch1, std::uint8_t ch2)
-{
-    return std::uint16_t(std::uint16_t(std::uint16_t(ch1)<<8) | std::uint16_t(ch2));
-}
+// Верхняя часть std::uint32_t задаёт индекс найденной последовательности+1,
+// а нижняя - диапазон, если верхняя часть нулевая
 
 //----------------------------------------------------------------------------
 inline
 constexpr
-std::uint16_t makeCharRangeKey(char ch1, char ch2)
+std::uint32_t makeCharRange(unsigned char ch1, unsigned char ch2)
 {
-    return makeCharRangeKey(std::uint8_t(ch1), std::uint8_t(ch2));
+    return std::uint32_t(std::uint16_t(std::uint16_t(std::uint16_t(ch1)<<8) | std::uint16_t(ch2)));
 }
 
 //----------------------------------------------------------------------------
 inline
-std::unordered_map<std::uint16_t, std::string> makeStdRangesMap()
+constexpr
+std::uint32_t makeCharRange(char ch1, char ch2)
 {
-    std::unordered_map<std::uint16_t, std::string> m;
+    return std::uint32_t(makeCharRange(std::uint8_t(ch1), std::uint8_t(ch2)));
+}
 
-    m[makeCharRangeKey('\t','\r')] = "\\s";
-    m[makeCharRangeKey('0','9')  ] = "\\d";
+//----------------------------------------------------------------------------
+inline constexpr std::uint32_t makeCharRange(std::uint8_t ch)             { return makeCharRange(ch, ch); }
+inline constexpr std::uint32_t makeCharRange(char ch)                     { return makeCharRange(std::uint8_t(ch)); }
+inline constexpr std::uint32_t makeCharRange(char ch1, unsigned char ch2) { return makeCharRange(ch1, char(ch2)); }
+inline constexpr std::uint32_t makeCharRange(unsigned char ch1, char ch2) { return makeCharRange(char(ch1), ch2); }
+inline constexpr std::uint32_t makeCharRange(char ch1, int ch2)           { return makeCharRange(ch1, char(ch2)); }
+inline constexpr std::uint32_t makeCharRange(int  ch1, char ch2)          { return makeCharRange(char(ch1), ch2); }
+inline constexpr std::uint32_t makeCharRange(int  ch1, int ch2)           { return makeCharRange(char(ch1), char(ch2)); }
+ 
+// //----------------------------------------------------------------------------
+// inline
+// std::unordered_map<std::uint16_t, std::string> makeStdRangesMap()
+// {
+//     std::unordered_map<std::uint16_t, std::string> m;
+//  
+//     m[makeCharRangeKey('\t','\r')] = "\\s";
+//     m[makeCharRangeKey('0','9')  ] = "\\d";
+//  
+//     return m;
+// }
+//  
+// //----------------------------------------------------------------------------
+// inline
+// const std::unordered_map<std::uint16_t, std::string>& getStdRangesMap()
+// {
+//     static std::unordered_map<std::uint16_t, std::string> m = makeStdRangesMap();
+//     return m;
+// }
 
-    return m;
+/*
+    Нужно из вектора диапазонов создать единую строку range'ей
+
+ */
+
+//----------------------------------------------------------------------------
+using char_range_string = std::vector<std::uint32_t>;
+
+//----------------------------------------------------------------------------
+inline
+char_range_string makeCharRangeString(std::uint32_t r1)
+{
+    char_range_string res;
+    res.push_back(r1);
+    return res;
 }
 
 //----------------------------------------------------------------------------
 inline
-const std::unordered_map<std::uint16_t, std::string>& getStdRangesMap()
+char_range_string makeCharRangeString(std::uint32_t r1, std::uint32_t r2)
 {
-    static std::unordered_map<std::uint16_t, std::string> m = makeStdRangesMap();
-    return m;
+    char_range_string res;
+    res.push_back(r1);
+    res.push_back(r2);
+    return res;
+}
+
+//----------------------------------------------------------------------------
+inline
+char_range_string makeCharRangeString(std::uint32_t r1, std::uint32_t r2, std::uint32_t r3)
+{
+    char_range_string res;
+    res.push_back(r1);
+    res.push_back(r2);
+    res.push_back(r3);
+    return res;
+}
+
+//----------------------------------------------------------------------------
+inline
+char_range_string makeCharRangeString(std::uint32_t r1, std::uint32_t r2, std::uint32_t r3, std::uint32_t r4)
+{
+    char_range_string res;
+    res.push_back(r1);
+    res.push_back(r2);
+    res.push_back(r3);
+    res.push_back(r4);
+    return res;
+}
+
+//----------------------------------------------------------------------------
+inline
+char_range_string makeCharRangeString(std::uint32_t r1, std::uint32_t r2, std::uint32_t r3, std::uint32_t r4, std::uint32_t r5)
+{
+    char_range_string res;
+    res.push_back(r1);
+    res.push_back(r2);
+    res.push_back(r3);
+    res.push_back(r4);
+    res.push_back(r5);
+    return res;
+}
+
+//----------------------------------------------------------------------------
+inline
+char_range_string makeCharRangeString(std::uint32_t r1, std::uint32_t r2, std::uint32_t r3, std::uint32_t r4, std::uint32_t r5, std::uint32_t r6)
+{
+    char_range_string res;
+    res.push_back(r1);
+    res.push_back(r2);
+    res.push_back(r3);
+    res.push_back(r4);
+    res.push_back(r5);
+    res.push_back(r6);
+    return res;
+}
+
+//----------------------------------------------------------------------------
+using sample_pair_t = std::pair<char_range_string, std::string>;
+
+//----------------------------------------------------------------------------
+std::vector<sample_pair_t> makeSamplePairsVec()
+{
+    std::vector<sample_pair_t> res;
+
+    // Последовательности вставляем начиная с самых длинных
+
+    // !!! Сделать реверс последовательности для oO  пунктуации
+
+    const char ff = char(std::uint8_t(0xFFu));
+    const char c0 = char(0);
+    const char c7 = char(std::uint8_t(0x7Fu));
+
+    res.emplace_back( makeCharRangeString( makeCharRange(c0   , '-'-1)
+                                         , makeCharRange('-'+1, '0'-1)
+                                         , makeCharRange('9'+1, 'A'-1)
+                                         , makeCharRange('Z'+1, '_'-1)
+                                         , makeCharRange('_'+1, 'a'-1)
+                                         , makeCharRange('z'+1, ff  ))
+                    , "\\K");
+
+    res.emplace_back( makeCharRangeString( makeCharRange('-')
+                                         , makeCharRange('0','9')
+                                         , makeCharRange('A','Z')
+                                         , makeCharRange('_')
+                                         , makeCharRange('a','z'))
+                    , "\\k");
+
+    res.emplace_back( makeCharRangeString( makeCharRange(c0   , '0'-1) // \c@-/
+                                         , makeCharRange('9'+1, 'A'-1) // :-@
+                                         , makeCharRange('Z'+1, '_'-1) // \[-^ ???
+                                         , makeCharRange('_'+1, 'a'-1) // 
+                                         , makeCharRange('z'+1, ff  )) //
+                    , "\\W");
+
+    res.emplace_back( makeCharRangeString( makeCharRange('0','9')
+                                         , makeCharRange('A','Z')
+                                         , makeCharRange('_')
+                                         , makeCharRange('a','z'))
+                    , "\\w");
+
+
+    res.emplace_back( makeCharRangeString( makeCharRange(c0   , '0'-1)
+                                         , makeCharRange('9'+1, 'A'-1)
+                                         , makeCharRange('F'+1, 'a'-1)
+                                         , makeCharRange('f'+1, ff))
+                    , "\\H");
+
+    res.emplace_back( makeCharRangeString( makeCharRange('0','9')
+                                         , makeCharRange('A','F')
+                                         , makeCharRange('a','f'))
+                    , "\\h");
+
+    res.emplace_back( makeCharRangeString( makeCharRange(c0   , 'A'-1)
+                                         , makeCharRange('Z'+1, 'a'-1)
+                                         , makeCharRange('z'+1, ff))
+                    , "\\L");
+
+    res.emplace_back( makeCharRangeString( makeCharRange('A','Z')
+                                         , makeCharRange('a','z'))
+                    , "\\l");
+
+    res.emplace_back( makeCharRangeString( makeCharRange(c0    ,'\"'-1)
+                                         , makeCharRange('\"'+1,'\''-1)
+                                         , makeCharRange('\''+1, ff))
+                    , "\\Q");
+
+    res.emplace_back( makeCharRangeString( makeCharRange('\"')
+                                         , makeCharRange('\''))
+                    , "\\q");
+
+    res.emplace_back( makeCharRangeString( makeCharRange(c0   , 'A'-1)
+                                         , makeCharRange('F'+1, 'a'-1)
+                                         , makeCharRange('f'+1, ff))
+                    , "\\Z");
+
+    res.emplace_back( makeCharRangeString( makeCharRange('A','F')
+                                         , makeCharRange('a','f'))
+                    , "\\z");
+
+    res.emplace_back( makeCharRangeString( makeCharRange(c0   , 'A'-1)
+                                         , makeCharRange('Z'+1, ff))
+                    , "\\M");
+     
+    res.emplace_back( makeCharRangeString( makeCharRange('A','Z'))
+                    , "\\m");
+
+    res.emplace_back( makeCharRangeString( makeCharRange(c0   , 'a'-1)
+                                         , makeCharRange('z'+1, ff))
+                    , "\\J");
+
+    res.emplace_back( makeCharRangeString( makeCharRange('a','z'))
+                    , "\\j");
+
+    res.emplace_back( makeCharRangeString( makeCharRange(c0    ,'\t'-1)
+                                         , makeCharRange('\r'+1, ff))
+                    , "\\S");
+
+    res.emplace_back( makeCharRangeString( makeCharRange('\t','\r'))
+                    , "\\s");
+
+    res.emplace_back( makeCharRangeString( makeCharRange(c0   , '0'-1)
+                                         , makeCharRange('9'+1, ff))
+                    , "\\D");
+
+    res.emplace_back( makeCharRangeString( makeCharRange('0','9'))
+                    , "\\d");
+
+    res.emplace_back( makeCharRangeString( makeCharRange(c7+1, ff))
+                    , "\\I");
+
+    res.emplace_back( makeCharRangeString( makeCharRange(c0, c7))
+                    , "\\i");
+
+    // isSet_i = `\c@\c?`;
+    // isSet_I = `\cA-~\x80-\xFF`;
+
+
+
+    res.emplace_back( makeCharRangeString( makeCharRange('a','z'))
+                    , "a-z");
+    res.emplace_back( makeCharRangeString( makeCharRange('A','Z'))
+                    , "A-Z");
+
+    // isSet_j = `a-z`;
+    // isSet_J = `\c@-\`{-\xFF`;
+    // isSet_k = `\-\w`;
+    // isSet_K = `\c@-,.-/:-@\[-^\`{-\xFF`;
+    // isSet_z = `A-Fa-f`;
+    // isSet_Z = `\c@-@G-\`g-\xFF`;
+
+
+
+    return res;
+}
+
+//----------------------------------------------------------------------------
+const std::vector<sample_pair_t>& getSamplePairsVec()
+{
+    static std::vector<sample_pair_t> sp = makeSamplePairsVec();
+    return sp;
 }
 
 //----------------------------------------------------------------------------
@@ -1176,8 +1503,75 @@ std::string makePredicateCharClassString(const std::set<std::uint8_t> &charSet)
         }
     }
 
+    char_range_string rangesStr; rangesStr.reserve(ranges.size());
+    for(auto r: ranges)
+    {
+        rangesStr.push_back(makeCharRange(charSetVec[r.first], charSetVec[r.second]));
+    }
+
+    const std::vector<sample_pair_t>& knownRanges = getSamplePairsVec();
+
+    // !!! Тут ещё нужно добавить внешний цикл - 
+    // текущий цикл становится внутренним, после него сортируем rangesStr, и опять прогоняем
+    bool bFound = true;
+    while(bFound)
+    {
+        bFound = false;
+
+        for(std::uint32_t krIdx=0u; krIdx!=knownRanges.size(); ++krIdx)
+        {
+            while(true)
+            {
+                auto it = std::search(rangesStr.begin(), rangesStr.end(), knownRanges[krIdx].first.begin(), knownRanges[krIdx].first.end());
+                if (it==rangesStr.end())
+                    break;
+    
+                auto eraseIdxB = std::distance(rangesStr.begin(), it);
+                ++eraseIdxB;
+                auto eraseIdxE = eraseIdxB + knownRanges[krIdx].first.size();
+    
+                rangesStr.insert(it, (krIdx+1)<<16);
+    
+                auto eraseItB = rangesStr.begin(); std::advance(eraseItB, std::ptrdiff_t(eraseIdxB));
+                auto eraseItE = rangesStr.begin(); std::advance(eraseItE, std::ptrdiff_t(eraseIdxE));
+    
+                rangesStr.erase(eraseItB, eraseItE);
+    
+                bFound = true;
+            }
+        }
+    }
+
     std::string resStr;
 
+    for(auto r : rangesStr)
+    {
+        std::uint16_t hiPart = std::uint16_t(r>>16);
+        std::uint16_t loPart = std::uint16_t(r&0xFFFFu);
+
+        if (hiPart)
+        {
+            resStr.append(knownRanges[std::size_t(hiPart-1)].second);
+        }
+        else
+        {
+            std::uint8_t ch1 = std::uint8_t(loPart>>8);
+            std::uint8_t ch2 = std::uint8_t(loPart);
+            if (ch1==ch2)
+            {
+                // resStr.append(1, char(ch1));
+                resStr.append(makePredicateCharCharClassString(ch1));
+            }
+            else
+            {
+                resStr.append(makePredicateCharCharClassString(ch1));
+                resStr.append(1, '-');
+                resStr.append(makePredicateCharCharClassString(ch2));
+            }
+        }
+    }
+
+    #if 0
     for(auto r: ranges)
     {
         if (r.first==r.second)
@@ -1200,6 +1594,7 @@ std::string makePredicateCharClassString(const std::set<std::uint8_t> &charSet)
             }
         }
     }
+    #endif
 
     return resStr;
 }
@@ -1228,6 +1623,7 @@ bool parseCharClassDefinition( const std::string &str
         stGotCaret ,  // началась caret-последовательность - "\c"
         stGotHex   ,  // началась HEX-последоватеьность - "\x"
         stGotHex2  ,  // ждём второй символ HEX-кода - "\xH"
+        //stGotHexDigit,  // началась HEX-цифра - "\xxd" / "\xxD"
         stGotRange
     };
 
@@ -1403,19 +1799,11 @@ bool parseCharClassDefinition( const std::string &str
         
             case stGotHex:
             {
-                if (ch=='d')
-                {
-                    auto s = makeCharSetsUnion(makeCharSet('a','f'), makeCharSet('A','F'), makeCharSet('0','9'));
-                    resSet = makeCharSetsUnion(resSet, s);
-                    rangeStartChar = -1;
-                }
-                else if (ch=='D')
-                {
-                    auto s = makeCharSetsUnion(makeCharSet('a','f'), makeCharSet('A','F'), makeCharSet('0','9'));
-                    resSet = makeCharSetsUnion(resSet, invertCharSet(s));
-                    rangeStartChar = -1;
-                }
-                else
+                // if (ch=='x')
+                // {
+                //     st = stGotHexDigit;
+                // }
+                // else
                 {
                     int d = hexCharToDigit(ch);
                     if (d<0 || d>15)
@@ -1436,6 +1824,30 @@ bool parseCharClassDefinition( const std::string &str
                     return err(idx);
                 break;
             }
+
+            // case stGotHexDigit:
+            // {
+            //     if (ch=='d')
+            //     {
+            //         auto s = makeCharSetsUnion(makeCharSet('a','f'), makeCharSet('A','F'), makeCharSet('0','9'));
+            //         resSet = makeCharSetsUnion(resSet, s);
+            //         rangeStartChar = -1;
+            //         unclosedRange  = false;
+            //     }
+            //     else if (ch=='D')
+            //     {
+            //         auto s = makeCharSetsUnion(makeCharSet('a','f'), makeCharSet('A','F'), makeCharSet('0','9'));
+            //         resSet = makeCharSetsUnion(resSet, invertCharSet(s));
+            //         rangeStartChar = -1;
+            //         unclosedRange  = false;
+            //     }
+            //     else
+            //     {
+            //         return err(idx);
+            //     }
+            //  
+            //     break;
+            // }
         
             case stGotRange:
             {
