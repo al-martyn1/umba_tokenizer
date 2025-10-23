@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "umba/types/FullQualifiedName.h"
+//
 #include "basic_typedefs.h"
 #include "exceptions.h"
 //
@@ -28,28 +30,26 @@ namespace ufsm {
 
 
 //----------------------------------------------------------------------------
-struct FullQualifiedName
+struct FullQualifiedName : public umba::types::FullQualifiedName<std::string>
 {
 
 public: // types
 
-    enum class PathType
-    {
-        relative,
-        absolute
-    };
+    using BaseType        = umba::types::FullQualifiedName<std::string>;
+    using base_type       = umba::types::FullQualifiedName<std::string>;
+
+    // using Scheme          = BaseType::Scheme;
+
+    using iterator        = typename BaseType::iterator       ;
+    using const_iterator  = typename BaseType::const_iterator ;
+    using reference       = typename BaseType::reference      ;
+    using const_reference = typename BaseType::const_reference;
+
 
 public: // fields
 
 
     PositionInfo               positionInfo;
-
-    FullQualifiedNameFlags     flags = FullQualifiedNameFlags::none; // absolute
-    std::vector<std::string>   name; 
-
-    using iterator        = typename std::vector<std::string>::iterator      ;
-    using const_iterator  = typename std::vector<std::string>::const_iterator;
-
 
     static inline std::string namespaceSeparator = "::"; // Можно переопределять, но только глобально
 
@@ -57,44 +57,61 @@ public: // ctors
 
     UMBA_RULE_OF_FIVE(FullQualifiedName, default, default, default, default, default);
 
-    FullQualifiedName(PathType pt, std::initializer_list<std::string> pathParts)
-    : positionInfo()
-    , flags(pt==PathType::absolute ? FullQualifiedNameFlags::absolute : FullQualifiedNameFlags::absolute)
-    , name(pathParts.begin(), pathParts.end())
-    {}
+    FullQualifiedName(Scheme sch) : BaseType(sch) {}
 
-    FullQualifiedName(std::initializer_list<std::string> pathParts)
-    : positionInfo()
-    , flags(FullQualifiedNameFlags::absolute)
-    , name(pathParts.begin(), pathParts.end())
-    {}
+    FullQualifiedName(Scheme sch, const StringType &p1) : BaseType(sch, p1) {}
+    FullQualifiedName(const StringType &p1)             : BaseType(p1) {}
+
+    FullQualifiedName(Scheme sch, std::initializer_list<StringType> pathParts) : BaseType(sch, pathParts) {}
+    FullQualifiedName(std::initializer_list<StringType> pathParts)             : BaseType(pathParts) {}
 
 
 public: // methods
 
-    std::size_t size() const  { return name.size(); }
-    bool empty() const { return name.empty(); }
-    std::string& front() { return name.front(); }
-    const std::string& front() const { return name.front(); }
+    FullQualifiedName& makeRelative() { BaseType::makeRelative(); return *this; }
+    FullQualifiedName& makeAbsolute() { BaseType::makeAbsolute(); return *this; }
 
-    iterator        begin()       { return name.begin (); }
-    iterator        end  ()       { return name.end   (); }
-    const_iterator  begin() const { return name.begin (); }
-    const_iterator  end  () const { return name.end   (); }
-    const_iterator cbegin() const { return name.cbegin(); }
-    const_iterator cend  () const { return name.cend  (); }
+    FullQualifiedName toRelative() const { auto res = *this; return res.makeRelative(); }
+    FullQualifiedName toAbsolute() const { auto res = *this; return res.makeAbsolute(); }
 
-    bool isAbsolute() const;
-    FullQualifiedName toRelative() const;
-    FullQualifiedName toAbsolute() const;
-    FullQualifiedName getTail   () const;
-    FullQualifiedName getHead   () const;
-    void tailRemove(std::size_t nItems);
-    void clear();
-    void append(const std::string &n);
-    void append(const FullQualifiedName &n);
+    FullQualifiedName& removeTail(std::size_t nItems=1u) { BaseType::removeTail(nItems); return *this; }
+    FullQualifiedName& removeHead(std::size_t nItems=1u) { BaseType::removeHead(nItems); return *this; }
 
-    std::string getCanonicalName() const;
+    // Возвращает хвост, удаляя голову. Также меняет схему на relative
+    FullQualifiedName getTail() const
+    {
+        if (empty())
+            throw std::runtime_error("umba::tokenizer::ufsm::FullQualifiedName::getTail: can't get tail from empty name");
+
+        auto res = *this;
+        return res.removeHead(1);
+    }
+
+    // Возвращает голову (всё оставшееся), удаляя хвост (последний элемент). Не меняет scheme
+    FullQualifiedName getHead   () const
+    {
+        if (empty())
+            throw std::runtime_error("umba::tokenizer::ufsm::FullQualifiedName::getHead: can't get head from empty name");
+    
+        auto res = *this;
+        return res.removeTail(1);
+    }
+
+    FullQualifiedName& operator+=(const StringType &n)        { append(n); return *this; }
+    FullQualifiedName& operator/=(const StringType &n)        { append(n); return *this; }
+    FullQualifiedName& operator+=(const FullQualifiedName &n) { append(n); return *this; }
+    FullQualifiedName& operator/=(const FullQualifiedName &n) { append(n); return *this; }
+
+    FullQualifiedName  operator+(const StringType &n)        { FullQualifiedName res = *this; res.append(n); return res; }
+    FullQualifiedName  operator/(const StringType &n)        { FullQualifiedName res = *this; res.append(n); return res; }
+    FullQualifiedName  operator+(const FullQualifiedName &n) { FullQualifiedName res = *this; res.append(n); return res; }
+    FullQualifiedName  operator/(const FullQualifiedName &n) { FullQualifiedName res = *this; res.append(n); return res; }
+
+    std::string getCanonicalName() const
+    {
+        return toString(namespaceSeparator);
+    }
+
 
 }; // struct FullQualifiedName
 //----------------------------------------------------------------------------

@@ -70,8 +70,9 @@ struct ParsingContext
 
 
     ParsingContext()
+    : curNsName(FullQualifiedName::Scheme::absolute)
     {
-        curNsName.flags |= FullQualifiedNameFlags::absolute;
+        //curNsName.flags |= FullQualifiedNameFlags::absolute;
     }
 
     void appendCurNsName(const FullQualifiedName &n)
@@ -1335,11 +1336,13 @@ public:
         {
             // В начале у нас оператор скоупа, значит имя абсолютное
             waitSep = true;
-            fqn.flags = FullQualifiedNameFlags::absolute;
+            //fqn.flags = FullQualifiedNameFlags::absolute;
+            fqn.makeAbsolute();
         }
         else
         {
-            fqn.flags = FullQualifiedNameFlags::none;
+            //fqn.flags = FullQualifiedNameFlags::none;
+            fqn.makeRelative();
         }
 
         if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_SCOPE
@@ -1701,7 +1704,7 @@ public:
                     throw std::runtime_error("Too many closing curly bracket to pop");
                 }
 
-                ctx.curNsName.tailRemove(nsPopCount);
+                ctx.curNsName.removeTail(nsPopCount);
 
             }
 

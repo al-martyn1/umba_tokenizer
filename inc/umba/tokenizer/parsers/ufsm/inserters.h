@@ -68,15 +68,7 @@ StringType mergeString(const ContainerType &c, const StringType &sep)
 template<typename StreamType>
 StreamType& operator<<(StreamType &oss, const FullQualifiedName &fqn)
 {
-    if (fqn.name.empty())
-        return oss;
-
-    auto it = fqn.name.begin();
-
-    if (fqn.isAbsolute())
-        oss << fqn.namespaceSeparator;
-
-    oss << utils::mergeString(fqn.name, fqn.namespaceSeparator);
+    oss << fqn.toString(fqn.namespaceSeparator); // utils::mergeString(fqn.name, fqn.namespaceSeparator);
 
     return oss;
 }

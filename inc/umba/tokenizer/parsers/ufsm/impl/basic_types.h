@@ -109,6 +109,7 @@ TypeValueInfo makeTypeValueInfo(const StateDefinition &d)
 
 
 //----------------------------------------------------------------------------
+#if 0
 inline bool FullQualifiedName::isAbsolute() const { return (flags&FullQualifiedNameFlags::absolute)!=0; }
 
 inline
@@ -206,7 +207,7 @@ inline void FullQualifiedName::append(const FullQualifiedName &n)
     // for(auto &&nm : n) append(nm);
     name.insert(name.end(), n.name.begin(), n.name.end());
 }
-
+#endif
 
 //----------------------------------------------------------------------------
 

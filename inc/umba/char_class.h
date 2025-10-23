@@ -1648,7 +1648,8 @@ bool parseCharClassDefinition( const std::string &str
         if (!unclosedRange)
             return err(idx);
 
-        if (std::uint8_t(rangeStartChar)<0u)
+        //if (std::uint8_t(rangeStartChar)<0u)
+        if (rangeStartChar<0)
             return err(idx);
 
         if (std::uint8_t(rangeStartChar)> std::uint8_t(ch))
