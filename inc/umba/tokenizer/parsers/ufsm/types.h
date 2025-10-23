@@ -381,6 +381,11 @@ TypeValueInfo makeTypeValueInfo(const NamespaceEntry &d);
 // umba::tokenizer::ufsm::
 
 
+#if defined(_DEBUG) || defined(DEBUG)
+    #include "inserters.h"
+#endif
+
+
 #include "impl/types.h"
 
 

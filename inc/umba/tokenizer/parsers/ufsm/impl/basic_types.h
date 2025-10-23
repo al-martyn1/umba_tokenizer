@@ -467,7 +467,7 @@ int TransitionSourceStates::getWeightForCompareForPrioritySort() const
     if (list.size()>1)
         return 1; // Если есть исключения, то они легче полного ANY
 
-    return 1;
+    return 2;
 }
 
 inline
@@ -611,7 +611,7 @@ int TransitionEvents::getWeightForCompareForPrioritySort() const
     if (list.size()>1)
         return 1; // Если есть исключения, то они легче полного ANY
 
-    return 1;
+    return 2;
 }
 
 inline

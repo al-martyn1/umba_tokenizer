@@ -471,13 +471,14 @@ uses TrafficLightCommands,
         // Состояния - turnedOff, allowWarning, trafficAllowed, stopNotice, stopWarning, trafficStopped, uncontrolled
 
         // Для теста помещаем их в начало
+
+        *,!turnedOff : * -> self; // Этого для теста присунул
+        *,!turnedOff : *,!tmToggleGreen -> self; // Этого для теста присунул
+
         * : cmdUncontrolledMode -> uncontrolledMode;
         * : tmAlivePoll -> self : reportAlive;
         * : cmdTurnOff      -> turnedOff;
         * : * -> self;
-
-        *,!turnedOff : * -> self; // Этого для теста присунул
-        *,!turnedOff : *,!tmToggleGreen -> self; // Этого для теста присунул
 
         turnedOff : cmdStopTraffic      -> trafficStopped;
         turnedOff : cmdAllowTraffic     -> trafficAllowed;

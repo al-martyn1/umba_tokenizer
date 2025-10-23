@@ -988,7 +988,10 @@ public:
             readNextToken();
 
             if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COMMA)
+            {
+                readNextToken();
                 continue;
+            }
 
             return true;
         }

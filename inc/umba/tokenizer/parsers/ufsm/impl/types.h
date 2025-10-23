@@ -142,21 +142,58 @@ std::vector<TransitionDefinition> StateMachineDefinition::getPrioritySortedTrans
     for(const auto &kv : transitions)
         sorted.emplace_back(kv.second);
 
+#if defined(_DEBUG) || defined(DEBUG)
+    std::size_t i = 0;
+    std::size_t j = 0;
+    std::size_t k = 0;
+    //auto logCmp = [&](auto c, auto t1, auto t2)
+    auto logCmp = [&](auto , auto , auto )
+    {
+        // std::cerr << "i: " << i << ", j: " << j << ", k: " << k << ", cmp: " << c << std::endl;
+        // std::cerr << "t1: " << t1 << std::endl;
+        // std::cerr << "t2: " << t2 << std::endl;
+        // std::cerr << std::endl;
+    };
+    auto less = [&](const TransitionDefinition &td1, const TransitionDefinition &td2) -> bool
+    {
+        ++i;
+#else
+    auto logCmp = [&](auto c, auto t1, auto t2)
+    {
+    };
     auto less = [](const TransitionDefinition &td1, const TransitionDefinition &td2)
     {
+#endif
         int cmp = td1.sourceStates.compareForPrioritySort(td2.sourceStates);
+
+#if defined(_DEBUG) || defined(DEBUG)
+        logCmp(cmp, td1.sourceStates, td2.sourceStates);
+#endif
+        
         if (cmp<0)
-            return -1;
+            return true;
         if (cmp>0)
-            return  1;
+            return false;
+
+#if defined(_DEBUG) || defined(DEBUG)
+        ++j;
+#endif
 
         cmp = td1.events.compareForPrioritySort(td2.events);
-        if (cmp<0)
-            return -1;
-        if (cmp>0)
-            return  1;
+#if defined(_DEBUG) || defined(DEBUG)
+        logCmp(cmp, td1.events, td2.events);
+#endif
 
-        return 0;
+        if (cmp<0)
+            return true;
+        if (cmp>0)
+            return false;
+
+#if defined(_DEBUG) || defined(DEBUG)
+        ++k;
+#endif
+
+        return false;
     };
 
     std::stable_sort(sorted.begin(), sorted.end(), less);
