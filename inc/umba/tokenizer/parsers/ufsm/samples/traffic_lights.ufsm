@@ -470,6 +470,13 @@ uses TrafficLightCommands,
         //                        tmToggleGreen, tmToggleYellow, tmAlivePoll
         // Состояния - turnedOff, allowWarning, trafficAllowed, stopNotice, stopWarning, trafficStopped, uncontrolled
 
+        // Для теста помещаем их в начало
+        * : cmdUncontrolledMode -> uncontrolledMode;
+        * : tmAlivePoll -> self : reportAlive;
+        * : cmdTurnOff      -> turnedOff;
+        * : * -> self;
+
+
         turnedOff : cmdStopTraffic      -> trafficStopped;
         turnedOff : cmdAllowTraffic     -> trafficAllowed;
 
@@ -491,10 +498,6 @@ uses TrafficLightCommands,
 
         trafficStopped : cmdAllowTraffic -> allowWarning;
 
-        * : cmdUncontrolledMode -> uncontrolledMode;
-        * : tmAlivePoll -> self : reportAlive;
-        * : cmdTurnOff      -> turnedOff;
-        * : * -> self;
 
     }
 

@@ -103,6 +103,17 @@ UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_BEGIN(already_declared_error,
 UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_END(already_declared_error, already_error_base)
 
 //----------------------------------------------------------------------------
+UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_BEGIN(already_defined_error, already_error_base)
+
+    void assignExtra(const already_defined_error &) {}
+
+    already_defined_error(const TypeValueInfo &prevDeclInfo_, const TypeValueInfo &curDeclInfo_)
+    : already_error_base(prevDeclInfo_, curDeclInfo_, "already defined")
+    {}
+
+UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_END(already_defined_error, already_error_base)
+
+//----------------------------------------------------------------------------
 UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_BEGIN(already_used_error, already_error_base)
 
     void assignExtra(const already_used_error &) {}
@@ -130,7 +141,7 @@ UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_BEGIN(looking_for_error, alre
     void assignExtra(const looking_for_error &) {}
 
     looking_for_error(const TypeValueInfo &prevDeclInfo_, const TypeValueInfo &curDeclInfo_)
-    : already_error_base(prevDeclInfo_, curDeclInfo_, "lookin for, but found something else")
+    : already_error_base(prevDeclInfo_, curDeclInfo_, "looking for, but found something else")
     {}
 
 UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_END(looking_for_error, already_error_base)

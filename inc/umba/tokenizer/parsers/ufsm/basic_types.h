@@ -8,6 +8,7 @@
 #include "exceptions.h"
 //
 #include <unordered_map>
+#include <initializer_list>
 
 #include "../../../undef_min_max.h"
 
@@ -29,9 +30,21 @@ namespace ufsm {
 //----------------------------------------------------------------------------
 struct FullQualifiedName
 {
+
+public: // types
+
+    enum class PathType
+    {
+        relative,
+        absolute
+    };
+
+public: // fields
+
+
     PositionInfo               positionInfo;
 
-    FullQualifiedNameFlags     flags = FullQualifiedNameFlags::none;
+    FullQualifiedNameFlags     flags = FullQualifiedNameFlags::none; // absolute
     std::vector<std::string>   name; 
 
     using iterator        = typename std::vector<std::string>::iterator      ;
@@ -39,6 +52,22 @@ struct FullQualifiedName
 
 
     static inline std::string namespaceSeparator = "::"; // Можно переопределять, но только глобально
+
+public: // ctors
+
+    UMBA_RULE_OF_FIVE(FullQualifiedName, default, default, default, default, default);
+
+    FullQualifiedName(PathType pt, std::initializer_list<std::string> pathParts)
+    : positionInfo()
+    , flags(pt==PathType::absolute ? FullQualifiedNameFlags::absolute : FullQualifiedNameFlags::absolute)
+    , name(pathParts.begin(), pathParts.end())
+    {}
+
+    FullQualifiedName(std::initializer_list<std::string> pathParts)
+    : positionInfo()
+    , flags(FullQualifiedNameFlags::absolute)
+    , name(pathParts.begin(), pathParts.end())
+    {}
 
 
 public: // methods
