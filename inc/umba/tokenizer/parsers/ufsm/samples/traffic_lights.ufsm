@@ -476,6 +476,8 @@ uses TrafficLightCommands,
         * : cmdTurnOff      -> turnedOff;
         * : * -> self;
 
+        *,!turnedOff : * -> self; // Этого для теста присунул
+        *,!turnedOff : *,!tmToggleGreen -> self; // Этого для теста присунул
 
         turnedOff : cmdStopTraffic      -> trafficStopped;
         turnedOff : cmdAllowTraffic     -> trafficAllowed;

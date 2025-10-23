@@ -103,6 +103,9 @@ public: // methods
 
     std::string getCanonicalName() const { return name; }
 
+    std::vector<TransitionDefinition> getPrioritySortedTransitions() const;
+    //bool expandTransitions();
+
 
 }; // struct StateMachineDefinition
 

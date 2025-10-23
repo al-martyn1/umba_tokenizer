@@ -458,6 +458,29 @@ int TransitionSourceStates::compare(const TransitionSourceStates &other) const
     return s1.size()<s2.size() ? -1 : 1; // Более короткая строка меньше
 }
 
+inline
+int TransitionSourceStates::getWeightForCompareForPrioritySort() const
+{
+    if (!checkForAny())
+        return 0; // Самые легкие - без ANY
+
+    if (list.size()>1)
+        return 1; // Если есть исключения, то они легче полного ANY
+
+    return 1;
+}
+
+inline
+int TransitionSourceStates::compareForPrioritySort(const TransitionSourceStates &other) const
+{
+    auto w  = getWeightForCompareForPrioritySort();
+    auto wo = other.getWeightForCompareForPrioritySort();
+    if (w==wo)
+        return 0;
+
+    return w < wo ? -1 : 1;
+}
+
 inline bool TransitionSourceStates::operator< (const TransitionSourceStates &other) const { return compare(other)< 0; }
 inline bool TransitionSourceStates::operator<=(const TransitionSourceStates &other) const { return compare(other)<=0; }
 inline bool TransitionSourceStates::operator> (const TransitionSourceStates &other) const { return compare(other)> 0; }
@@ -577,6 +600,29 @@ int TransitionEvents::compare(const TransitionEvents &other) const
         return 0; // При равном размере вектора равны
  
     return s1.size()<s2.size() ? -1 : 1; // Более короткая строка меньше
+}
+
+inline
+int TransitionEvents::getWeightForCompareForPrioritySort() const
+{
+    if (!checkForAny())
+        return 0; // Самые легкие - без ANY
+
+    if (list.size()>1)
+        return 1; // Если есть исключения, то они легче полного ANY
+
+    return 1;
+}
+
+inline
+int TransitionEvents::compareForPrioritySort(const TransitionEvents &other) const
+{
+    auto w  = getWeightForCompareForPrioritySort();
+    auto wo = other.getWeightForCompareForPrioritySort();
+    if (w==wo)
+        return 0;
+
+    return w < wo ? -1 : 1;
 }
 
 inline bool TransitionEvents::operator< (const TransitionEvents &other) const { return compare(other)< 0; }

@@ -295,6 +295,8 @@ struct TransitionSourceStates
 
     std::string getCanonicalName() const;
 
+    int getWeightForCompareForPrioritySort() const;
+    int compareForPrioritySort(const TransitionSourceStates &other) const;
     int compare(const TransitionSourceStates &other) const;
     bool isEqual(const TransitionSourceStates &other) const;
 
@@ -354,6 +356,8 @@ struct TransitionEvents
 
     std::string getCanonicalName() const;
 
+    int getWeightForCompareForPrioritySort() const;
+    int compareForPrioritySort(const TransitionEvents &other) const;
     int compare(const TransitionEvents &other) const;
     bool isEqual(const TransitionEvents &other) const;
 

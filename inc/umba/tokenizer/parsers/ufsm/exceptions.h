@@ -30,6 +30,7 @@ struct TypeValueInfo
     PositionInfo    positionInfo;
     std::string     name        ;
     std::string     typeName    ; // In DSL terms
+    //std::string     className   ; // Owning FSM
 
 }; // struct TypeValueInfo
 

@@ -136,6 +136,50 @@ TypeValueInfo makeTypeValueInfo(const NamespaceEntry &d)
 
 
 //----------------------------------------------------------------------------
+std::vector<TransitionDefinition> StateMachineDefinition::getPrioritySortedTransitions() const
+{
+    std::vector<TransitionDefinition> sorted; sorted.reserve(transitions.size());
+    for(const auto &kv : transitions)
+        sorted.emplace_back(kv.second);
+
+    auto less = [](const TransitionDefinition &td1, const TransitionDefinition &td2)
+    {
+        int cmp = td1.sourceStates.compareForPrioritySort(td2.sourceStates);
+        if (cmp<0)
+            return -1;
+        if (cmp>0)
+            return  1;
+
+        cmp = td1.events.compareForPrioritySort(td2.events);
+        if (cmp<0)
+            return -1;
+        if (cmp>0)
+            return  1;
+
+        return 0;
+    };
+
+    std::stable_sort(sorted.begin(), sorted.end(), less);
+
+    return sorted;
+}
+
+//----------------------------------------------------------------------------
+// bool StateMachineDefinition::expandTransitions()
+// {
+//     // insertion_ordered_map<TransitionDefinition>  transitionsSorted = transitions;
+//  
+//     // std::string       name        ;
+//     // insertion_ordered_map<TransitionDefinition>    transitions;
+//  
+//     return true;
+// }
+
+//----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
 } // namespace ufsm
 } // namespace tokenizer
 } // namespace umba
