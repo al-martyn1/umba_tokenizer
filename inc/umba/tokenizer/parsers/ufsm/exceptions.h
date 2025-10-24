@@ -73,6 +73,10 @@ UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_BEGIN(base_error, std::runtim
 UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_END(base_error, std::runtime_error)
 
 //----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
 UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_BEGIN(already_error_base, base_error)
 
     void assignExtra(const already_error_base &e)
@@ -146,6 +150,60 @@ UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_BEGIN(looking_for_error, alre
     {}
 
 UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_END(looking_for_error, already_error_base)
+
+//----------------------------------------------------------------------------
+
+
+
+//----------------------------------------------------------------------------
+UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_BEGIN(not_found_error_base, base_error)
+
+    void assignExtra(const not_found_error_base &e)
+    {
+        declInfo  = e.declInfo;
+    }
+
+    not_found_error_base(const TypeValueInfo &declInfo_, const std::string &strExtra_=std::string())
+    : base_error(makeSimpleDeclInfoString(declInfo_, strExtra_))
+    , declInfo(declInfo_)
+    {}
+
+    TypeValueInfo  declInfo;
+
+UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_END(not_found_error_base, base_error)
+
+//----------------------------------------------------------------------------
+UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_BEGIN(state_not_found, not_found_error_base)
+
+    void assignExtra(const state_not_found &) {}
+
+    state_not_found(const TypeValueInfo &declInfo_)
+    : not_found_error_base(declInfo_, "state not found")
+    {}
+
+UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_END(state_not_found, not_found_error_base)
+
+//----------------------------------------------------------------------------
+UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_BEGIN(state_not_found_in_dead, not_found_error_base)
+
+    void assignExtra(const state_not_found_in_dead &) {}
+
+    state_not_found_in_dead(const TypeValueInfo &declInfo_)
+    : not_found_error_base(declInfo_, "state not found in dead states")
+    {}
+
+UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_END(state_not_found_in_dead, not_found_error_base)
+
+//----------------------------------------------------------------------------
+UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_BEGIN(event_not_found, not_found_error_base)
+
+    void assignExtra(const event_not_found &) {}
+
+    event_not_found(const TypeValueInfo &declInfo_)
+    : not_found_error_base(declInfo_, "state not found")
+    {}
+
+UMBA_TOKENIZER_UFSM_PARSER_DECLARE_EXCEPTION_CLASS_END(event_not_found, not_found_error_base)
 
 //----------------------------------------------------------------------------
 

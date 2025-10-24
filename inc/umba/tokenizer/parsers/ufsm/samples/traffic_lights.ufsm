@@ -472,8 +472,8 @@ uses TrafficLightCommands,
 
         // Для теста помещаем их в начало
 
-        *,!turnedOff : * -> self; // Этого для теста присунул
-        *,!turnedOff : *,!tmToggleGreen -> self; // Этого для теста присунул
+        *,!uncontrolledMode : * -> self; // Этого для теста присунул
+        *,!trafficStopped : *,!tmToggleGreen -> self; // Этого для теста присунул
 
         * : cmdUncontrolledMode -> uncontrolledMode;
         * : tmAlivePoll -> self : reportAlive;
@@ -496,10 +496,12 @@ uses TrafficLightCommands,
         stopNotice : tmToggleGreen ? !greenLightIsOn -> self : greenOn;
         stopNotice : tmStopTraffic                   -> trafficStopped;
 
-        uncontrolledMode : tmToggleYellow ?  yellowLightIsOn -> self : yellowOff;
-        uncontrolledMode : tmToggleYellow ? !yellowLightIsOn -> self : yellowOn;
 
-        trafficStopped : cmdAllowTraffic -> allowWarning;
+        // Временно коментируем 
+        // uncontrolledMode : tmToggleYellow ?  yellowLightIsOn -> self : yellowOff;
+        // uncontrolledMode : tmToggleYellow ? !yellowLightIsOn -> self : yellowOn;
+        // 
+        // trafficStopped : cmdAllowTraffic -> allowWarning;
 
 
     }

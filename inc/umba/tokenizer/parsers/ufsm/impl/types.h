@@ -158,9 +158,9 @@ std::vector<TransitionDefinition> StateMachineDefinition::getPrioritySortedTrans
     {
         ++i;
 #else
-    auto logCmp = [&](auto c, auto t1, auto t2)
-    {
-    };
+    // auto logCmp = [&](auto c, auto t1, auto t2)
+    // {
+    // };
     auto less = [](const TransitionDefinition &td1, const TransitionDefinition &td2)
     {
 #endif
@@ -200,6 +200,152 @@ std::vector<TransitionDefinition> StateMachineDefinition::getPrioritySortedTrans
 
     return sorted;
 }
+
+//----------------------------------------------------------------------------
+std::set<std::string> StateMachineDefinition::getSourceStateNamesSet(bool skipFinal) const
+{
+    std::set<std::string> s;
+    for(const auto &kv : states)
+    {
+        if (((kv.second.flags&(StateFlags::final|StateFlags::error))!=0) && skipFinal)
+            continue; // пропускаем финальные и ошибочные состояния, но только если задано опцией
+
+        s.insert(kv.first);
+    }
+
+    return s;
+}
+
+//----------------------------------------------------------------------------
+std::vector<std::string> StateMachineDefinition::getSourceStateNamesList(bool skipFinal) const
+{
+    std::vector<std::string> v; v.reserve(states.size());
+    for(const auto &kv : states)
+    {
+        if (((kv.second.flags&(StateFlags::final|StateFlags::error))!=0) && skipFinal)
+            continue; // пропускаем финальные и ошибочные состояния, но только если задано опцией
+
+        v.push_back(kv.first);
+    }
+
+    return v;
+}
+
+//----------------------------------------------------------------------------
+bool StateMachineDefinition::expandTransitions()
+{
+    // Тупиковое состояние (Dead State)	Наиболее общий и часто используемый термин.
+    // Поглощающее состояние (Absorbing State)	Акцент на том, что состояние "засасывает" и не отпускает.
+    // Состояние-поглотитель (Sink State)	Часто используется для обозначения специального состояния для обработки ошибок в ДКА.
+
+    std::set<std::string>     allDeadStateNames = getSourceStateNamesSet(true /* skipFinal */ );
+    std::vector<std::string>  allStateNamesList = getSourceStateNamesList(false /* !skipFinal */ );
+
+
+    std::vector<TransitionDefinition> sortedTransitions = getPrioritySortedTransitions();
+
+    std::vector<TransitionDefinition> resTransitions;
+    std::vector<TransitionDefinition> tmpTransitions;
+
+    for(const auto &trDef : sortedTransitions)
+    {
+        tmpTransitions.clear();
+
+        std::vector<TransitionDefinition> tmpTransitionsSingleSourceState;
+
+        auto tmpTrDefSingleSourceState = trDef;
+        tmpTrDefSingleSourceState.sourceStates.list.clear();
+
+        //TransitionSourceState tmpSrcState;
+
+        std::set<std::string> srcStateNames;
+        std::unordered_map<std::string, PositionInfo> srcStatePosInfos;
+        PositionInfo defPositionInfo;
+
+        for(const auto &trSrcState : trDef.sourceStates.list)
+        {
+            if ((trSrcState.flags&TransitionSourceStateFlags::any)!=0)
+            {
+                srcStateNames = allDeadStateNames; // Берём только те, из которых ещё нет переходов
+                defPositionInfo = trSrcState.positionInfo;
+            }
+            else
+            {
+                // Проверяем, а есть ли вообще такое состояние?
+                auto srcStateNameIt = states.find(trSrcState.name);
+                if (srcStateNameIt==states.end())
+                {
+                    TypeValueInfo tvi = makeTypeValueInfo(StateDefinition()); // тут нам нужен только typeName
+                    tvi.positionInfo = trSrcState.positionInfo; // не где объявлено, а где ссылаемся
+                    tvi.name = trSrcState.name;
+                    throw state_not_found(tvi);
+                }
+
+                if ((trSrcState.flags&TransitionSourceStateFlags::excluded)!=0)
+                {
+                    // Нужно исключить состояние из srcStateNames
+                    // Но его может там не быть - это ошибка
+                    if (srcStateNames.find(trSrcState.name)==srcStateNames.end())
+                    {
+                        TypeValueInfo tvi = makeTypeValueInfo(StateDefinition()); // тут нам нужен только typeName
+                        tvi.positionInfo = trSrcState.positionInfo; // не где объявлено, а где ссылаемся
+                        tvi.name = trSrcState.name;
+                        throw state_not_found_in_dead(tvi);
+                    }
+
+                    srcStateNames.erase(trSrcState.name);
+                }
+                else
+                {
+                    // Нужно доюавить состояние в srcStateNames
+                    srcStateNames.insert(trSrcState.name);
+                    srcStatePosInfos[trSrcState.name] = trSrcState.positionInfo;
+                }
+            }
+        }
+
+        // Итого - прошлись по всем исходным состояниям текущего TransitionDefinition, 
+        // составили набор из отдельных состояний, для которых делаем новый переход
+        // Добавляем в том порядке, в котором состояния заданы в исходниках
+
+        for(auto && stName : allStateNamesList)
+        {
+            if (srcStateNames.find(stName)==srcStateNames.end())
+                continue;
+
+            TransitionSourceState tmpSrcState;
+            auto npIt = srcStatePosInfos.find(stName);
+            if (npIt!=srcStatePosInfos.end())
+                tmpSrcState.positionInfo = npIt->second;
+            else
+                tmpSrcState.positionInfo = defPositionInfo;
+
+            tmpSrcState.flags = TransitionSourceStateFlags::none;
+            tmpSrcState.name = stName;
+
+            tmpTrDefSingleSourceState.sourceStates.list.push_back(tmpSrcState);
+
+            tmpTransitions.push_back(tmpTrDefSingleSourceState);
+
+            allDeadStateNames.erase(stName);
+        }
+
+        // В tmpTransitions у нас разбитые по одному исходному состоянию переходы, но со множественными событиями
+
+        resTransitions = tmpTransitions; // пока временно, не разбивая по событиям
+    }
+
+
+    transitions.clear();
+
+    for(auto &&rtr : resTransitions)
+    {
+        addDefinition(rtr);
+    }
+
+    return true;
+}
+
 
 //----------------------------------------------------------------------------
 // bool StateMachineDefinition::expandTransitions()

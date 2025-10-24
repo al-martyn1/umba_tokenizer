@@ -291,8 +291,8 @@ struct TransitionSourceState
 //------------------------------
 struct TransitionSourceStates
 {
+    
     std::vector<TransitionSourceState>  list;
-
     std::string getCanonicalName() const;
 
     int getWeightForCompareForPrioritySort() const;
