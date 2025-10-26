@@ -4,6 +4,13 @@
 
 #pragma once
 
+//
+#include <string>
+//
+#include <sstream>
+//
+#include <iostream>
+
 
 //----------------------------------------------------------------------------
 // umba::tokenizer::ufsm::
@@ -136,34 +143,48 @@ TypeValueInfo makeTypeValueInfo(const NamespaceEntry &d)
 
 
 //----------------------------------------------------------------------------
+inline
+void StateMachineDefinition::prioritySortTransitions()
+{
+    std::vector<TransitionDefinition> ptr = getPrioritySortedTransitions();
+    transitions.clear();
+
+    for( auto &&t: ptr)
+       addDefinition(t);
+}
+
+//----------------------------------------------------------------------------
+inline
 std::vector<TransitionDefinition> StateMachineDefinition::getPrioritySortedTransitions() const
 {
     std::vector<TransitionDefinition> sorted; sorted.reserve(transitions.size());
     for(const auto &kv : transitions)
         sorted.emplace_back(kv.second);
 
-#if defined(_DEBUG) || defined(DEBUG)
-    std::size_t i = 0;
-    std::size_t j = 0;
-    std::size_t k = 0;
-    //auto logCmp = [&](auto c, auto t1, auto t2)
-    auto logCmp = [&](auto , auto , auto )
-    {
-        // std::cerr << "i: " << i << ", j: " << j << ", k: " << k << ", cmp: " << c << std::endl;
-        // std::cerr << "t1: " << t1 << std::endl;
-        // std::cerr << "t2: " << t2 << std::endl;
-        // std::cerr << std::endl;
-    };
-    auto less = [&](const TransitionDefinition &td1, const TransitionDefinition &td2) -> bool
-    {
-        ++i;
-#else
-    // auto logCmp = [&](auto c, auto t1, auto t2)
-    // {
-    // };
+// #if defined(_DEBUG) || defined(DEBUG)
+//     std::size_t i = 0;
+//     std::size_t j = 0;
+//     std::size_t k = 0;
+//     //auto logCmp = [&](auto c, auto t1, auto t2)
+//     auto logCmp = [&](auto , auto , auto )
+//     {
+//         // std::cerr << "i: " << i << ", j: " << j << ", k: " << k << ", cmp: " << c << std::endl;
+//         // std::cerr << "t1: " << t1 << std::endl;
+//         // std::cerr << "t2: " << t2 << std::endl;
+//         // std::cerr << std::endl;
+//     };
+//     auto less = [&](const TransitionDefinition &td1, const TransitionDefinition &td2) -> bool
+//     {
+//         ++i;
+// #else
+//     // auto logCmp = [&](auto c, auto t1, auto t2)
+//     // {
+//     // };
     auto less = [](const TransitionDefinition &td1, const TransitionDefinition &td2)
     {
-#endif
+// #endif
+
+/*
         int cmp = td1.sourceStates.compareForPrioritySort(td2.sourceStates);
 
 #if defined(_DEBUG) || defined(DEBUG)
@@ -194,7 +215,59 @@ std::vector<TransitionDefinition> StateMachineDefinition::getPrioritySortedTrans
 #endif
 
         return false;
+*/
+        /*
+        auto cmpResStr = [](int r) -> std::string
+        {
+            if (r==0) return " == ";
+            return r<0 ? " < " : " > ";
+        };
+
+        // События - приоритетнее
+
+        std::cerr << "\n\n";
+        std::cerr << "EVT: [" << td1.events << "]" << cmpResStr(td1.events.compareForPrioritySort(td2.events)) << "[" << td2.events << "]" << "\n";
+        
+        int cmp = td1.events.compareForPrioritySort(td2.events);
+        if (cmp<0)
+            return true;
+        if (cmp>0)
+            return false;
+
+        std::cerr << "\n";
+        std::cerr << "SRC: [" << td1.sourceStates << "]" << cmpResStr(td1.sourceStates.compareForPrioritySort(td2.sourceStates)) << "[" << td2.sourceStates << "]" << "\n";
+
+        cmp = td1.sourceStates.compareForPrioritySort(td2.sourceStates);
+        if (cmp<0)
+            return true;
+        if (cmp>0)
+            return false;
+
+        return false;
+        */
+
+        // std::cerr << "\n";
+        // std::cerr << "\n";
+        // std::cerr << td1 << "\n";
+        // std::cerr << td2 << "\n";
+        // int w1 = td1.events.getWeightForCompareForPrioritySort();
+        // int w2 = td2.events.getWeightForCompareForPrioritySort();
+        // std::cerr << w1 << "\n";
+        // std::cerr << w2 << "\n";
+
+        // w1 *= 10;
+        // w2 *= 10;
+        //  
+        // w1 += td1.sourceStates.getWeightForCompareForPrioritySort();
+        // w2 += td2.sourceStates.getWeightForCompareForPrioritySort();
+
+        // std::cerr << w1 << "\n";
+        // std::cerr << w2 << "\n";
+
+        return td1.getWeightForCompareForPrioritySort() < td2.getWeightForCompareForPrioritySort();
+
     };
+
 
     std::stable_sort(sorted.begin(), sorted.end(), less);
 
@@ -202,6 +275,7 @@ std::vector<TransitionDefinition> StateMachineDefinition::getPrioritySortedTrans
 }
 
 //----------------------------------------------------------------------------
+inline
 std::set<std::string> StateMachineDefinition::getSourceStateNamesSet(bool skipFinal) const
 {
     std::set<std::string> s;
@@ -217,6 +291,7 @@ std::set<std::string> StateMachineDefinition::getSourceStateNamesSet(bool skipFi
 }
 
 //----------------------------------------------------------------------------
+inline
 std::vector<std::string> StateMachineDefinition::getSourceStateNamesList(bool skipFinal) const
 {
     std::vector<std::string> v; v.reserve(states.size());
@@ -232,8 +307,88 @@ std::vector<std::string> StateMachineDefinition::getSourceStateNamesList(bool sk
 }
 
 //----------------------------------------------------------------------------
+inline
+std::set<std::string> StateMachineDefinition::getEventNamesSet() const
+{
+    std::set<std::string> s;
+    for(const auto &kv : events)
+        s.insert(kv.first);
+
+    return s;
+}
+
+//----------------------------------------------------------------------------
+inline
+std::vector<std::string> StateMachineDefinition::getEventNamesList() const
+{
+    std::vector<std::string> v; v.reserve(events.size());
+    for(const auto &kv : events)
+        v.push_back(kv.first);
+
+    return v;
+}
+
+//----------------------------------------------------------------------------
+inline
+bool StateMachineDefinition::hasSamePrerequisitesTransition(const TransitionDefinition &tOther) const
+{
+    for(const auto &kvt : transitions)
+    {
+        if (kvt.second.isEqualPrerequisites(tOther))
+            return true;
+    }
+
+    return false;
+}
+
+//----------------------------------------------------------------------------
+inline
 bool StateMachineDefinition::expandTransitions()
 {
+    std::vector<std::string> eventNames       = getEventNamesList();
+    std::vector<std::string> sourceStateNames = getSourceStateNamesList( true /* skipFinal */ );
+
+    std::vector<TransitionDefinition> sortedTransitions = getPrioritySortedTransitions();
+
+    transitions.clear();
+
+    // !!! Данная версия expandTransitions нужна для реализации автомата
+    // Для рисования графа нам не нужно раскрывать events - граф будет сильно замусорен,
+    // но нам нужно раскрывать sourceStates - так как рисовать события нужно для каждой вершины.
+    // При этом нам нужно как-то помечать раскрытые по sourceStates переходы каким-то ID для того,
+    // чтобы проверить, присутствует ли что-либо с таким ID в полностью раскрытом графе.
+    // Если не присутствует, то такой нераскрытый по events переход не отображается.
+
+    for(const auto &srtd : sortedTransitions)
+    {
+        auto expanded = srtd.expandEventsAndSourceStates(eventNames, sourceStateNames);
+
+        for(const auto &expd : expanded)
+        {
+            // std::ostringstream oss;
+            // oss << expd;
+            // if (oss.str()=="turnedOff: cmdAllowTraffic -> self;")
+            // {
+            //     std::cerr << "Set breakpoint here\n";
+            // }
+
+            // std::cerr << "Testing transition: " << expd << " - ";
+            if (hasSamePrerequisitesTransition(expd))
+            {
+                // std::cerr << "already exist\n";
+                continue;
+            }
+            else
+            {
+                // std::cerr << "NOT exist, adding\n";
+                addDefinition(expd);
+            }
+        }
+    }
+
+    return true;
+
+#if 0
     // Тупиковое состояние (Dead State)	Наиболее общий и часто используемый термин.
     // Поглощающее состояние (Absorbing State)	Акцент на том, что состояние "засасывает" и не отпускает.
     // Состояние-поглотитель (Sink State)	Часто используется для обозначения специального состояния для обработки ошибок в ДКА.
@@ -332,7 +487,7 @@ bool StateMachineDefinition::expandTransitions()
 
         // В tmpTransitions у нас разбитые по одному исходному состоянию переходы, но со множественными событиями
 
-        resTransitions = tmpTransitions; // пока временно, не разбивая по событиям
+        resTransitions.insert(resTransitions.end(), tmpTransitions.begin(), tmpTransitions.end()); // пока временно, не разбивая по событиям
     }
 
 
@@ -344,6 +499,7 @@ bool StateMachineDefinition::expandTransitions()
     }
 
     return true;
+#endif
 }
 
 

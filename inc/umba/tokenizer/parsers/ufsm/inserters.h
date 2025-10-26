@@ -301,8 +301,11 @@ StreamType& operator<<(StreamType &oss, const TransitionSourceState &v)
 {
     if ((v.flags&TransitionSourceStateFlags::any)!=0)
     {
+        // if ((v.flags&TransitionSourceStateFlags::excluded)!=0)
+        //     throw std::runtime_error("StreamType& operator<<(StreamType &oss, const TransitionSourceState &v): excluded flags can't be combined with ANY");
+
         if ((v.flags&TransitionSourceStateFlags::excluded)!=0)
-            throw std::runtime_error("StreamType& operator<<(StreamType &oss, const TransitionSourceState &v): excluded flags can't be combined with ANY");
+            oss << "!";
 
         oss << "*";
     }
@@ -311,7 +314,7 @@ StreamType& operator<<(StreamType &oss, const TransitionSourceState &v)
         if ((v.flags&TransitionSourceStateFlags::excluded)!=0)
             oss << "!";
 
-        oss << v.name;
+        oss << v.name.c_str();
     }
 
     return oss;
@@ -385,7 +388,7 @@ StreamType& operator<<(StreamType &oss, const TransitionDefinition &v)
     if ((v.flags&TransitionFlags::selfTarget)!=0)
         oss << "self";
     else
-        oss << v.targetState;
+        oss << v.targetState.c_str();
 
     if (!v.actionRefs.empty())
         oss << " : " << v.actionRefs;
@@ -501,9 +504,19 @@ void printDefinitionsSection(StreamType &oss, const ContainerType &sec, const st
 template< typename FlagType, typename ItemType, typename StreamType, typename ContainerType=insertion_ordered_map<ItemType> >
 void printDefinitionsSections(StreamType &oss, const std::vector<ContainerType> &secs, const std::string &secName, std::size_t indendSize)
 {
+    if (!secs.empty())
+    {
+        oss << "\n";
+        oss << std::string(indendSize, ' ') << "//------------------------------\n";
+    }
+
+    std::size_t cnt = 0;
     for(const auto &s: secs)
     {
+        if (cnt)
+            oss << "\n";
         printDefinitionsSection<FlagType, ItemType, StreamType, ContainerType>(oss, s, secName, indendSize);
+        ++cnt;
     }
 }
 
@@ -519,6 +532,9 @@ StreamType& StateMachineDefinition::print(StreamType& oss, std::size_t indendSiz
     auto chIndSize = indendSize + 4u;
     auto indend = std::string(indendSize, ' ');
     auto chInd  = std::string(chIndSize , ' '); // child indend
+
+
+    oss << indend << "//----------------------------------------------------------------------------\n";
 
     oss << indend;
 
@@ -583,7 +599,7 @@ StreamType& StateMachineDefinition::print(StreamType& oss, std::size_t indendSiz
         utils::printDefinitionsSections<TransitionFlags, TransitionDefinition, StreamType>(oss, secs, "transitions", indendSize+4);
     }
 
-    oss << indend << "}\n";
+    oss << indend << "}\n\n";
 
     return oss;
 }
@@ -599,7 +615,7 @@ StreamType& NamespaceDefinition::print(StreamType& oss, std::size_t indendSize) 
     if (!name.empty())
     {
         oss << indend << "namespace " << name << "\n";
-        oss << indend << "{\n";
+        oss << indend << "{\n\n";
         indendInc = 4u;
     }
 
@@ -610,7 +626,7 @@ StreamType& NamespaceDefinition::print(StreamType& oss, std::size_t indendSize) 
 
     if (!name.empty())
     {
-        oss << indend << "}\n";
+        oss << indend << "}\n\n";
     }
 
     return oss;

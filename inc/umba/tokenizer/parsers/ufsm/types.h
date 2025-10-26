@@ -103,9 +103,14 @@ public: // methods
 
     std::string getCanonicalName() const { return name; }
 
+    bool hasSamePrerequisitesTransition(const TransitionDefinition &tOther) const; // Сравниваются исх состояние, событие, доп условия. 
+
     std::vector<TransitionDefinition> getPrioritySortedTransitions() const;
-    std::set<std::string> getSourceStateNamesSet(bool skipFinal=true) const;
+    void prioritySortTransitions();
     std::vector<std::string> getSourceStateNamesList(bool skipFinal=true) const;
+    std::set<std::string> getSourceStateNamesSet(bool skipFinal=true) const;
+    std::vector<std::string> getEventNamesList() const;
+    std::set<std::string> getEventNamesSet() const;
     bool expandTransitions();
 
 

@@ -462,14 +462,15 @@ inline
 int TransitionSourceStates::getWeightForCompareForPrioritySort() const
 {
     if (!checkForAny())
-        return 0; // Самые легкие - без ANY
+        return 1; // Самые легкие - без ANY
 
     if (list.size()>1)
-        return 1; // Если есть исключения, то они легче полного ANY
+        return 2; // Если есть исключения, то они легче полного ANY
 
-    return 2;
+    return 3;
 }
 
+/*
 inline
 int TransitionSourceStates::compareForPrioritySort(const TransitionSourceStates &other) const
 {
@@ -480,6 +481,7 @@ int TransitionSourceStates::compareForPrioritySort(const TransitionSourceStates 
 
     return w < wo ? -1 : 1;
 }
+*/
 
 inline bool TransitionSourceStates::operator< (const TransitionSourceStates &other) const { return compare(other)< 0; }
 inline bool TransitionSourceStates::operator<=(const TransitionSourceStates &other) const { return compare(other)<=0; }
@@ -606,14 +608,15 @@ inline
 int TransitionEvents::getWeightForCompareForPrioritySort() const
 {
     if (!checkForAny())
-        return 0; // Самые легкие - без ANY
+        return 1; // Самые легкие - без ANY
 
     if (list.size()>1)
-        return 1; // Если есть исключения, то они легче полного ANY
+        return 2; // Если есть исключения, то они легче полного ANY
 
-    return 2;
+    return 3;
 }
 
+/*
 inline
 int TransitionEvents::compareForPrioritySort(const TransitionEvents &other) const
 {
@@ -624,6 +627,7 @@ int TransitionEvents::compareForPrioritySort(const TransitionEvents &other) cons
 
     return w < wo ? -1 : 1;
 }
+*/
 
 inline bool TransitionEvents::operator< (const TransitionEvents &other) const { return compare(other)< 0; }
 inline bool TransitionEvents::operator<=(const TransitionEvents &other) const { return compare(other)<=0; }
@@ -662,6 +666,79 @@ std::string TransitionDefinition::getCanonicalName() const
     return name;
 }
 
+int TransitionDefinition::getWeightForCompareForPrioritySort() const
+{
+    int w = events.getWeightForCompareForPrioritySort() * 100;
+    w += sourceStates.getWeightForCompareForPrioritySort() * 10;
+    if ((flags&TransitionFlags::conditional)==0)
+        w += 1;
+    return w;
+}
+
+bool TransitionDefinition::hasAnyAny() const
+{
+    return sourceStates.checkForAny() || events.checkForAny();
+}
+
+inline
+bool TransitionDefinition::hasAdditionalCondition() const
+{
+    if ((flags&TransitionFlags::conditional)==0) // флаг не установлен
+        return false;
+    return true;
+}
+
+inline
+int TransitionDefinition::compareAdditionalCondition(const TransitionDefinition &other) const
+{
+    bool a1 = hasAdditionalCondition();
+    bool a2 = other.hasAdditionalCondition();
+
+    if (!a1)
+    {
+        if (!a2) // Оба без условий
+            return 0;
+
+        // правый - с условием, он должен быть ближе к началу, т.е. меньше текущего
+        return 1; // левый - больше
+    }
+
+    // левый - с условием 
+
+    if (!a2) // правый - без условия, он - больше
+        return -1; // левый - меньше
+
+    // Оба - с условиями
+
+    return additionalConditionAsString().compare(other.additionalConditionAsString());
+}
+
+inline
+int  TransitionDefinition::comparePrerequisites(const TransitionDefinition &other) const
+{
+    int cmp = sourceStates.compare(other.sourceStates);
+    if (cmp!=0)
+        return cmp;
+
+    cmp = events.compare(other.events);
+    if (cmp!=0)
+        return cmp;
+
+    if ((flags&TransitionFlags::conditional)==0) // флаг не установлен - не участвует в сравнении
+        return cmp;
+
+    return compareAdditionalCondition(other);
+}
+
+inline
+bool TransitionDefinition::isEqualPrerequisites(const TransitionDefinition &other) const
+{
+    return !(!sourceStates.isEqual(other.sourceStates)
+          || !events.isEqual(other.events)
+          || compareAdditionalCondition(other)!=0
+            );
+}
+
 inline
 int  TransitionDefinition::compare(const TransitionDefinition &other) const
 {
@@ -676,7 +753,7 @@ int  TransitionDefinition::compare(const TransitionDefinition &other) const
     if ((flags&TransitionFlags::conditional)==0) // флаг не установлен - не участвует в сравнении
         return cmp;
 
-    return additionalConditionAsString().compare(other.additionalConditionAsString());
+    return compareAdditionalCondition(other);
 }
 
 inline
@@ -684,7 +761,7 @@ bool TransitionDefinition::isEqual(const TransitionDefinition &other) const
 {
     return !(!sourceStates.isEqual(other.sourceStates)
           || !events.isEqual(other.events)
-          || additionalConditionAsString().compare(other.additionalConditionAsString())!=0
+          || compareAdditionalCondition(other)==0
             );
 }
 
@@ -722,6 +799,190 @@ inline void TransitionDefinition::push_back( const TransitionSourceState &st) { 
 
 inline void TransitionDefinition::append   ( const TransitionEvent &te) { appendImpl(te); }
 inline void TransitionDefinition::push_back( const TransitionEvent &te) { appendImpl(te); }
+
+std::vector<TransitionDefinition> TransitionDefinition::expandEvents(const std::vector<std::string> &allEventNames) const
+{
+    std::set<std::string> allEventNamesSet;
+    {
+        for(auto &&n: allEventNames)
+            allEventNamesSet.insert(n);
+    }
+
+    std::set<std::string> evtNames;
+    std::unordered_map<std::string, PositionInfo> evtPosInfos;
+    PositionInfo defPositionInfo;
+
+    std::vector<TransitionDefinition> resTransitions;
+
+    for(const auto &evt : events)
+    {
+        if ((evt.flags&TransitionEventFlags::any)!=0)
+        {
+            evtNames = allEventNamesSet;
+            defPositionInfo = evt.positionInfo;
+            continue;
+        }
+
+        // Проверяем, а есть ли вообще такое событие?
+        auto evtNameIt = allEventNamesSet.find(evt.name);
+        if (evtNameIt== allEventNamesSet.end())
+        {
+            TypeValueInfo tvi = makeTypeValueInfo(EventDefinition()); // тут нам нужен только typeName
+            tvi.positionInfo  = evt.positionInfo; // не где объявлено, а где ссылаемся
+            tvi.name = evt.name;
+            throw event_not_found(tvi);
+        }
+
+        if ((evt.flags&TransitionEventFlags::excluded)!=0)
+        {
+            // Нужно исключить состояние из evtNames
+            // Но его может там не быть - это ошибка
+            if (evtNames.find(evt.name)==evtNames.end())
+            {
+                TypeValueInfo tvi = makeTypeValueInfo(EventDefinition()); // тут нам нужен только typeName
+                tvi.positionInfo  = evt.positionInfo; // не где объявлено, а где ссылаемся
+                tvi.name = evt.name;
+                throw event_not_found(tvi);
+            }
+
+            evtNames.erase(evt.name);
+        }
+        else
+        {
+            // Нужно доюавить состояние в srcStateNames
+            evtNames.insert(evt.name);
+            evtPosInfos[evt.name] = evt.positionInfo;
+        }
+
+    }
+
+
+    TransitionDefinition trDef = *this;
+
+    for(auto && evtName : allEventNames)
+    {
+        if (evtNames.find(evtName)== evtNames.end())
+            continue;
+
+        TransitionEvent tmpEvt;
+        auto npIt = evtPosInfos.find(evtName);
+        if (npIt!=evtPosInfos.end())
+            tmpEvt.positionInfo = npIt->second;
+        else
+            tmpEvt.positionInfo = defPositionInfo;
+
+        tmpEvt.flags = TransitionEventFlags::none;
+        tmpEvt.name = evtName;
+
+        trDef.events.clear();
+        trDef.events.push_back(tmpEvt);
+
+        resTransitions.push_back(trDef);
+    }
+
+    return resTransitions;
+}
+
+std::vector<TransitionDefinition> TransitionDefinition::expandSourceStates(const std::vector<std::string> &allSourceStateNames ) const
+{
+    std::set<std::string> allSourceStateNamesSet;
+    {
+        for(auto &&n: allSourceStateNames)
+            allSourceStateNamesSet.insert(n);
+    }
+
+    std::set<std::string> srcStateNames;
+    std::unordered_map<std::string, PositionInfo> srcStatePosInfos;
+    PositionInfo defPositionInfo;
+
+    std::vector<TransitionDefinition> resTransitions;
+
+    for(const auto &srcState : sourceStates)
+    {
+        if ((srcState.flags&TransitionSourceStateFlags::any)!=0)
+        {
+            srcStateNames = allSourceStateNamesSet;
+            defPositionInfo = srcState.positionInfo;
+            continue;
+        }
+
+        // Проверяем, а есть ли вообще такое событие?
+        auto srcStateNameIt = allSourceStateNamesSet.find(srcState.name);
+        if (srcStateNameIt == allSourceStateNamesSet.end())
+        {
+            TypeValueInfo tvi = makeTypeValueInfo(StateDefinition()); // тут нам нужен только typeName
+            tvi.positionInfo  = srcState.positionInfo; // не где объявлено, а где ссылаемся
+            tvi.name = srcState.name;
+            throw state_not_found(tvi);
+        }
+
+        if ((srcState.flags&TransitionSourceStateFlags::excluded)!=0)
+        {
+            // Нужно исключить состояние из evtNames
+            // Но его может там не быть - это ошибка
+            if (srcStateNames.find(srcState.name)==srcStateNames.end())
+            {
+                TypeValueInfo tvi = makeTypeValueInfo(EventDefinition()); // тут нам нужен только typeName
+                tvi.positionInfo  = srcState.positionInfo; // не где объявлено, а где ссылаемся
+                tvi.name = srcState.name;
+                throw state_not_found(tvi);
+            }
+
+            srcStateNames.erase(srcState.name);
+        }
+        else
+        {
+            // Нужно доюавить состояние в srcStateNames
+            srcStateNames.insert(srcState.name);
+            srcStatePosInfos[srcState.name] = srcState.positionInfo;
+        }
+
+    }
+
+
+    TransitionDefinition trDef = *this;
+
+    for(auto && srcStateName : allSourceStateNames)
+    {
+        if (srcStateNames.find(srcStateName)== srcStateNames.end())
+            continue;
+
+        TransitionSourceState tmpSourceState;
+        auto npIt = srcStatePosInfos.find(srcStateName);
+        if (npIt!=srcStatePosInfos.end())
+            tmpSourceState.positionInfo = npIt->second;
+        else
+            tmpSourceState.positionInfo = defPositionInfo;
+
+        tmpSourceState.flags = TransitionSourceStateFlags::none;
+        tmpSourceState.name = srcStateName;
+
+        trDef.sourceStates.clear();
+        trDef.sourceStates.push_back(tmpSourceState);
+
+        resTransitions.push_back(trDef);
+    }
+
+    return resTransitions;
+
+}
+
+std::vector<TransitionDefinition> TransitionDefinition::expandEventsAndSourceStates( const std::vector<std::string> &allEventNames
+                                                                                   , const std::vector<std::string> &allSourceStateNames
+                                                                                   ) const
+{
+    std::vector<TransitionDefinition> resTransitions;
+
+    std::vector<TransitionDefinition> expandedEventsVec = expandEvents(allEventNames);
+
+    for(const auto &ee : expandedEventsVec)
+    {
+        std::vector<TransitionDefinition> expandedSourceStatesVec = ee.expandSourceStates(allSourceStateNames);
+        resTransitions.insert(resTransitions.end(), expandedSourceStatesVec.begin(), expandedSourceStatesVec.end());
+    }
+
+    return resTransitions;
+}
 
 //----------------------------------------------------------------------------
 

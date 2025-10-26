@@ -1303,6 +1303,7 @@ public:
                 case UFSM_TOKEN_KWD_TRANSITIONS:
                      if (!parseStateMachineTransitions(sm))
                          return false;
+                     // sm.prioritySortTransitions(); // тут не сортируем, пусть тут всё остаётся так, как введено
                      break;
 
                 case UFSM_TOKEN_BRACKET_SCOPE_CLOSE:

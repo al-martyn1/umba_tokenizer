@@ -242,12 +242,33 @@ uses TrafficLightCommands override:{events},
             СписокИсхСостояний : СписокСобытий [? ДопУсловие] -> ЦелевоеСостояние [? ДопУсловие] [: СписокДействий] [- Описание];
             где
               СписокИсхСостояний - Состояние1 [, Состояние2 [, Состояние3... ] ]
-              СостояниеN         - * / Состояние / !Состояние
+              СостояниеN         - '*' / Состояние / !Состояние
               СписокСобытий      - Событие1 [, Событие2 [, Событие3... ] ]
-              СобытиеN           - * / Событие / !Событие
+              СобытиеN           - '*' / Событие / !Событие
               СписокДействий     - Действие1 [, Действие2 [, Действие3... ] ]
 
-            '*' - означает любое состояние, для которого не задано перехода.
+            '*'  - означает любое состояние.
+                   Или: любое состояние, для которого не задан переход по указанным событиям?
+                   Какова семантика '*' в применении к состоянию?
+                   Что мы можем хотеть?
+                   Мы можем хотеть для всех состояний добавить переход по событию,
+                   если перехода по данному событию ещё нет.
+                   А если переходы по такому событию есть, но с другими предикатами?
+
+                   Или пойдём другим путём, от событий?
+
+            '*' для события в переходе - означает: переходы для всех событий (кроме указанных в исключении),
+                если переход по событию не был задан ранее.
+                Тоже ни хрена не понятно.
+
+                Берем одно состояние. У него есть переходы по разным событиям, вероятно, не по всем.
+                Берём каждое событие перехода из этого состояния.
+                Если по событию нет перехода с таким же предикатом - надо добавлять переход.
+
+
+
+
+            '!*' - означает любое состояние, для которого не задано перехода.
             '!' (отрицание) - используется совместно с состоянием '*', и явно исключает
                 генерацию перехода из этого состояния.
 
@@ -391,7 +412,47 @@ uses TrafficLightCommands,
     
     */
 
-    events{}
+    events{
+    
+        //----------------------------------------------------------------
+        // Вообще-то они должны наследоваться из TrafficLightEventsActions
+        // Но пока наследование не реализовано
+
+        tmStopTrafficWarning : external generated - "The RED light (stop) will come on very soon";
+        tmStopTraffic : external generated;
+
+        // Приходит по таймеру за некоторое время до включения разрешающего сигнала,
+        // на двухцветных светофорах обычно не обозначается отдельно
+        tmAllowTrafficWarning : external generated - "The GREEN light (go) will come on very soon";
+        tmAllowTraffic : external generated;
+
+        // Приходит, когда требуется сменить состяние зелёного сигнала на противоположный
+        tmToggleGreen  : external generated;
+
+        // Приходит, когда требуется сменить состяние желтого сигнала на противоположный
+        tmToggleYellow : external generated;
+
+        // Приходит по таймеру aliveTimer
+        tmAlivePoll    : external;
+
+
+        //----------------------------------------------------------------
+        // Вообще-то они должны наследоваться из definitions TrafficLightCommands
+
+        // Отправляется в светофор для переключения в режим trafficStopped - горящий красный
+        cmdStopTraffic : external - "The RED light (stop) mode is on";
+
+        // Отправляется в светофор для включения разрешающего сигнала
+        cmdAllowTraffic : external - "The GREEN light (go) mode is on";
+
+        // Приходит для выключения всех сигналов светофора
+        cmdTurnOff : external - "Traffic Light goes down";
+
+        // Приходит для переключения светофора в "неуправляемый" режим
+        cmdUncontrolledMode : external - "Traffic Light goes to uncontrolled mode";
+
+    
+    }
 
     actions
     {
@@ -473,28 +534,28 @@ uses TrafficLightCommands,
         // Для теста помещаем их в начало
 
         *,!uncontrolledMode : * -> self; // Этого для теста присунул
-        *,!trafficStopped : *,!tmToggleGreen -> self; // Этого для теста присунул
+        *,!trafficStopped,!uncontrolledMode : *,!tmToggleGreen -> self; // Этого для теста присунул
 
         * : cmdUncontrolledMode -> uncontrolledMode;
-        * : tmAlivePoll -> self : reportAlive;
-        * : cmdTurnOff      -> turnedOff;
-        * : * -> self;
+//        * : tmAlivePoll -> self : reportAlive;
+//        * : cmdTurnOff      -> turnedOff;
+//        * : * -> self;
 
-        turnedOff : cmdStopTraffic      -> trafficStopped;
+//        turnedOff : cmdStopTraffic      -> trafficStopped;
         turnedOff : cmdAllowTraffic     -> trafficAllowed;
 
         //allowWarning : cmdStopTraffic   -> trafficStopped;
         //allowWarning : cmdAllowTraffic  -> trafficAllowed;
-        allowWarning : tmAllowTraffic   -> trafficAllowed;
+//        allowWarning : tmAllowTraffic   -> trafficAllowed;
 
         //tmAllowTrafficWarning : external generated - "The GREEN light (go) will come on very soon";
         //tmAllowTraffic : external generated;
 
-        trafficAllowed : cmdStopTraffic      -> stopNotice;
+//        trafficAllowed : cmdStopTraffic      -> stopNotice;
 
-        stopNotice : tmToggleGreen ?  greenLightIsOn -> self : greenOff;
-        stopNotice : tmToggleGreen ? !greenLightIsOn -> self : greenOn;
-        stopNotice : tmStopTraffic                   -> trafficStopped;
+//        stopNotice : tmToggleGreen ?  greenLightIsOn -> self : greenOff;
+//        stopNotice : tmToggleGreen ? !greenLightIsOn -> self : greenOn;
+//        stopNotice : tmStopTraffic                   -> trafficStopped;
 
 
         // Временно коментируем 
