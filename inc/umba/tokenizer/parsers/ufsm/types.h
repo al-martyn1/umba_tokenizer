@@ -115,6 +115,10 @@ public: // methods
     bool expandTransitions();
     std::vector<TransitionDefinition> makeExpandedTransitionsForGraph() const;
 
+    std::size_t assignStateIds(std::size_t startId=0);
+    std::size_t assignTransitionIds(std::size_t startId=0);
+    std::size_t assignIds(std::size_t startId=0);
+
 
 }; // struct StateMachineDefinition
 

@@ -251,6 +251,37 @@ bool StateMachineDefinition::hasSamePrerequisitesTransition(const TransitionDefi
 
 //----------------------------------------------------------------------------
 inline
+std::size_t StateMachineDefinition::assignStateIds(std::size_t startId)
+{
+    for(auto &kv : states)
+    {
+        kv.second.id = ++startId;
+    }
+
+    return startId;
+}
+
+//----------------------------------------------------------------------------
+inline
+std::size_t StateMachineDefinition::assignTransitionIds(std::size_t startId)
+{
+    for(auto &kv : transitions)
+    {
+        kv.second.id = ++startId;
+    }
+
+    return startId;
+}
+
+//----------------------------------------------------------------------------
+inline
+std::size_t StateMachineDefinition::assignIds(std::size_t startId)
+{
+    return assignTransitionIds(assignStateIds(startId));
+}
+
+//----------------------------------------------------------------------------
+inline
 bool StateMachineDefinition::expandTransitions()
 {
     std::vector<std::string> eventNames       = getEventNamesList();
@@ -296,11 +327,12 @@ std::vector<TransitionDefinition> StateMachineDefinition::makeExpandedTransition
     std::vector<TransitionDefinition> sortedTransitions = getPrioritySortedTransitions();
 
     // Задаем ID для существующих переходов
-    unsigned uid = 0;
+    std::size_t uid = 0;
     for(auto &tmpTr : sortedTransitions)
     {
         tmpTr.id = ++uid;
     }
+    // assignTransitionIds();
 
     StateMachineDefinition tmpStateMachineDefinition;
 

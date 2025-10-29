@@ -984,6 +984,30 @@ std::vector<TransitionDefinition> TransitionDefinition::expandEventsAndSourceSta
     return resTransitions;
 }
 
+std::string TransitionDefinition::getSourceState() const
+{
+    if (sourceStates.empty())
+        throw std::runtime_error("TransitionDefinition::getSourceState: can't get source state: sourceStates is empty");
+
+    if (sourceStates.size()>1)
+        throw std::runtime_error("TransitionDefinition::getSourceState: can't get source state: too many states");
+
+    const auto &srcState = sourceStates.front();
+
+    if ((srcState.flags&TransitionSourceStateFlags::any)!=0)
+        throw std::runtime_error("TransitionDefinition::getSourceState: can't get source state: ANY state found");
+
+    if ((srcState.flags&TransitionSourceStateFlags::excluded)!=0)
+        throw std::runtime_error("TransitionDefinition::getSourceState: can't get source state: EXCLUDED state found");
+
+    return srcState.name;
+}
+
+std::string TransitionDefinition::getTargetState() const
+{
+    return targetState;
+}
+
 //----------------------------------------------------------------------------
 
 

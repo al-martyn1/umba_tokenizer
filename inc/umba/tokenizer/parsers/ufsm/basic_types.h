@@ -242,6 +242,7 @@ struct StateDefinition
 
     std::unordered_map<StateActionKind, StateActionRefs>   actionRefs; 
 
+    std::size_t     id = 0;
 
 public: // methods
 
@@ -311,6 +312,11 @@ struct TransitionSourceStates
     const_iterator  end  () const { return list.end   (); }
     const_iterator cbegin() const { return list.cbegin(); }
     const_iterator cend  () const { return list.cend  (); }
+
+    reference       front()       { return list.front(); }
+    const_reference front() const { return list.front(); }
+    reference       back()        { return list.back() ; }
+    const_reference back() const  { return list.back() ; }
 
 
     int getWeightForCompareForPrioritySort() const;
@@ -433,7 +439,7 @@ struct TransitionDefinition
     std::string                targetState ;
     TransitionActionRefs       actionRefs  ;
 
-    std::size_t                id          ;
+    std::size_t                id = 0;
 
 
     std::string additionalConditionAsString() const;
@@ -468,6 +474,14 @@ struct TransitionDefinition
     std::vector<TransitionDefinition> expandEvents(const std::vector<std::string> &allEventNames) const;
     std::vector<TransitionDefinition> expandSourceStates(const std::vector<std::string> &allSourceStateNames) const;
     std::vector<TransitionDefinition> expandEventsAndSourceStates(const std::vector<std::string> &allEventNames, const std::vector<std::string> &allSourceStateNames) const;
+
+    std::string getSourceState() const;
+    std::string getTargetState() const;
+
+    bool isSelfTarget() const { return (flags&TransitionFlags::selfTarget)!=0; }
+    
+
+    
 
 }; // struct TransitionDefinition
 
