@@ -11,6 +11,8 @@
 //
 #include <iostream>
 
+#include <unordered_set>
+
 
 //----------------------------------------------------------------------------
 // umba::tokenizer::ufsm::
@@ -155,119 +157,25 @@ void StateMachineDefinition::prioritySortTransitions()
 
 //----------------------------------------------------------------------------
 inline
+std::vector<TransitionDefinition> StateMachineDefinition::getTransitionsVector() const
+{
+    std::vector<TransitionDefinition> res; res.reserve(transitions.size());
+    for(const auto &kv : transitions)
+        res.emplace_back(kv.second);
+
+    return res;
+}
+
+//----------------------------------------------------------------------------
+inline
 std::vector<TransitionDefinition> StateMachineDefinition::getPrioritySortedTransitions() const
 {
-    std::vector<TransitionDefinition> sorted; sorted.reserve(transitions.size());
-    for(const auto &kv : transitions)
-        sorted.emplace_back(kv.second);
+    std::vector<TransitionDefinition> sorted = getTransitionsVector();
 
-// #if defined(_DEBUG) || defined(DEBUG)
-//     std::size_t i = 0;
-//     std::size_t j = 0;
-//     std::size_t k = 0;
-//     //auto logCmp = [&](auto c, auto t1, auto t2)
-//     auto logCmp = [&](auto , auto , auto )
-//     {
-//         // std::cerr << "i: " << i << ", j: " << j << ", k: " << k << ", cmp: " << c << std::endl;
-//         // std::cerr << "t1: " << t1 << std::endl;
-//         // std::cerr << "t2: " << t2 << std::endl;
-//         // std::cerr << std::endl;
-//     };
-//     auto less = [&](const TransitionDefinition &td1, const TransitionDefinition &td2) -> bool
-//     {
-//         ++i;
-// #else
-//     // auto logCmp = [&](auto c, auto t1, auto t2)
-//     // {
-//     // };
     auto less = [](const TransitionDefinition &td1, const TransitionDefinition &td2)
     {
-// #endif
-
-/*
-        int cmp = td1.sourceStates.compareForPrioritySort(td2.sourceStates);
-
-#if defined(_DEBUG) || defined(DEBUG)
-        logCmp(cmp, td1.sourceStates, td2.sourceStates);
-#endif
-        
-        if (cmp<0)
-            return true;
-        if (cmp>0)
-            return false;
-
-#if defined(_DEBUG) || defined(DEBUG)
-        ++j;
-#endif
-
-        cmp = td1.events.compareForPrioritySort(td2.events);
-#if defined(_DEBUG) || defined(DEBUG)
-        logCmp(cmp, td1.events, td2.events);
-#endif
-
-        if (cmp<0)
-            return true;
-        if (cmp>0)
-            return false;
-
-#if defined(_DEBUG) || defined(DEBUG)
-        ++k;
-#endif
-
-        return false;
-*/
-        /*
-        auto cmpResStr = [](int r) -> std::string
-        {
-            if (r==0) return " == ";
-            return r<0 ? " < " : " > ";
-        };
-
-        // События - приоритетнее
-
-        std::cerr << "\n\n";
-        std::cerr << "EVT: [" << td1.events << "]" << cmpResStr(td1.events.compareForPrioritySort(td2.events)) << "[" << td2.events << "]" << "\n";
-        
-        int cmp = td1.events.compareForPrioritySort(td2.events);
-        if (cmp<0)
-            return true;
-        if (cmp>0)
-            return false;
-
-        std::cerr << "\n";
-        std::cerr << "SRC: [" << td1.sourceStates << "]" << cmpResStr(td1.sourceStates.compareForPrioritySort(td2.sourceStates)) << "[" << td2.sourceStates << "]" << "\n";
-
-        cmp = td1.sourceStates.compareForPrioritySort(td2.sourceStates);
-        if (cmp<0)
-            return true;
-        if (cmp>0)
-            return false;
-
-        return false;
-        */
-
-        // std::cerr << "\n";
-        // std::cerr << "\n";
-        // std::cerr << td1 << "\n";
-        // std::cerr << td2 << "\n";
-        // int w1 = td1.events.getWeightForCompareForPrioritySort();
-        // int w2 = td2.events.getWeightForCompareForPrioritySort();
-        // std::cerr << w1 << "\n";
-        // std::cerr << w2 << "\n";
-
-        // w1 *= 10;
-        // w2 *= 10;
-        //  
-        // w1 += td1.sourceStates.getWeightForCompareForPrioritySort();
-        // w2 += td2.sourceStates.getWeightForCompareForPrioritySort();
-
-        // std::cerr << w1 << "\n";
-        // std::cerr << w2 << "\n";
-
         return td1.getWeightForCompareForPrioritySort() < td2.getWeightForCompareForPrioritySort();
-
     };
-
 
     std::stable_sort(sorted.begin(), sorted.end(), less);
 
@@ -365,154 +273,90 @@ bool StateMachineDefinition::expandTransitions()
 
         for(const auto &expd : expanded)
         {
-            // std::ostringstream oss;
-            // oss << expd;
-            // if (oss.str()=="turnedOff: cmdAllowTraffic -> self;")
-            // {
-            //     std::cerr << "Set breakpoint here\n";
-            // }
-
-            // std::cerr << "Testing transition: " << expd << " - ";
             if (hasSamePrerequisitesTransition(expd))
             {
-                // std::cerr << "already exist\n";
                 continue;
             }
             else
             {
-                // std::cerr << "NOT exist, adding\n";
                 addDefinition(expd);
             }
         }
     }
 
     return true;
+}
 
-#if 0
-    // Тупиковое состояние (Dead State)	Наиболее общий и часто используемый термин.
-    // Поглощающее состояние (Absorbing State)	Акцент на том, что состояние "засасывает" и не отпускает.
-    // Состояние-поглотитель (Sink State)	Часто используется для обозначения специального состояния для обработки ошибок в ДКА.
-
-    std::set<std::string>     allDeadStateNames = getSourceStateNamesSet(true /* skipFinal */ );
-    std::vector<std::string>  allStateNamesList = getSourceStateNamesList(false /* !skipFinal */ );
-
+//----------------------------------------------------------------------------
+std::vector<TransitionDefinition> StateMachineDefinition::makeExpandedTransitionsForGraph() const
+{
+    std::vector<std::string> eventNames       = getEventNamesList();
+    std::vector<std::string> sourceStateNames = getSourceStateNamesList( true /* skipFinal */ );
 
     std::vector<TransitionDefinition> sortedTransitions = getPrioritySortedTransitions();
 
-    std::vector<TransitionDefinition> resTransitions;
-    std::vector<TransitionDefinition> tmpTransitions;
-
-    for(const auto &trDef : sortedTransitions)
+    // Задаем ID для существующих переходов
+    unsigned uid = 0;
+    for(auto &tmpTr : sortedTransitions)
     {
-        tmpTransitions.clear();
+        tmpTr.id = ++uid;
+    }
 
-        std::vector<TransitionDefinition> tmpTransitionsSingleSourceState;
+    StateMachineDefinition tmpStateMachineDefinition;
 
-        auto tmpTrDefSingleSourceState = trDef;
-        tmpTrDefSingleSourceState.sourceStates.list.clear();
+    for(const auto &srtd : sortedTransitions)
+    {
+        auto expanded = srtd.expandEventsAndSourceStates(eventNames, sourceStateNames);
 
-        //TransitionSourceState tmpSrcState;
-
-        std::set<std::string> srcStateNames;
-        std::unordered_map<std::string, PositionInfo> srcStatePosInfos;
-        PositionInfo defPositionInfo;
-
-        for(const auto &trSrcState : trDef.sourceStates.list)
+        for(const auto &expd : expanded)
         {
-            if ((trSrcState.flags&TransitionSourceStateFlags::any)!=0)
+            if (tmpStateMachineDefinition.hasSamePrerequisitesTransition(expd))
             {
-                srcStateNames = allDeadStateNames; // Берём только те, из которых ещё нет переходов
-                defPositionInfo = trSrcState.positionInfo;
+                continue;
             }
             else
             {
-                // Проверяем, а есть ли вообще такое состояние?
-                auto srcStateNameIt = states.find(trSrcState.name);
-                if (srcStateNameIt==states.end())
-                {
-                    TypeValueInfo tvi = makeTypeValueInfo(StateDefinition()); // тут нам нужен только typeName
-                    tvi.positionInfo = trSrcState.positionInfo; // не где объявлено, а где ссылаемся
-                    tvi.name = trSrcState.name;
-                    throw state_not_found(tvi);
-                }
-
-                if ((trSrcState.flags&TransitionSourceStateFlags::excluded)!=0)
-                {
-                    // Нужно исключить состояние из srcStateNames
-                    // Но его может там не быть - это ошибка
-                    if (srcStateNames.find(trSrcState.name)==srcStateNames.end())
-                    {
-                        TypeValueInfo tvi = makeTypeValueInfo(StateDefinition()); // тут нам нужен только typeName
-                        tvi.positionInfo = trSrcState.positionInfo; // не где объявлено, а где ссылаемся
-                        tvi.name = trSrcState.name;
-                        throw state_not_found_in_dead(tvi);
-                    }
-
-                    srcStateNames.erase(trSrcState.name);
-                }
-                else
-                {
-                    // Нужно доюавить состояние в srcStateNames
-                    srcStateNames.insert(trSrcState.name);
-                    srcStatePosInfos[trSrcState.name] = trSrcState.positionInfo;
-                }
+                tmpStateMachineDefinition.addDefinition(expd);
             }
         }
+    }
 
-        // Итого - прошлись по всем исходным состояниям текущего TransitionDefinition, 
-        // составили набор из отдельных состояний, для которых делаем новый переход
-        // Добавляем в том порядке, в котором состояния заданы в исходниках
+    std::unordered_set<std::size_t> idSet;
 
-        for(auto && stName : allStateNamesList)
+    // Неоторые ID могли не выжить после раскрытия - например, 
+    // там была звездочка, и после раскрытия все элементарные переходы
+    // уже были явно заданы
+    for(const auto &kv : tmpStateMachineDefinition.transitions)
+    {
+        // std::cerr << "Add ID: " << kv.second.id << "\n";
+        idSet.insert(kv.second.id);
+    }
+
+    tmpStateMachineDefinition.transitions.clear();
+
+    for(const auto &srtd : sortedTransitions)
+    {
+        auto expanded = srtd.expandSourceStates(sourceStateNames);
+
+        for(const auto &expd : expanded)
         {
-            if (srcStateNames.find(stName)==srcStateNames.end())
+            if (idSet.find(expd.id)==idSet.end()) // Такой id пропал в результате раскрытий
                 continue;
 
-            TransitionSourceState tmpSrcState;
-            auto npIt = srcStatePosInfos.find(stName);
-            if (npIt!=srcStatePosInfos.end())
-                tmpSrcState.positionInfo = npIt->second;
+            if (tmpStateMachineDefinition.hasSamePrerequisitesTransition(expd))
+            {
+                continue;
+            }
             else
-                tmpSrcState.positionInfo = defPositionInfo;
-
-            tmpSrcState.flags = TransitionSourceStateFlags::none;
-            tmpSrcState.name = stName;
-
-            tmpTrDefSingleSourceState.sourceStates.list.push_back(tmpSrcState);
-
-            tmpTransitions.push_back(tmpTrDefSingleSourceState);
-
-            allDeadStateNames.erase(stName);
+            {
+                tmpStateMachineDefinition.addDefinition(expd);
+            }
         }
-
-        // В tmpTransitions у нас разбитые по одному исходному состоянию переходы, но со множественными событиями
-
-        resTransitions.insert(resTransitions.end(), tmpTransitions.begin(), tmpTransitions.end()); // пока временно, не разбивая по событиям
     }
 
 
-    transitions.clear();
-
-    for(auto &&rtr : resTransitions)
-    {
-        addDefinition(rtr);
-    }
-
-    return true;
-#endif
+    return tmpStateMachineDefinition.getTransitionsVector();
 }
-
-
-//----------------------------------------------------------------------------
-// bool StateMachineDefinition::expandTransitions()
-// {
-//     // insertion_ordered_map<TransitionDefinition>  transitionsSorted = transitions;
-//  
-//     // std::string       name        ;
-//     // insertion_ordered_map<TransitionDefinition>    transitions;
-//  
-//     return true;
-// }
 
 //----------------------------------------------------------------------------
 

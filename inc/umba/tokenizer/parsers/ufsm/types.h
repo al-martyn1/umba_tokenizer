@@ -105,6 +105,7 @@ public: // methods
 
     bool hasSamePrerequisitesTransition(const TransitionDefinition &tOther) const; // Сравниваются исх состояние, событие, доп условия. 
 
+    std::vector<TransitionDefinition> getTransitionsVector() const;
     std::vector<TransitionDefinition> getPrioritySortedTransitions() const;
     void prioritySortTransitions();
     std::vector<std::string> getSourceStateNamesList(bool skipFinal=true) const;
@@ -112,6 +113,7 @@ public: // methods
     std::vector<std::string> getEventNamesList() const;
     std::set<std::string> getEventNamesSet() const;
     bool expandTransitions();
+    std::vector<TransitionDefinition> makeExpandedTransitionsForGraph() const;
 
 
 }; // struct StateMachineDefinition

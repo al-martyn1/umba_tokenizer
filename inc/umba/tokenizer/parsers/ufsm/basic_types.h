@@ -252,6 +252,10 @@ public: // methods
     template<typename StreamType>
     StreamType& print(StreamType& oss, std::size_t indendSize) const;
 
+    bool isInitial() const { return (flags&StateFlags::initial)!=0; }
+    bool isFinal()   const { return (flags&StateFlags::final  )!=0; }
+    bool isError()   const { return (flags&StateFlags::error  )!=0; }
+
 }; // struct StateDefinition
 
 //----------------------------------------------------------------------------
@@ -428,6 +432,8 @@ struct TransitionDefinition
     LogicExpression            additionalCondition;
     std::string                targetState ;
     TransitionActionRefs       actionRefs  ;
+
+    std::size_t                id          ;
 
 
     std::string additionalConditionAsString() const;
