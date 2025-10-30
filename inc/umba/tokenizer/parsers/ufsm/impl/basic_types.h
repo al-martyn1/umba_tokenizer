@@ -78,26 +78,6 @@ TypeValueInfo makeTypeValueInfo(const TransitionDefinition &d)
     return TypeValueInfo{ d.positionInfo, d.getCanonicalName(), std::string("transition") };
 }
 
-// struct TransitionDefinition
-// {
-//     PositionInfo               positionInfo;
-//     TransitionSourceStates     sourceStates; 
-//     TransitionEvents           events      ;
-//     TransitionFlags            flags;
-//     LogicExpression            additionalCondition;
-//  
-//  
-//     std::string additionalConditionAsString() const;
-//  
-//     std::string getCanonicalName() const;
-
-
-// inline
-// TypeValueInfo makeTypeValueInfo(const StateActionRefs &d)
-// {
-//  
-// }
-
 inline
 TypeValueInfo makeTypeValueInfo(const StateDefinition &d)
 {
@@ -650,6 +630,28 @@ std::string TransitionDefinition::additionalConditionAsString() const
     if ((flags&TransitionFlags::conditional)==0)
         return std::string();
     return LogicExpressionEvaluator(makeLogicExpressionOperatorTraits()).toString(additionalCondition);
+}
+
+std::string TransitionDefinition::eventsAsString() const
+{
+    return events.getCanonicalName();
+/*
+    std::string res;
+
+    if (events.empty())
+        return res;
+
+    auto it = events.begin();
+    res.append(*it);
+
+    for(++it; it!=events.end(); ++it)
+    {
+        res.append(", ");
+        res.append(*it);
+    }
+
+    return res;
+*/
 }
 
 inline

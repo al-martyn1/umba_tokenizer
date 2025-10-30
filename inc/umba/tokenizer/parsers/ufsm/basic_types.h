@@ -443,6 +443,7 @@ struct TransitionDefinition
 
 
     std::string additionalConditionAsString() const;
+    std::string eventsAsString() const;
 
     std::string getCanonicalName() const;
 
