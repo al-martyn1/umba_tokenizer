@@ -62,6 +62,9 @@ public: // ctors
     FullQualifiedName(Scheme sch, const StringType &p1) : BaseType(sch, p1) {}
     FullQualifiedName(const StringType &p1)             : BaseType(p1) {}
 
+    FullQualifiedName(const StringType &p, const StringType &sep) : BaseType(p, sep) {}
+    FullQualifiedName(const StringType &p, const std::vector<StringType> &seps) : BaseType(p, seps) {}
+
     FullQualifiedName(Scheme sch, std::initializer_list<StringType> pathParts) : BaseType(sch, pathParts) {}
     FullQualifiedName(std::initializer_list<StringType> pathParts)             : BaseType(pathParts) {}
 
