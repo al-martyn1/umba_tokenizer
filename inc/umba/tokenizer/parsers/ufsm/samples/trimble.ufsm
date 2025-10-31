@@ -1,0 +1,86 @@
+
+namespace protocols::trimble
+{
+
+// TSIP (in appendix A, Packet structure) - https://docs.ampnuts.ru/eevblog.docs/Trimble/Manuals/MiniT%20Rev1B.pdf
+// TSIP packets - // https://docs.ampnuts.ru/eevblog.docs/Trimble/palisade/pal-appa.pdf
+
+
+state-machine Tsip - "Trimble Serial Interface Protocol" 
+{
+    // [DLE 0x10] [Код пакета] [Данные...] [DLE 0x10] [ETX 0x03]
+    // При синхронизации с потоком данных мы должны найти последовательность
+    // DLE ETX DLE - это окончание предыдущего пакета и начало следующего,
+    // при этом символ, следующий за стартовым DLE не должен быть равен DLE.
+    // Тут надо разобраться, может ли в оригинальном TSIP 0x10 быть кодом пакета
+    // Если не может, то всё нормально, алгоритм рабочий
+    // Если может, то надо что-то думать ещё. Пока не будем, считаем, что код
+    // пакета 0x10 не разрешён.
+    // UPD - норм: <id> is a packet identifier byte, which can have any value except <ETX> and <DLE>.
+
+    events
+    {
+        onData : external /* char */ - "Input byte received";
+    }
+
+    predicates
+    {
+        isDLE : external - "DLE (0x10) byte";
+        isETX : external - "ETX (0x03) byte";
+    }
+
+    states
+    {
+        SYNC_WAIT_DLE : initial - "Режим синхронизации - ожидание конечного DLE";
+        SYNC_WAIT_ETX           - "Режим синхронизации - ожидание конечного ETX";
+        WAIT_DLE                - "Ожидание стартового DLE";
+        WAIT_FIRST              - "Ожидание первого байта (код команды, не DLE)";
+        READ                    - "Чтение пакета";
+        WAIT_ETX                - "Ожидание конечного ETX - тут может придти экранированный DLE";
+    }
+
+    actions
+    {
+        collectByte          : external - "Накопить текущий входной байт в буфере";
+        processMessage       : external - "Обработать сообщение";
+        resetBuffer          : external - "Очистить буфер";
+    }
+
+    transitions
+    {
+        SYNC_WAIT_DLE : onData ? isDLE -> SYNC_WAIT_ETX;
+        SYNC_WAIT_DLE : *              -> self;
+
+        SYNC_WAIT_ETX : onData ? isETX -> WAIT_DLE;
+        SYNC_WAIT_ETX : *              -> SYNC_WAIT_DLE; // Перезапустили процесс синхронизации
+
+        WAIT_DLE      : onData ? isDLE -> WAIT_FIRST; // Переходим к ожиданию кода пакета, не равного DLE
+        WAIT_DLE      : *              -> SYNC_WAIT_DLE; // У нас что-то не понятное, сихронизации нет, начали заново
+
+        WAIT_FIRST    : onData ? isDLE -> SYNC_WAIT_DLE; // Ждём код пакета, не равный DLE, если DLE - то что-то непонятное, сихронизации нет, начали заново
+        WAIT_FIRST    : *              -> READ : collectByte;
+
+        READ          : onData ? isDLE -> WAIT_ETX; // Следом идёт либо экранированный DLE, либо ETX (в норме)
+        READ          : *              -> self : collectByte;
+
+        WAIT_ETX      : onData ? isDLE -> READ : collectByte; // Всё нормально - экранированый DLE
+        WAIT_ETX      : onData ? isETX -> WAIT_DLE : processMessage, resetBuffer; // Окончание пакета
+        WAIT_ETX      : *              -> SYNC_WAIT_DLE : resetBuffer; // Что-то пошло не так, начинаем синхронизацию заново
+    }
+
+} // state-machine Tsip
+
+
+// https://github.com/rokubun/gcc_docker
+
+/*
+state-machine Ssb - "Trimble Serial Binary Protocol"
+{
+    // [Заголовок 0x80] [Длина] [Тип пакета] [Флаги] [Данные...] [CRC-16]
+
+
+}
+*/
+
+} // namespace protocols::trimble
+

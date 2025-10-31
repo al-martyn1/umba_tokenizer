@@ -1,0 +1,157 @@
+
+// SiRF Technology
+
+// https://cdn.sparkfun.com/datasheets/Sensors/GPS/SiRF_Binary_Protocol.pdf
+// https://ekf.com/media/docs/binary_reference_manual.pdf
+// https://www.sos.sk/microsite_docs/QUECTEL/Sirf%20Binary%20reference%20manual.pdf
+// https://www.sasgis.org/forum/viewtopic.php?p=16237
+
+// GPS Protocol Reference Manual - https://www.elgps.com/public_ftp/Documentos/SIRF_Protocol.pdf
+
+namespace protocols::sirf
+{
+
+state-machine Tsip - "Trimble Serial Interface Protocol" 
+{
+    // Start Sequence  Payload Length       Payload Message        Checksum             End Sequence
+    // 0xA0, 0xA2     Two-bytes (15-bits)  Up to 2**10-1 (<1023)  Two-bytes (15-bits)  0xB0, 0xB3
+    // Characters preceded by "0x" denotes a hexadecimal value. 0xA0 equals 160.
+
+    // The validation layer is of part of the transport, but operates independently. The byte
+    // count refers to the payload byte length. The checksum is a sum on the payload
+
+    // The payload data follows the payload length. It contains the number of bytes specified
+    // by the payload length. The payload data may contain any 8-bit value.
+
+    // Where multi-byte values are in the payload data, neither the alignment nor the byte order
+    // are defined as part of the transport although SiRF payloads uses the big-endian order. 
+
+    // The payload length is transmitted high order byte first followed by the low byte
+    // High Byte   Low Byte
+    // <= 0x7F     Any value
+
+    // The checksum is transmitted high order byte first followed by the low byte. This is the so-called big-endian order.
+    // High Byte   Low Byte
+    // <= 0x7F     Any value
+
+    // Let message be the array of bytes to be sent by the transport.
+    // Let msgLen be the number of bytes in the message array to be transmitted.
+    //   Index = first
+    //   checkSum = 0
+    //   while index < msgLen
+    //     checkSum = checkSum + message[index]
+    //     checkSum = checkSum AND (215-1).
+    //     increment index
+
+    // A0A20018 — Start Sequence and Payload Length
+    // 810201010001010105010101000100010001000100012580 — Payload
+    // 013AB0B3 — Message Checksum and End Sequence 
+
+    // A0A2002B — Start Sequence and Payload Length
+    // 83036000105005010201010448656C6C6F00253264202532642025326420253264202531302E316C660000 — Payload
+    // 0867B0B3 — Message Checksum and End Sequence
+
+
+    /*
+        В данном протоколе мы по преамбуле определяем начало сообщения, после вычитывания его 
+        полностью по заданной длине проверяем Checksum и ждём завершение.
+        Если у нас на каком-то этапе возникла ошибка, нам нельзя сбрасывать весь буфер, нам 
+        надо попробовать найти в нем преамбулу. Преамбула может быть найдена, но может и отсутствовать.
+        Тут возникает момент, когда следующее состояние зависит от действия.
+
+        Как быть?
+
+        Можно сделать фейковое состояние, в котором ждём фейковое событие, а это фейковое событие
+        генерируется действием по сдвигу буфера. Но это как-то сложновато.
+
+        Второй вариант: делаем предикат - bufHasPreamble, который производит поиск преамбулы без сдвига
+        буфера (возможно запоминая расположение преамбулы). В этом случае не надо вводить доп состояния 
+        и доп события.
+
+        Второй случай. К нам приходит второй байт длины данных. Одним действием мы кладём его в буфер,
+        другим действием формирем число с длиной, и тут нам надо проверить, не превышает ли длина 0x7FFF,
+        и перейти в зависимости от этого. Можно сделать состояние READ_FIRST, и переходить не в READ, а туда.
+        В READ_FIRST, по приходу байта, дёргать предикат isLengthOk и переходить в различные состояния в 
+        зависимости от его значения.
+
+        Или мы создаём состояние WAIT_LL_E (Epsilon), которое обрабатывает только событие epsilon, а все 
+        другие события отправляют безусловно в состояние fatal_stop.
+
+        Когда мы выходим из WAIT_LL, мы можем указать действие epsilon. Но куда мы переходим? Мы же ещё не 
+        знаем, куда идти.
+
+
+
+
+     */
+
+
+    //       |       |                       |       |
+    // A0 A2   XX XX   XX XX XX ... XX XX XX   XX XX   B0 B3
+    //         Length    Payload Message      Checksum
+
+    events
+    {
+        onData : external /* char */ - "Input byte received";
+    }
+
+    predicates
+    {
+        isA0:external; isA2:external; isB0:external; isB3:external;
+    }
+
+    actions
+    {
+        collectByte          : external - "Накопить текущий входной байт в буфере";
+        processMessage       : external - "Обработать сообщение";
+        resetBuffer          : external - "Очистить буфер";
+        checkCS              : external; // check CheckSum
+        checkLen             : external - "Старший байт <=0x7F";
+        getLenHigh           : external; // Обработать старшую часть поля длины пейлоада (поместить в поле)
+        getLenLow            : external; // Обработать младшую часть поля длины пейлоада
+
+        // turnOff   = greenOff, redOff - "Turn all lights off"; 
+    }
+
+    states
+    {
+         WAIT_A0; WAIT_A2; WAIT_B0; WAIT_B3;
+         WAIT_LH; WAIT_LL; // length - high part, low part
+
+         READ;
+
+         WAIT_CS1;
+
+    }
+
+    actions
+    {
+        collectByte          : external - "Накопить текущий входной байт в буфере";
+        processMessage       : external - "Обработать сообщение";
+        resetBuffer          : external - "Очистить буфер";
+    }
+
+    transitions
+    {
+        // WAIT_ETX      : onData ? isDLE -> READ : collectByte; // Всё нормально - экранированый DLE
+        // WAIT_ETX      : *              -> SYNC_WAIT_DLE : resetBuffer; // Что-то пошло не так, начинаем синхронизацию заново
+
+        WAIT_A0 :  onData ? isA0      -> WAIT_A2;
+    }
+
+} // state-machine Tsip
+
+
+// https://github.com/rokubun/gcc_docker
+
+/*
+state-machine Ssb - "Trimble Serial Binary Protocol"
+{
+    // [Заголовок 0x80] [Длина] [Тип пакета] [Флаги] [Данные...] [CRC-16]
+
+
+}
+*/
+
+} // namespace protocols::trimble
+

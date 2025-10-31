@@ -1,0 +1,17 @@
+// #!ufsm
+
+// Modbus - https://ru.wikipedia.org/wiki/Modbus
+// Modbus Protocol in Depth - https://www.ni.com/en/shop/seamlessly-connect-to-third-party-devices-and-supervisory-system/the-modbus-protocol-in-depth.html
+// Modbus UDP Specification - https://jamod.sourceforge.net/kbase/modbus_udp.html
+// Modbus interface tutorial - https://www.lammertbies.nl/comm/info/modbus
+// Application Development with Modbus - https://www.ni.com/en/shop/seamlessly-connect-to-third-party-devices-and-supervisory-system/application-development-with-modbus.html
+// Преобразователи частоты KIPPRIBOR серии AFD-E Протокол связи Modbus RTU (интерфейс RS485) - https://kippribor.ru/?id=1297
+// Просто о Modbus RTU с подробным описанием и примерами - https://ipc2u.ru/articles/prostye-resheniya/modbus-rtu/
+// Описание протокола Modbus RTU расходомера-счетчика «Питерфлоу Т» модификации 1 с системой верхнего уровня - https://termotronic.ru/upload/files/piterflou_t1._protokol_obmena_modbus_red.1-01a_.pdf
+
+namespace samples::modbus
+{
+
+
+} // namespace samples::http
+
