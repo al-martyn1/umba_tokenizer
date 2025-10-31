@@ -11,7 +11,7 @@
 namespace protocols::sirf
 {
 
-state-machine Tsip - "Trimble Serial Interface Protocol" 
+state-machine SirfB - "Sirf Binary protocol" 
 {
     // Start Sequence  Payload Length       Payload Message        Checksum             End Sequence
     // 0xA0, 0xA2     Two-bytes (15-bits)  Up to 2**10-1 (<1023)  Two-bytes (15-bits)  0xB0, 0xB3
@@ -152,19 +152,11 @@ state-machine Tsip - "Trimble Serial Interface Protocol"
         WAIT_A0 :  onData ? isA0      -> WAIT_A2;
     }
 
-} // state-machine Tsip
+} // state-machine SirfB
 
 
 // https://github.com/rokubun/gcc_docker
 
-/*
-state-machine Ssb - "Trimble Serial Binary Protocol"
-{
-    // [Заголовок 0x80] [Длина] [Тип пакета] [Флаги] [Данные...] [CRC-16]
 
-
-}
-*/
-
-} // namespace protocols::trimble
+} // namespace protocols::sirf
 
