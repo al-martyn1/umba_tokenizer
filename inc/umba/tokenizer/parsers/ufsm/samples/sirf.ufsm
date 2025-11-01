@@ -11,7 +11,7 @@
 namespace protocols::sirf
 {
 
-state-machine SirfB - "Trimble Serial Interface Protocol" 
+state-machine SirfB - "Sirf Binary protocol" 
 {
     // У нас есть протокол
 
@@ -87,8 +87,21 @@ state-machine SirfB - "Trimble Serial Interface Protocol"
         Когда мы выходим из WAIT_LL, мы можем указать действие epsilon. Но куда мы переходим? Мы же ещё не 
         знаем, куда идти.
 
+        Или мы задаём epsilon как предикат в условиях перехода? Сам epsilon предикат удаляем из условия перехода,
+        но отмечаем, что по данному условию переходим в epsilon состояние.
 
+        А теперь - epsilon состояние, WAIT_LL_E (Epsilon), например. В этом состоянии обрабатываем только 
+        epsilon-событие.
 
+        Ну, хорошо. У нас есть epsilon состояние, WAIT_LL_E (Epsilon), и есть epsilon-событие.
+
+        На примере WAIT_LL, из WAIT_LL_E - тут мы можем перейти либо в какой-то гуд, либо в какой-то бэд, всё 
+        определяется аргументом epsilon в предикате базового состояния WAIT_LL. Если в базовом состоянии в предикате 
+        перехода есть epsilon(checksumOk), то мы в epsilon состоянии обрабатываем epsilon-событие с предикатом
+        checksumOk - и всё вроде бы хорошечно. Но: у нас нет синтаксиса для предикатов с аргументами, в базовом состоянии
+        мы не можем одним из условий в логической формуле сделать epsilon(checksumOk).
+
+        Как быть?
 
      */
 
@@ -146,19 +159,11 @@ state-machine SirfB - "Trimble Serial Interface Protocol"
         WAIT_A0 :  onData ? isA0      -> WAIT_A2;
     }
 
-} // state-machine Tsip
+} // state-machine SirfB
 
 
 // https://github.com/rokubun/gcc_docker
 
-/*
-state-machine Ssb - "Trimble Serial Binary Protocol"
-{
-    // [Заголовок 0x80] [Длина] [Тип пакета] [Флаги] [Данные...] [CRC-16]
 
-
-}
-*/
-
-} // namespace protocols::trimble
+} // namespace protocols::sirf
 
