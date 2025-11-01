@@ -4,7 +4,7 @@ namespace protocols::trimble
 
 // TSIP (in appendix A, Packet structure) - https://docs.ampnuts.ru/eevblog.docs/Trimble/Manuals/MiniT%20Rev1B.pdf
 // TSIP packets - // https://docs.ampnuts.ru/eevblog.docs/Trimble/palisade/pal-appa.pdf
-
+// https://trl.trimble.com/docushare/dsweb/Get/Document-6222/TSIP%20Reference%20Manual%20-%20Rev%20C.pdf
 
 state-machine Tsip - "Trimble Serial Interface Protocol" 
 {
