@@ -11,8 +11,10 @@
 namespace protocols::sirf
 {
 
-state-machine Tsip - "Trimble Serial Interface Protocol" 
+state-machine SirfB - "Trimble Serial Interface Protocol" 
 {
+    // У нас есть протокол
+
     // Start Sequence  Payload Length       Payload Message        Checksum             End Sequence
     // 0xA0, 0xA2     Two-bytes (15-bits)  Up to 2**10-1 (<1023)  Two-bytes (15-bits)  0xB0, 0xB3
     // Characters preceded by "0x" denotes a hexadecimal value. 0xA0 equals 160.
@@ -52,7 +54,12 @@ state-machine Tsip - "Trimble Serial Interface Protocol"
     // 0867B0B3 — Message Checksum and End Sequence
 
 
-    /*
+    /*  У нас при описании и реализации ДКА есть четкое разграничение - сначала вычисляются условия перехода,
+        затем производится переход - присваивается новое состояние и выполняются действия.
+
+        Но в некоторых случаях нам нужно выполнить действия, и только потом становится понятно, 
+        в какое состояние делать переход.
+
         В данном протоколе мы по преамбуле определяем начало сообщения, после вычитывания его 
         полностью по заданной длине проверяем Checksum и ждём завершение.
         Если у нас на каком-то этапе возникла ошибка, нам нельзя сбрасывать весь буфер, нам 
