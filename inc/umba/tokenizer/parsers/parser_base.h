@@ -33,11 +33,11 @@ namespace tokenizer {
 
 
 //----------------------------------------------------------------------------
-template<typename TokenizerType>
+template<typename TokenizerType, typename FilenameSetUserDataType=void*>
 class ParserBase
 {
 
-public: // types & ctors
+public: // types
 
     using tokenizer_type           = TokenizerType;
     using TokenCollectionType      = TokenCollection<TokenizerType>;
@@ -50,10 +50,15 @@ public: // types & ctors
     using string_type              = typename tokenizer_type::string_type; // Input chars string type
     using char_type                = typename string_type::value_type;
 
-    using FilenameSetType          = umba::FilenameSet<file_id_type, string_type>;
+    using FilenameSetType          = umba::FilenameSet<file_id_type, string_type, FilenameSetUserDataType>;
     using SharedFilenameSetType    = std::shared_ptr<FilenameSetType>;
+    using filename_set_type        = FilenameSetType;
+    using shared_filename_set_type = SharedFilenameSetType;
 
     // using FilenameSetType               = umba:: /* Simple */ FilenameSet<std::size_t /* , std::string */ >;
+
+
+public: // ctors
 
     UMBA_RULE_OF_FIVE_COPY_DELETE(ParserBase);
     UMBA_RULE_OF_FIVE_MOVE_DEFAULT(ParserBase);
@@ -172,6 +177,8 @@ public: // methods
         // logUnexpected(pTokenInfo, {payloadExpected}, prefixMsg, kindStringGetter);
 
         std::string unexpectedTokenKind = kindStringGetter(payloadUnexpected);
+        if (unexpectedTokenKind.empty())
+            unexpectedTokenKind = "<UNKNOWN>";
         std::string msgId = "unexpected-" + unexpectedTokenKind;
         std::string msg = "got unexpected '$(UnexpectedTokenKind)'";
         auto formatMessage = FormatMessage<std::string>();

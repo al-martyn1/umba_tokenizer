@@ -16,7 +16,7 @@
 #include "marty_expressions/tokenizer_helpers.h"
 //
 #include "../utils.h"
-#include "../parser_base.h"
+#include "../parser_base2.h"
 #include "types.h"
 #include "umba/tokenizer/lexers/ufsm.h"
 
@@ -96,35 +96,33 @@ struct ParsingContext
 
 
 //----------------------------------------------------------------------------
-template<typename TokenizerType>
-class Parser : public umba::tokenizer::ParserBase<TokenizerType>
+template<typename TokenizerType, typename FilenameSetUserDataType=void*>
+class Parser : public umba::tokenizer::ParserBase2<TokenizerType, FilenameSetUserDataType>
 {
 
-public:
+public: // types
 
-    using BaseClass                = umba::tokenizer::ParserBase<TokenizerType>;
-    using tokenizer_type           = TokenizerType;
-    using TokenCollectionType      = typename BaseClass::TokenCollectionType     ;
-    using TokenCollectionItemType  = typename BaseClass::TokenCollectionItemType ;
-    using TokenInfoType            = typename BaseClass::TokenInfoType           ;
-    using TokenPosType             = typename BaseClass::TokenPosType            ;
-    using token_parsed_data_type   = typename tokenizer_type::token_parsed_data_type;
-    using shared_log_type          = umba::tokenizer::log::SharedParserErrorLog;
-    using string_type              = typename BaseClass::string_type;
-    using SharedFilenameSetType    = typename BaseClass::SharedFilenameSetType   ;
+    using BaseClass                = umba::tokenizer::ParserBase2<TokenizerType, FilenameSetUserDataType>;
+    using tokenizer_type           = typename BaseClass::tokenizer_type             ;
+    using TokenCollectionType      = typename BaseClass::TokenCollectionType        ;
+    using TokenCollectionItemType  = typename BaseClass::TokenCollectionItemType    ;
+    using TokenInfoType            = typename BaseClass::TokenInfoType              ;
+    using TokenPosType             = typename BaseClass::TokenPosType               ;
+    using token_parsed_data_type   = typename BaseClass::token_parsed_data_type     ;
+    using shared_log_type          = typename BaseClass::shared_log_type            ;
+    using string_type              = typename BaseClass::string_type                ;
+    using FilenameSetType          = typename BaseClass::FilenameSetType            ;
+    using SharedFilenameSetType    = typename BaseClass::SharedFilenameSetType      ;
+    using filename_set_type        = typename BaseClass::filename_set_type          ;
+    using shared_filename_set_type = typename BaseClass::shared_filename_set_type   ;
+    using payload_type             = typename BaseClass::payload_type               ;
 
-    // using PacketDiagramItemType    = PacketDiagramItem<TokenCollectionItemType>;
-    // using PacketDiagramType        = PacketDiagram<TokenCollectionItemType>;
-
-
-    shared_log_type                log    ;
+    using plid_list                = std::initializer_list<payload_type>;
 
 
 protected:
 
     ParsingContext                 ctx;
-    const TokenInfoType            *m_pTokenInfo = 0;
-    TokenPosType                   m_tokenPos;
 
 
 public:
@@ -136,8 +134,7 @@ public:
 
     explicit
     Parser(std::shared_ptr<TokenCollectionType> tc, SharedFilenameSetType pFilenameSet, shared_log_type a_log)
-    : BaseClass(tc, pFilenameSet)
-    , log(a_log)
+    : BaseClass(tc, pFilenameSet, a_log)
     , ctx()
     {
     }
@@ -147,22 +144,60 @@ public:
         return ctx.rootNs;
     }
 
-    std::string extractIdentifierName(const TokenInfoType *pTokenInfo)
+    FullTokenPosition getFullPos(TokenPosType pos) const  { return BaseClass::getFullPos(pos); }
+    FullTokenPosition getFullPos() const                  { return BaseClass::getFullPos();    }
+    payload_type getTokenType() const                     { return BaseClass::getTokenType(); }
+    void readNextToken(ParserWaitForTokenFlags readFlags=ParserWaitForTokenFlags::none)   { BaseClass::readNextToken(readFlags); }
+    string_type extractIdentifierName() const { return BaseClass::extractIdentifierName(); }
+    string_type extractLiteral() const        { return BaseClass::extractLiteral() ;}
+
+    const token_parsed_data_type* getTokenParsedDataPtr() const { return BaseClass::getTokenParsedDataPtr(); }
+    token_parsed_data_type getTokenParsedData() const           { return BaseClass::getTokenParsedData(); }
+
+    template <typename... TArgs>
+    bool isTokenOneOf(TArgs&&... args) const
     {
-        auto pTokenParsedData = BaseClass::getTokenParsedDataPtr(pTokenInfo);
-        auto identifierData = std::get<typename TokenizerType::IdentifierDataHolder>(*pTokenParsedData);
-        return identifierData.pData->value;
+        return ((getTokenType() == args) || ...);
     }
 
-    std::string extractLiteral(const TokenInfoType *pTokenInfo)
+    void logSimpleMessage(const std::string &msgId, const std::string &msg) const { BaseClass::logSimpleMessage(msgId, msg); }
+    void logSimpleMessage(TokenPosType pos, const std::string &msgId, const std::string &msg) const { BaseClass::logSimpleMessage(pos, msgId, msg); }
+    void logSimpleMessage(TokenPosType pos, payload_type tokenType, const std::string &msgId, const std::string &msg) const { BaseClass::logSimpleMessage(pos, tokenType, msgId, msg); }
+    void logSimpleUnexpected(payload_type payloadUnexpected) const { BaseClass::logSimpleUnexpected(payloadUnexpected); }
+    void logSimpleUnexpected() const                               { BaseClass::logSimpleUnexpected(); }
+    void logMessage(const std::string &msgId, const std::string &msg, const typename umba::FormatMessage<std::string>::macros_map_type &args ) { BaseClass::logMessage(msgId, msg, args ); }
+    void logMessage(const std::string &msgId, const std::string &msg) { BaseClass::logMessage(msgId, msg ); }
+
+    bool expectedReachedMsg(std::initializer_list<payload_type> payloadExpectedList, const std::string &msg=std::string()) const
     {
-        auto pTokenParsedData = BaseClass::getTokenParsedDataPtr(pTokenInfo);
-        auto literalData = std::get<typename TokenizerType::StringLiteralDataHolder>(*pTokenParsedData);
-        return literalData.pData->value;
+        return BaseClass::expectedReachedMsg(payloadExpectedList, msg);
     }
 
-    FullTokenPosition getFullPos(TokenPosType pos) const  { return BaseClass::getFullTokenPosition(pos); }
-    FullTokenPosition getFullPos() const                  { return getFullPos(m_tokenPos); }
+    bool expectedReachedMsg(payload_type payloadExpected, const std::string &msg=std::string()) const
+    {
+        return BaseClass::expectedReachedMsg(payloadExpected, msg);
+    }
+
+    bool checkExactTokenType(std::initializer_list<payload_type> payloadExpectedList, const std::string &msg=std::string()) const
+    {
+        return BaseClass::checkExactTokenType(payloadExpectedList, msg);
+    }
+
+    bool checkExactTokenType(payload_type payloadExpected, const std::string &msg=std::string()) const
+    {
+        return BaseClass::checkExactTokenType(payloadExpected, msg);
+    }
+
+    template<typename TokenHandler>
+    bool readHomogeneousTokensList( payload_type tokenToken, payload_type tokenSep
+                                  , bool readNextOnStart
+                                  , TokenHandler handler
+                                  , bool initialWaitSep = false
+                                  )
+    {
+         return BaseClass::readHomogeneousTokensList(tokenToken, tokenSep, readNextOnStart, handler, initialWaitSep);
+    }
+
 
 
     NamespaceDefinition* getCurrentNamespace()
@@ -173,14 +208,9 @@ public:
         return pCurNs;
     }
 
-    void readNextToken(ParserWaitForTokenFlags readFlags=ParserWaitForTokenFlags::none)
-    {
-        m_pTokenInfo = BaseClass::waitForSignificantTokenChecked( &m_tokenPos, readFlags);
-    }
 
-
-    static
-    std::string getTokenIdStr(umba::tokenizer::payload_type tk)
+    virtual
+    std::string getTokenIdStr(umba::tokenizer::payload_type tk) const override
     {
         switch(tk)
         {
@@ -266,79 +296,81 @@ public:
         return true;
     }
 
-    bool expectedReachedMsg(const TokenInfoType *pTokenInfo, std::initializer_list<umba::tokenizer::payload_type> payloadExpectedList, const std::string &msg=std::string()) const
-    {
-        BaseClass::logUnexpected( pTokenInfo, payloadExpectedList, msg, [&](umba::tokenizer::payload_type tk) { return getTokenIdStr(tk); } );
-        return false;
-    }
+    // bool expectedReachedMsg(const TokenInfoType *pTokenInfo, std::initializer_list<umba::tokenizer::payload_type> payloadExpectedList, const std::string &msg=std::string()) const
+    // {
+    //     BaseClass::logUnexpected( pTokenInfo, payloadExpectedList, msg, [&](umba::tokenizer::payload_type tk) { return getTokenIdStr(tk); } );
+    //     return false;
+    // }
+    //  
+    // bool expectedReachedMsg(const TokenInfoType *pTokenInfo, umba::tokenizer::payload_type payloadExpected, const std::string &msg=std::string()) const
+    // {
+    //     BaseClass::logUnexpected( pTokenInfo, payloadExpected, msg, [&](umba::tokenizer::payload_type tk) { return getTokenIdStr(tk); } );
+    //     return false;
+    // }
+    //  
+    // bool checkExactTokenType(const TokenInfoType *pTokenInfo, std::initializer_list<umba::tokenizer::payload_type> payloadExpectedList, const std::string &msg=std::string()) const
+    // {
+    //     for(auto e : payloadExpectedList)
+    //     {
+    //         if (e==pTokenInfo->tokenType) // tkReached
+    //             return true;
+    //     }
+    //     return expectedReachedMsg(pTokenInfo, payloadExpectedList, msg);
+    // }
+    //  
+    // bool checkExactTokenType(const TokenInfoType *pTokenInfo, umba::tokenizer::payload_type payloadExpected, const std::string &msg=std::string()) const
+    // {
+    //     // for(auto e : payloadExpectedList)
+    //     // {
+    //     //     if (e==pTokenInfo->tokenType) // tkReached
+    //     //         return true;
+    //     // }
+    //  
+    //     if (payloadExpected==pTokenInfo->tokenType)
+    //         return true;
+    //  
+    //     return expectedReachedMsg(pTokenInfo, payloadExpected, msg);
+    // }
+    //  
+    //  
+    // template<typename TokenHandler>
+    // bool readHomogeneousTokensList( umba::tokenizer::payload_type tokenToken, umba::tokenizer::payload_type tokenSep
+    //                               , bool readNextOnStart
+    //                               , TokenHandler handler
+    //                               , bool initialWaitSep = false
+    //                               )
+    // {
+    //     if (readNextOnStart)
+    //         readNextToken();
+    //  
+    //     bool waitSep = initialWaitSep;
+    //  
+    //     for( 
+    //        ; umba::TheValue(m_pTokenInfo->tokenType).oneOf(tokenSep, tokenToken)
+    //        ; readNextToken()
+    //        )
+    //     {
+    //         if (waitSep)
+    //         {
+    //             if (m_pTokenInfo->tokenType!=tokenSep)
+    //                 break;
+    //             waitSep = false;
+    //         }
+    //         else // ждём tokenToken, после разделителя или в начале
+    //         {
+    //             if (!checkExactTokenType(m_pTokenInfo, tokenToken /* , "'display-options' directive: invalid option value" */ ))
+    //                 return false; // а пришло хз что
+    //             //evd.basicEvents.emplace_back(extractIdentifierName(m_pTokenInfo));
+    //             handler();
+    //             waitSep = true;
+    //         }
+    //     }
+    //  
+    //     return true;
+    // }
 
-    bool expectedReachedMsg(const TokenInfoType *pTokenInfo, umba::tokenizer::payload_type payloadExpected, const std::string &msg=std::string()) const
-    {
-        BaseClass::logUnexpected( pTokenInfo, payloadExpected, msg, [&](umba::tokenizer::payload_type tk) { return getTokenIdStr(tk); } );
-        return false;
-    }
 
-    bool checkExactTokenType(const TokenInfoType *pTokenInfo, std::initializer_list<umba::tokenizer::payload_type> payloadExpectedList, const std::string &msg=std::string()) const
-    {
-        for(auto e : payloadExpectedList)
-        {
-            if (e==pTokenInfo->tokenType) // tkReached
-                return true;
-        }
-        return expectedReachedMsg(pTokenInfo, payloadExpectedList, msg);
-    }
-
-    bool checkExactTokenType(const TokenInfoType *pTokenInfo, umba::tokenizer::payload_type payloadExpected, const std::string &msg=std::string()) const
-    {
-        // for(auto e : payloadExpectedList)
-        // {
-        //     if (e==pTokenInfo->tokenType) // tkReached
-        //         return true;
-        // }
-
-        if (payloadExpected==pTokenInfo->tokenType)
-            return true;
-
-        return expectedReachedMsg(pTokenInfo, payloadExpected, msg);
-    }
-
-
-    template<typename TokenHandler>
-    bool readHomogeneousTokensList( umba::tokenizer::payload_type tokenToken, umba::tokenizer::payload_type tokenSep
-                                  , bool readNextOnStart
-                                  , TokenHandler handler
-                                  , bool initialWaitSep = false
-                                  )
-    {
-        if (readNextOnStart)
-            readNextToken();
-
-        bool waitSep = initialWaitSep;
-
-        for( 
-           ; umba::TheValue(m_pTokenInfo->tokenType).oneOf(tokenSep, tokenToken)
-           ; readNextToken()
-           )
-        {
-            if (waitSep)
-            {
-                if (m_pTokenInfo->tokenType!=tokenSep)
-                    break;
-                waitSep = false;
-            }
-            else // ждём tokenToken, после разделителя или в начале
-            {
-                if (!checkExactTokenType(m_pTokenInfo, tokenToken /* , "'display-options' directive: invalid option value" */ ))
-                    return false; // а пришло хз что
-                //evd.basicEvents.emplace_back(extractIdentifierName(m_pTokenInfo));
-                handler();
-                waitSep = true;
-            }
-        }
-
-        return true;
-    }
-
+    //----------------------------------------------------------------------------
 
     // cmdStopTraffic : external - "The RED light (stop) mode is on";
     // tmStopTraffic : external generated;
@@ -351,36 +383,36 @@ public:
 
         EventFlags commonFlags = EventFlags::none;
 
-        if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
+        if (getTokenType()==UFSM_TOKEN_OP_COLON)
         {
             readNextToken();
-            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_OVERRIDE} /* , "'display-options' directive: invalid option value" */ ))
+            if (!checkExactTokenType({UFSM_TOKEN_KWD_OVERRIDE} /* , "'display-options' directive: invalid option value" */ ))
                 return false; // а пришло хз что
             commonFlags |= EventFlags::override;
             readNextToken();
         }
 
-        if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+        if (!checkExactTokenType({UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
             return false; // а пришло хз что
 
         while(true)
         {
             // Ждём идентификатор или конец блока
             readNextToken();
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_BRACKET_SCOPE_CLOSE)
+            if (getTokenType()==UFSM_TOKEN_BRACKET_SCOPE_CLOSE)
                 return true;
 
-            if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
+            if (!checkExactTokenType({UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
                 return false; // а пришло хз что
 
             EventDefinition evd;
             evd.positionInfo = getFullPos();
-            evd.name  = extractIdentifierName(m_pTokenInfo);
+            evd.name  = extractIdentifierName();
             evd.flags = commonFlags;
 
             readNextToken();
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_SEMICOLON)
+            if (isTokenOneOf(UFSM_TOKEN_OP_SEMICOLON))
             {
                 // Ничего дополнительно не задано, считаем событие как external
                 evd.flags |= EventFlags::external;
@@ -388,60 +420,60 @@ public:
                 continue;
             }
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+            if (isTokenOneOf(UFSM_TOKEN_OP_DESCR_FOLLOWS))
             {
                 readNextToken();
-                if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
+                if (!checkExactTokenType({UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
                     return false; // а пришло хз что
-                evd.description = extractLiteral(m_pTokenInfo);
+                evd.description = extractLiteral();
                 evd.flags |= EventFlags::external;
                 sm.addDefinition(evd);
                 readNextToken();
-                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
+                if (!checkExactTokenType({UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
                     return false;
                 continue;
             }
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
+            if (isTokenOneOf(UFSM_TOKEN_OP_COLON))
             {
                 readNextToken();
 
-                if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_EXTERNAL)
+                if (isTokenOneOf(UFSM_TOKEN_KWD_EXTERNAL))
                 {
                     evd.flags |= EventFlags::external;
                     readNextToken();
                 }
 
-                if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_GENERATED)
+                if (isTokenOneOf(UFSM_TOKEN_KWD_GENERATED))
                 {
                     evd.flags |= EventFlags::external | EventFlags::generated;
                     readNextToken();
                 }
 
-                if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+                if (isTokenOneOf(UFSM_TOKEN_OP_DESCR_FOLLOWS))
                 {
                     readNextToken();
-                    if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
+                    if (!checkExactTokenType({UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
                         return false; // а пришло хз что
-                    evd.description = extractLiteral(m_pTokenInfo);
+                    evd.description = extractLiteral();
                     readNextToken();
                 }
 
                 sm.addDefinition(evd);
             }
-            else if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_ASSIGN)
+            else if (isTokenOneOf(UFSM_TOKEN_OP_ASSIGN))
             {
                 if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_OR
                                               , true /* readNextOnStart */
-                                              , [&]() { evd.basicEvents.emplace_back(extractIdentifierName(m_pTokenInfo)); } ))
+                                              , [&]() { evd.basicEvents.emplace_back(extractIdentifierName()); } ))
                     return false;
 
-                if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+                if (isTokenOneOf(UFSM_TOKEN_OP_DESCR_FOLLOWS))
                 {
                     readNextToken();
-                    if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
+                    if (!checkExactTokenType({UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
                         return false; // а пришло хз что
-                    evd.description = extractLiteral(m_pTokenInfo);
+                    evd.description = extractLiteral();
                     readNextToken();
                 }
 
@@ -450,11 +482,11 @@ public:
             }
             else
             {
-                return checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON,UFSM_TOKEN_OP_DESCR_FOLLOWS,UFSM_TOKEN_OP_COLON,UFSM_TOKEN_OP_ASSIGN} /* , "'display-options' directive: invalid option value" */ );
+                return checkExactTokenType({UFSM_TOKEN_OP_SEMICOLON,UFSM_TOKEN_OP_DESCR_FOLLOWS,UFSM_TOKEN_OP_COLON,UFSM_TOKEN_OP_ASSIGN} /* , "'display-options' directive: invalid option value" */ );
             }
 
             // Тут у нас должна быть точка с запятой
-            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
+            if (!checkExactTokenType({UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
                 return false; // а пришло хз что
 
         } // while(true)
@@ -474,36 +506,36 @@ public:
 
         ActionFlags commonFlags = ActionFlags::none;
 
-        if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
+        if (isTokenOneOf(UFSM_TOKEN_OP_COLON))
         {
             readNextToken();
-            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_OVERRIDE} /* , "'display-options' directive: invalid option value" */ ))
+            if (!checkExactTokenType({UFSM_TOKEN_KWD_OVERRIDE} /* , "'display-options' directive: invalid option value" */ ))
                 return false; // а пришло хз что
             commonFlags |= ActionFlags::override;
             readNextToken();
         }
 
-        if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+        if (!checkExactTokenType({UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
             return false; // а пришло хз что
 
         while(true)
         {
             // Ждём идентификатор или конец блока
             readNextToken();
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_BRACKET_SCOPE_CLOSE)
+            if (isTokenOneOf(UFSM_TOKEN_BRACKET_SCOPE_CLOSE))
                 return true;
 
-            if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
+            if (!checkExactTokenType({UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
                 return false; // а пришло хз что
 
             ActionDefinition ad;
             ad.positionInfo = getFullPos();
-            ad.name  = extractIdentifierName(m_pTokenInfo);
+            ad.name  = extractIdentifierName();
             ad.flags = commonFlags;
 
             readNextToken();
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_SEMICOLON)
+            if (isTokenOneOf(UFSM_TOKEN_OP_SEMICOLON))
             {
                 // Ничего дополнительно не задано, считаем событие как external
                 ad.flags |= ActionFlags::external;
@@ -511,67 +543,67 @@ public:
                 continue;
             }
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+            if (isTokenOneOf(UFSM_TOKEN_OP_DESCR_FOLLOWS))
             {
                 readNextToken();
-                if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
+                if (!checkExactTokenType({UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
                     return false; // а пришло хз что
-                ad.description = extractLiteral(m_pTokenInfo);
+                ad.description = extractLiteral();
                 ad.flags |= ActionFlags::external;
                 sm.addDefinition(ad);
                 readNextToken();
-                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
+                if (!checkExactTokenType({UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
                     return false;
                 continue;
             }
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
+            if (isTokenOneOf(UFSM_TOKEN_OP_COLON))
             {
                 readNextToken();
 
                 ad.flags |= ActionFlags::external;
 
-                if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_EXTERNAL)
+                if (isTokenOneOf(UFSM_TOKEN_KWD_EXTERNAL))
                 {
                     readNextToken();
                 }
 
-                if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_GENERATES)
+                if (isTokenOneOf(UFSM_TOKEN_KWD_GENERATES))
                 {
                     ad.flags |= ActionFlags::external | ActionFlags::generates;
 
                     if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_COMMA
                                                   , true /* readNextOnStart */
-                                                  , [&]() { ad.generates.emplace_back(extractIdentifierName(m_pTokenInfo)); } ))
+                                                  , [&]() { ad.generates.emplace_back(extractIdentifierName()); } ))
                         return false;
 
                 }
 
-                if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+                if (isTokenOneOf(UFSM_TOKEN_OP_DESCR_FOLLOWS))
                 {
                     readNextToken();
-                    if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
+                    if (!checkExactTokenType({UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
                         return false; // а пришло хз что
-                    ad.description = extractLiteral(m_pTokenInfo);
+                    ad.description = extractLiteral();
                     readNextToken();
                 }
 
                 sm.addDefinition(ad);
             }
-            else if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_ASSIGN)
+            else if (isTokenOneOf(UFSM_TOKEN_OP_ASSIGN))
             {
                 if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_COMMA
                                               , true /* readNextOnStart */
-                                              , [&]() { ad.basicActions.emplace_back(extractIdentifierName(m_pTokenInfo)); } ))
+                                              , [&]() { ad.basicActions.emplace_back(extractIdentifierName()); } ))
                     return false;
 
 
-                if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+                if (isTokenOneOf(UFSM_TOKEN_OP_DESCR_FOLLOWS))
                 {
                     readNextToken();
-                    if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
+                    if (!checkExactTokenType({UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
                         return false; // а пришло хз что
-                    ad.description = extractLiteral(m_pTokenInfo);
+                    ad.description = extractLiteral();
                     readNextToken();
                 }
 
@@ -580,11 +612,11 @@ public:
             }
             else
             {
-                return checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON,UFSM_TOKEN_OP_DESCR_FOLLOWS,UFSM_TOKEN_OP_COLON,UFSM_TOKEN_OP_ASSIGN} /* , "'display-options' directive: invalid option value" */ );
+                return checkExactTokenType({UFSM_TOKEN_OP_SEMICOLON,UFSM_TOKEN_OP_DESCR_FOLLOWS,UFSM_TOKEN_OP_COLON,UFSM_TOKEN_OP_ASSIGN} /* , "'display-options' directive: invalid option value" */ );
             }
 
             // Тут у нас должна быть точка с запятой
-            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
+            if (!checkExactTokenType({UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
                 return false; // а пришло хз что
 
         } // while(true)
@@ -599,45 +631,45 @@ public:
 
         StateFlags commonFlags = StateFlags::none;
 
-        if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
+        if (isTokenOneOf(UFSM_TOKEN_OP_COLON))
         {
             readNextToken();
-            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_OVERRIDE} /* , "'display-options' directive: invalid option value" */ ))
+            if (!checkExactTokenType({UFSM_TOKEN_KWD_OVERRIDE} /* , "'display-options' directive: invalid option value" */ ))
                 return false; // а пришло хз что
             commonFlags |= StateFlags::override;
             readNextToken();
         }
 
-        if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+        if (!checkExactTokenType({UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
             return false; // а пришло хз что
 
         while(true)
         {
             // Ждём идентификатор или конец блока
             readNextToken();
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_BRACKET_SCOPE_CLOSE)
+            if (isTokenOneOf(UFSM_TOKEN_BRACKET_SCOPE_CLOSE))
                 return true;
 
-            if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
+            if (!checkExactTokenType({UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
                 return false; // а пришло хз что
 
             StateDefinition sd;
             sd.positionInfo = getFullPos();
-            sd.name  = extractIdentifierName(m_pTokenInfo);
+            sd.name  = extractIdentifierName();
             sd.flags = commonFlags;
 
             readNextToken();
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
+            if (isTokenOneOf(UFSM_TOKEN_OP_COLON))
             {
                 readNextToken(); // вычитываем следующий токен
                 // может быть только признак initial/final/error
-                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_INITIAL, UFSM_TOKEN_KWD_FINAL, UFSM_TOKEN_KWD_ERROR} /* , "'display-options' directive: invalid option value" */ ))
+                if (!checkExactTokenType({UFSM_TOKEN_KWD_INITIAL, UFSM_TOKEN_KWD_FINAL, UFSM_TOKEN_KWD_ERROR} /* , "'display-options' directive: invalid option value" */ ))
                     return false; // а пришло хз что
 
-                if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_INITIAL)
+                if (isTokenOneOf(UFSM_TOKEN_KWD_INITIAL))
                     sd.flags |= StateFlags::initial;
-                else if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_FINAL)
+                else if (isTokenOneOf(UFSM_TOKEN_KWD_FINAL))
                     sd.flags |= StateFlags::final;
                 else // UFSM_TOKEN_KWD_ERROR
                     sd.flags |= StateFlags::final | StateFlags::error;
@@ -645,38 +677,38 @@ public:
                 readNextToken();
             }
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+            if (isTokenOneOf(UFSM_TOKEN_OP_DESCR_FOLLOWS))
             {
                 readNextToken();
-                if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
+                if (!checkExactTokenType({UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
                     return false; // а пришло хз что
-                sd.description = extractLiteral(m_pTokenInfo);
+                sd.description = extractLiteral();
                 readNextToken();
             }
 
             // Теперь ожидаем блок с различными типами действий: enter/leave/self-enter/self-leave,
             // или ожидаем завершение выражения точкой с запятой
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_SEMICOLON)
+            if (isTokenOneOf(UFSM_TOKEN_OP_SEMICOLON))
             {
                 // ничего не делаем
             }
-            else if (m_pTokenInfo->tokenType==UFSM_TOKEN_BRACKET_SCOPE_OPEN)
+            else if (isTokenOneOf(UFSM_TOKEN_BRACKET_SCOPE_OPEN))
             {
                 while(true)
                 {
                     // Ждём идентификатор типа действия или конец блока
                     readNextToken();
-                    if (m_pTokenInfo->tokenType==UFSM_TOKEN_BRACKET_SCOPE_CLOSE)
+                    if (isTokenOneOf(UFSM_TOKEN_BRACKET_SCOPE_CLOSE))
                         break;
       
                     // Ждём идентификатор типа действия
-                    if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_ENTER, UFSM_TOKEN_KWD_LEAVE, UFSM_TOKEN_KWD_SELF_ENTER, UFSM_TOKEN_KWD_SELF_LEAVE} /* , "'display-options' directive: invalid option value" */ ))
+                    if (!checkExactTokenType({UFSM_TOKEN_KWD_ENTER, UFSM_TOKEN_KWD_LEAVE, UFSM_TOKEN_KWD_SELF_ENTER, UFSM_TOKEN_KWD_SELF_LEAVE} /* , "'display-options' directive: invalid option value" */ ))
                         return false; // а пришло хз что
     
                     StateActionKind saKind = StateActionKind::none;
     
-                    switch(m_pTokenInfo->tokenType)
+                    switch(getTokenType())
                     {
                         case UFSM_TOKEN_KWD_ENTER     : saKind = StateActionKind::stateEnter; break;
                         case UFSM_TOKEN_KWD_LEAVE     : saKind = StateActionKind::stateLeave; break;
@@ -686,23 +718,23 @@ public:
     
                     readNextToken();
                     // Ждем разделитель перед списком действий
-                    if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_COLON} /* , "'display-options' directive: invalid option value" */ ))
+                    if (!checkExactTokenType({UFSM_TOKEN_OP_COLON} /* , "'display-options' directive: invalid option value" */ ))
                         return false; // а пришло хз что
                     
                     if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_COMMA
                                                   , true /* readNextOnStart */
-                                                  , [&]() { sd.actionRefs[saKind].push_back(extractIdentifierName(m_pTokenInfo)); } ))
+                                                  , [&]() { sd.actionRefs[saKind].push_back(extractIdentifierName()); } ))
                         return false;
     
                     // Тут у нас должна быть точка с запятой
-                    if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
+                    if (!checkExactTokenType({UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
                         return false; // а пришло хз что
     
                 } // while(true)
             }    
             else
             {
-                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN, UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
+                if (!checkExactTokenType({UFSM_TOKEN_BRACKET_SCOPE_OPEN, UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
                     return false; // а пришло хз что
             }
 
@@ -722,7 +754,7 @@ public:
         if (parserErr!=ParserErrorType::none)
         {
             //BaseClass::logSimpleMessage(getFullPos(), m_pTokenInfo->tokenType, "expression-parsering", "parser initialization failed");
-            BaseClass::logSimpleMessage(m_tokenPos, m_pTokenInfo->tokenType, "expression-parsering", "parser initialization failed");
+            logSimpleMessage("expression-parsering", "parser initialization failed");
             return false;
         }
 
@@ -735,7 +767,7 @@ public:
          
         std::size_t tokensCount = 0;
         for( 
-           ; umba::TheValue(m_pTokenInfo->tokenType)
+           ; umba::TheValue(getTokenType())
              .oneOf( UMBA_TOKENIZER_TOKEN_ROUND_BRACKET_OPEN 
                    , UMBA_TOKENIZER_TOKEN_ROUND_BRACKET_CLOSE
                    , UFSM_TOKEN_OP_NOT, UFSM_TOKEN_OP_NOT_ALTER
@@ -747,8 +779,8 @@ public:
            )
         {
             LogicExpressionInputItem inputItem;
-            if (!convertTokenizerEvent<tokenizer_type>( inputItem, m_pTokenInfo->tokenType
-                                      , getFullPos(), BaseClass::getTokenParsedData(m_pTokenInfo)
+            if (!convertTokenizerEvent<tokenizer_type>( inputItem, getTokenType()
+                                      , getFullPos(), getTokenParsedData()
                                       , false // bCaseIgnore
                                       , true // bBoolConvert
                                       , true // bOpConvert  
@@ -760,7 +792,7 @@ public:
             if (parserErr!= ParserErrorType::none)
             {
                 //BaseClass::logSimpleMessage(getFullPos(), m_pTokenInfo->tokenType, "expression-parsering", parser.getErrorMessage(parserErr));
-                BaseClass::logSimpleMessage(m_tokenPos, m_pTokenInfo->tokenType, "expression-parsering", parser.getErrorMessage(parserErr));
+                logSimpleMessage("expression-parsing", parser.getErrorMessage(parserErr));
                 return false;
             }
         }
@@ -768,7 +800,7 @@ public:
         if (!tokensCount)
         {
             //BaseClass::logSimpleMessage(getFullPos(), m_pTokenInfo->tokenType, "expression-parsering", "expression is empty");
-            BaseClass::logSimpleMessage(m_tokenPos, m_pTokenInfo->tokenType, "expression-parsering", "expression is empty");
+            logSimpleMessage("expression-parsing", "expression is empty");
             return false;
         }
 
@@ -777,7 +809,7 @@ public:
         if (parserErr!= ParserErrorType::none)
         {
             //BaseClass::logSimpleMessage(getFullPos(), m_pTokenInfo->tokenType, "expression-parsering", parser.getErrorMessage(parserErr));
-            BaseClass::logSimpleMessage(m_tokenPos, m_pTokenInfo->tokenType, "expression-parsering", parser.getErrorMessage(parserErr));
+            logSimpleMessage("expression-parsing", parser.getErrorMessage(parserErr));
             return false;
         }
 
@@ -798,70 +830,70 @@ public:
 
         PredicateFlags commonFlags = PredicateFlags::none;
 
-        if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
+        if (isTokenOneOf(UFSM_TOKEN_OP_COLON))
         {
             readNextToken();
-            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_OVERRIDE} /* , "'display-options' directive: invalid option value" */ ))
+            if (!checkExactTokenType({UFSM_TOKEN_KWD_OVERRIDE} /* , "'display-options' directive: invalid option value" */ ))
                 return false; // а пришло хз что
             commonFlags |= PredicateFlags::override;
             readNextToken();
         }
 
-        if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+        if (!checkExactTokenType({UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
             return false; // а пришло хз что
 
         while(true)
         {
             // Ждём идентификатор или конец блока
             readNextToken();
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_BRACKET_SCOPE_CLOSE)
+            if (isTokenOneOf(UFSM_TOKEN_BRACKET_SCOPE_CLOSE))
                 return true;
 
-            if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
+            if (!checkExactTokenType({UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
                 return false; // а пришло хз что
 
             PredicateDefinition pd;
             pd.positionInfo = getFullPos();
-            pd.name  = extractIdentifierName(m_pTokenInfo);
+            pd.name  = extractIdentifierName();
             pd.flags = commonFlags;
 
             readNextToken();
 
             //bool hasExpression = false;
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_ASSIGN)
+            if (isTokenOneOf(UFSM_TOKEN_OP_ASSIGN))
             {
                 readNextToken();
 
-                if (m_pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_BACKTICK_LITERAL)
+                if (isTokenOneOf(UMBA_TOKENIZER_TOKEN_BACKTICK_LITERAL))
                 {
                     pd.flags |= PredicateFlags::charSet;
-                    std::string bktckStr = extractLiteral(m_pTokenInfo);
+                    std::string bktckStr = extractLiteral();
                     std::size_t errPos = 0;
                     if (!char_class::utils::parseCharClassDefinition(bktckStr, pd.charSet, &errPos))
                     {
                         // Тупо прибавить позицию с ошибкой (+errPos) не прокатило, надо подумать, что не так
-                        BaseClass::logSimpleMessage(m_tokenPos /* +errPos */ , m_pTokenInfo->tokenType, "predicate-charset", "predicate char set definition is invalid");
+                        logSimpleMessage("predicate-charset", "predicate char set definition is invalid");
                         return false;
                     }
 
                     readNextToken();
 
                     // !!! Дублирование кода, вынести в отдельную лямбду
-                    if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_VALID_FOR)
+                    if (isTokenOneOf(UFSM_TOKEN_KWD_VALID_FOR))
                     {
                         pd.flags |= PredicateFlags::validFor;
     
                         readNextToken();
-                        if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+                        if (!checkExactTokenType({UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
                             return false; // а пришло хз что
     
                         if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_COMMA
                                                       , true /* readNextOnStart */
-                                                      , [&]() { pd.validForList.push_back(extractIdentifierName(m_pTokenInfo)); } ))
+                                                      , [&]() { pd.validForList.push_back(extractIdentifierName()); } ))
                             return false;
     
-                        if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
+                        if (!checkExactTokenType({UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
                             return false; // а пришло хз что
     
                         // Нужно проверить на пустоту список valid-for
@@ -869,7 +901,7 @@ public:
                         if (pd.validForList.empty())
                         {
                             // BaseClass::logSimpleMessage(getFullPos(), m_pTokenInfo->tokenType, "valid-for", "empty 'valid-for' list");
-                            BaseClass::logSimpleMessage(m_tokenPos, m_pTokenInfo->tokenType, "valid-for", "empty 'valid-for' list");
+                            logSimpleMessage("valid-for", "empty 'valid-for' list");
                             return false;
                         }
     
@@ -883,31 +915,31 @@ public:
                         return false;
                 }
             }
-            else if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
+            else if (isTokenOneOf(UFSM_TOKEN_OP_COLON))
             {
                 pd.flags |= PredicateFlags::external;
 
                 readNextToken();
 
-                if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_EXTERNAL)
+                if (isTokenOneOf(UFSM_TOKEN_KWD_EXTERNAL))
                 {
                     readNextToken();
                 }
 
-                if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_VALID_FOR)
+                if (isTokenOneOf(UFSM_TOKEN_KWD_VALID_FOR))
                 {
                     pd.flags |= PredicateFlags::validFor;
 
                     readNextToken();
-                    if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+                    if (!checkExactTokenType({UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
                         return false; // а пришло хз что
 
                     if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_COMMA
                                                   , true /* readNextOnStart */
-                                                  , [&]() { pd.validForList.push_back(extractIdentifierName(m_pTokenInfo)); } ))
+                                                  , [&]() { pd.validForList.push_back(extractIdentifierName()); } ))
                         return false;
 
-                    if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
+                    if (!checkExactTokenType({UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
                         return false; // а пришло хз что
 
                     // Нужно проверить на пустоту список valid-for
@@ -915,7 +947,7 @@ public:
                     if (pd.validForList.empty())
                     {
                         // BaseClass::logSimpleMessage(getFullPos(), m_pTokenInfo->tokenType, "valid-for", "empty 'valid-for' list");
-                        BaseClass::logSimpleMessage(m_tokenPos, m_pTokenInfo->tokenType, "valid-for", "empty 'valid-for' list");
+                        logSimpleMessage("valid-for", "empty 'valid-for' list");
                         return false;
                     }
 
@@ -923,16 +955,16 @@ public:
                 }
             }
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+            if (isTokenOneOf(UFSM_TOKEN_OP_DESCR_FOLLOWS))
             {
                 readNextToken();
-                if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
+                if (!checkExactTokenType({UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
                     return false; // а пришло хз что
-                pd.description = extractLiteral(m_pTokenInfo);
+                pd.description = extractLiteral();
                 readNextToken();
             }
 
-            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
+            if (!checkExactTokenType({UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
                 return false;
 
             sm.addDefinition(pd);
@@ -958,36 +990,36 @@ public:
 
             auto positionInfo = getFullPos();
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_NOT || m_pTokenInfo->tokenType==UFSM_TOKEN_OP_NOT_ALTER)
+            if (isTokenOneOf(UFSM_TOKEN_OP_NOT, UFSM_TOKEN_OP_NOT_ALTER))
             {
                 notFlag = true;
                 readNextToken();
             }
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_ANY)
+            if (isTokenOneOf(UFSM_TOKEN_OP_ANY))
             {
                 if (notFlag)
                 {
-                    BaseClass::logSimpleMessage(m_tokenPos, m_pTokenInfo->tokenType, "not-any", "the ANY ('*') value cannot be used with negation");
+                    logSimpleMessage("not-any", "the ANY ('*') value cannot be used with negation");
                     return false;
                 }
 
-                if (!handler(positionInfo, notFlag, m_pTokenInfo->tokenType, std::string()))
+                if (!handler(positionInfo, notFlag, getTokenType(), std::string()))
                     return false;
             }
-            else if (m_pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_IDENTIFIER)
+            else if (isTokenOneOf(UMBA_TOKENIZER_TOKEN_IDENTIFIER))
             {
-                if (!handler(positionInfo, notFlag, m_pTokenInfo->tokenType, extractIdentifierName(m_pTokenInfo)))
+                if (!handler(positionInfo, notFlag, getTokenType(), extractIdentifierName()))
                     return false;
             }
             else
             {
-                return checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_ANY, UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ );
+                return checkExactTokenType({UFSM_TOKEN_OP_ANY, UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ );
             }
 
             readNextToken();
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COMMA)
+            if (isTokenOneOf(UFSM_TOKEN_OP_COMMA))
             {
                 readNextToken();
                 continue;
@@ -1008,16 +1040,16 @@ public:
 
         TransitionFlags commonFlags = TransitionFlags::none; // conditional
 
-        if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON) // optional sequence
+        if (isTokenOneOf(UFSM_TOKEN_OP_COLON)) // optional sequence
         {
             readNextToken();
-            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_OVERRIDE} /* , "'display-options' directive: invalid option value" */ ))
+            if (!checkExactTokenType({UFSM_TOKEN_KWD_OVERRIDE} /* , "'display-options' directive: invalid option value" */ ))
                 return false; // а пришло хз что
             commonFlags |= TransitionFlags::override;
             readNextToken();
         }
 
-        if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+        if (!checkExactTokenType({UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
             return false; // а пришло хз что
 
         // turnedOff : cmdStopTraffic   -> trafficStopped;
@@ -1066,7 +1098,7 @@ public:
         {
             // Ждём конец блока
             readNextToken();
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_BRACKET_SCOPE_CLOSE)
+            if (isTokenOneOf(UFSM_TOKEN_BRACKET_SCOPE_CLOSE))
                 return true;
 
             // if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
@@ -1091,13 +1123,13 @@ public:
                 
                         if (td.sourceStates.checkForAny())
                         {
-                            BaseClass::logSimpleMessage(positionInfo.pos, m_pTokenInfo->tokenType, "already-any", "the ANY ('*') value already in list");
+                            logSimpleMessage(positionInfo.pos, "already-any", "the ANY ('*') value already in list");
                             return false;
                         }
 
                         if (!td.sourceStates.empty())
                         {
-                            BaseClass::logSimpleMessage(positionInfo.pos, m_pTokenInfo->tokenType, "first-any", "the ANY ('*') value must be added first");
+                            logSimpleMessage(positionInfo.pos, "first-any", "the ANY ('*') value must be added first");
                             return false;
                         }
                 
@@ -1113,9 +1145,9 @@ public:
                             //   если есть ANY - только с отрицанием
                             //   если нет ANY  - только без отрицания
                             if (bNot)
-                                BaseClass::logSimpleMessage(positionInfo.pos, m_pTokenInfo->tokenType, "missing-any", "the ANY ('*') value must be first in list before adding exclusions");
+                                logSimpleMessage(positionInfo.pos, "missing-any", "the ANY ('*') value must be first in list before adding exclusions");
                             else
-                                BaseClass::logSimpleMessage(positionInfo.pos, m_pTokenInfo->tokenType, "already-any", "adding normal value (with no exclusion) to list with ANY ('*') is wrong");
+                                logSimpleMessage(positionInfo.pos, "already-any", "adding normal value (with no exclusion) to list with ANY ('*') is wrong");
 
                             return false;
                         }
@@ -1135,7 +1167,7 @@ public:
                 return false;
             }
 
-            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_COLON} /* , "'display-options' directive: invalid option value" */ ))
+            if (!checkExactTokenType({UFSM_TOKEN_OP_COLON} /* , "'display-options' directive: invalid option value" */ ))
                 return false;
 
             readNextToken();
@@ -1155,13 +1187,13 @@ public:
                 
                         if (td.events.checkForAny())
                         {
-                            BaseClass::logSimpleMessage(positionInfo.pos, m_pTokenInfo->tokenType, "already-any", "the ANY ('*') value already in list");
+                            logSimpleMessage(positionInfo.pos, "already-any", "the ANY ('*') value already in list");
                             return false;
                         }
 
                         if (!td.events.empty())
                         {
-                            BaseClass::logSimpleMessage(positionInfo.pos, m_pTokenInfo->tokenType, "first-any", "the ANY ('*') value must be added first");
+                            logSimpleMessage(positionInfo.pos, "first-any", "the ANY ('*') value must be added first");
                             return false;
                         }
                 
@@ -1177,9 +1209,9 @@ public:
                             //   если есть ANY - только с отрицанием
                             //   если нет ANY  - только без отрицания
                             if (bNot)
-                                BaseClass::logSimpleMessage(positionInfo.pos, m_pTokenInfo->tokenType, "missing-any", "the ANY ('*') value must be first in list before adding exclusions");
+                                logSimpleMessage(positionInfo.pos, "missing-any", "the ANY ('*') value must be first in list before adding exclusions");
                             else
-                                BaseClass::logSimpleMessage(positionInfo.pos, m_pTokenInfo->tokenType, "already-any", "adding normal value (with no exclusion) to list with ANY ('*') is wrong");
+                                logSimpleMessage(positionInfo.pos, "already-any", "adding normal value (with no exclusion) to list with ANY ('*') is wrong");
 
                             return false;
                         }
@@ -1200,7 +1232,7 @@ public:
             }
 
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_TRANSITION_CONDITION)
+            if (isTokenOneOf(UFSM_TOKEN_OP_TRANSITION_CONDITION))
             {
                 // Читаем условие
                 if (!readLogicExpression(td.additionalCondition, true /* readNextOnStart */ ))
@@ -1209,30 +1241,30 @@ public:
                 td.flags |= TransitionFlags::conditional;
             }
 
-            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_TRANSITION_ARROW} /* , "'display-options' directive: invalid option value" */ ))
+            if (!checkExactTokenType({UFSM_TOKEN_OP_TRANSITION_ARROW} /* , "'display-options' directive: invalid option value" */ ))
                 return false;
 
             readNextToken();
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_SELF || m_pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_IDENTIFIER)
+            if (isTokenOneOf(UFSM_TOKEN_KWD_SELF, UMBA_TOKENIZER_TOKEN_IDENTIFIER))
             {
-                if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_SELF)
+                if (isTokenOneOf(UFSM_TOKEN_KWD_SELF))
                 {
                     td.flags |= TransitionFlags::selfTarget;
                 }
                 else // identifier
                 {
-                    td.targetState = extractIdentifierName(m_pTokenInfo);
+                    td.targetState = extractIdentifierName();
                 }
             }
 
             readNextToken();
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_TRANSITION_CONDITION)
+            if (isTokenOneOf(UFSM_TOKEN_OP_TRANSITION_CONDITION))
             {
                 if ((td.flags&TransitionFlags::conditional)!=0)
                 {
-                    BaseClass::logSimpleMessage(m_tokenPos, m_pTokenInfo->tokenType, "already-tr-condition", "transition condition is already set");
+                    BaseClass::logSimpleMessage("already-tr-condition", "transition condition is already set");
                     return false;
                 }
 
@@ -1243,26 +1275,26 @@ public:
                 td.flags |= TransitionFlags::conditional;
             }
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
+            if (isTokenOneOf(UFSM_TOKEN_OP_COLON))
             {
                 if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_COMMA
                                               , true /* readNextOnStart */
-                                              , [&]() { td.actionRefs.push_back(extractIdentifierName(m_pTokenInfo)); } ))
+                                              , [&]() { td.actionRefs.push_back(extractIdentifierName()); } ))
                     return false;
             }
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+            if (isTokenOneOf(UFSM_TOKEN_OP_DESCR_FOLLOWS))
             {
                 readNextToken();
-                if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
+                if (!checkExactTokenType({UMBA_TOKENIZER_TOKEN_STRING_LITERAL} /* , "'display-options' directive: invalid option value" */ ))
                     return false; // а пришло хз что
-                td.description = extractLiteral(m_pTokenInfo);
+                td.description = extractLiteral();
                 readNextToken();
             }
 
             sm.addDefinition(td);
 
-            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
+            if (!checkExactTokenType({UFSM_TOKEN_OP_SEMICOLON} /* , "'display-options' directive: invalid option value" */ ))
                 return false;
             
             //readNextToken();
@@ -1278,7 +1310,7 @@ public:
         {
             readNextToken(); 
 
-            switch(m_pTokenInfo->tokenType)
+            switch(getTokenType())
             {
                 case UFSM_TOKEN_KWD_EVENTS     : 
                      if (!parseStateMachineEvents(sm))
@@ -1315,7 +1347,7 @@ public:
 
                 default:
                 {
-                     if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_EVENTS,UFSM_TOKEN_KWD_ACTIONS,UFSM_TOKEN_KWD_STATES,UFSM_TOKEN_KWD_PREDICATES,UFSM_TOKEN_KWD_TRANSITIONS,UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
+                     if (!checkExactTokenType({UFSM_TOKEN_KWD_EVENTS,UFSM_TOKEN_KWD_ACTIONS,UFSM_TOKEN_KWD_STATES,UFSM_TOKEN_KWD_PREDICATES,UFSM_TOKEN_KWD_TRANSITIONS,UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
                          return false; // а пришло хз что
                 }
 
@@ -1336,7 +1368,7 @@ public:
 
         bool waitSep = false;
 
-        if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_SCOPE)
+        if (isTokenOneOf(UFSM_TOKEN_OP_SCOPE))
         {
             // В начале у нас оператор скоупа, значит имя абсолютное
             waitSep = true;
@@ -1351,7 +1383,7 @@ public:
 
         if (!readHomogeneousTokensList( UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_OP_SCOPE
                                       , false /* readNextOnStart */
-                                      , [&]() { fqn.append(extractIdentifierName(m_pTokenInfo)); } 
+                                      , [&]() { fqn.append(extractIdentifierName()); } 
                                       , waitSep ))
             return false;
 
@@ -1367,8 +1399,8 @@ public:
 
         std::size_t flagsCount = 0;
         
-        for( m_pTokenInfo = BaseClass::waitForSignificantTokenChecked( &m_tokenPos, ParserWaitForTokenFlags::none) // пропустили открывающую скобку
-           ; umba::TheValue(m_pTokenInfo->tokenType).oneOf( UFSM_TOKEN_OP_COMMA
+        for( readNextToken(ParserWaitForTokenFlags::none) // пропустили открывающую скобку
+           ; umba::TheValue(getTokenType()).oneOf( UFSM_TOKEN_OP_COMMA
                                                           , UFSM_TOKEN_KWD_ACTIONS    
                                                           , UFSM_TOKEN_KWD_EVENTS     
                                                           , UFSM_TOKEN_KWD_PREDICATES 
@@ -1376,21 +1408,21 @@ public:
                                                           , UFSM_TOKEN_KWD_TRANSITIONS
                                                           , UFSM_TOKEN_KWD_ALL
                                                           )
-           ; m_pTokenInfo = BaseClass::waitForSignificantTokenChecked( &m_tokenPos, ParserWaitForTokenFlags::none)
+           ; readNextToken(ParserWaitForTokenFlags::none)
            )
         {
             if (waitComma)
             {
-                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_COMMA} /* , "'display-options' directive: invalid option value" */ ))
+                if (!checkExactTokenType({UFSM_TOKEN_OP_COMMA} /* , "'display-options' directive: invalid option value" */ ))
                     return false; // пришло что-то другое - ошибка
                 waitComma = false;
             }
             else // ждём флаг (кейворд флага)
             {
-                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_KWD_EVENTS, UFSM_TOKEN_KWD_ACTIONS, UFSM_TOKEN_KWD_STATES, UFSM_TOKEN_KWD_PREDICATES, UFSM_TOKEN_KWD_TRANSITIONS, UFSM_TOKEN_KWD_ALL} /* , "'display-options' directive: invalid option value" */ ))
+                if (!checkExactTokenType({UFSM_TOKEN_KWD_EVENTS, UFSM_TOKEN_KWD_ACTIONS, UFSM_TOKEN_KWD_STATES, UFSM_TOKEN_KWD_PREDICATES, UFSM_TOKEN_KWD_TRANSITIONS, UFSM_TOKEN_KWD_ALL} /* , "'display-options' directive: invalid option value" */ ))
                     return false; // а пришла запятая
                 InheritanceOverrideFlags newFlagVal = InheritanceOverrideFlags::none;
-                switch(m_pTokenInfo->tokenType)
+                switch(getTokenType())
                 {
                     case UFSM_TOKEN_KWD_ACTIONS    : ++flagsCount; newFlagVal = InheritanceOverrideFlags::actions    ; break;
                     case UFSM_TOKEN_KWD_EVENTS     : ++flagsCount; newFlagVal = InheritanceOverrideFlags::events     ; break;
@@ -1410,7 +1442,7 @@ public:
         if (!flagsCount)
         {
             // BaseClass::logSimpleMessage(getFullPos(), m_pTokenInfo->tokenType, "override-list", "empty 'override' list");
-            BaseClass::logSimpleMessage(m_tokenPos, m_pTokenInfo->tokenType, "override-list", "empty 'override' list");
+            logSimpleMessage("override-list", "empty 'override' list");
             return false;
         }
 
@@ -1425,9 +1457,9 @@ public:
         readNextToken(); 
         while(true)
         {
-            if (umba::TheValue(m_pTokenInfo->tokenType).oneOf(UFSM_TOKEN_KWD_USES, UFSM_TOKEN_KWD_INHERITS))
+            if (umba::TheValue(getTokenType()).oneOf(UFSM_TOKEN_KWD_USES, UFSM_TOKEN_KWD_INHERITS))
             {
-                if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_USES)
+                if (isTokenOneOf(UFSM_TOKEN_KWD_USES))
                     inheritanceListMode = InheritanceListMode::uses;
                 else
                     inheritanceListMode = InheritanceListMode::inherits;
@@ -1439,10 +1471,10 @@ public:
             ParentListEntry ple;
             ple.flags = inheritanceListMode==InheritanceListMode::uses ? ParentListEntryFlags::uses : ParentListEntryFlags::inherits;
 
-            if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SCOPE, UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ ))
+            if (!checkExactTokenType({UFSM_TOKEN_OP_SCOPE, UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ ))
                 return false;
 
-            ple.positionInfo = getFullPos(m_tokenPos);
+            ple.positionInfo = getFullPos();
 
             // У нас - идентификатор или оператор скоупа, парсим полное имя
             if (!parseFullQualifiedName(ple.name))
@@ -1453,24 +1485,24 @@ public:
             }
 
             // После имени может идти override, а после override - опционально идёт блок с атрибутами
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_OVERRIDE)
+            if (isTokenOneOf(UFSM_TOKEN_KWD_OVERRIDE))
             {
                 readNextToken(); 
 
-                if (m_pTokenInfo->tokenType!=UFSM_TOKEN_OP_COLON) // override без блока - это all
+                if (isTokenOneOf(UFSM_TOKEN_OP_COLON)) // override без блока - это all
                 {
                     ple.overrideFlags = InheritanceOverrideFlags::all;
                 }
                 else
                 {
                     readNextToken(); 
-                    if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+                    if (!checkExactTokenType({UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
                         return false; // а пришло хз
 
                     if (!parseInheritanceOverrideFlags(ple.overrideFlags))
                         return false;
 
-                    if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
+                    if (!checkExactTokenType({UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
                         return false;
                     readNextToken(); 
                 }
@@ -1506,24 +1538,24 @@ public:
 
 
             // После имени или списка override может идти запятая, дефис перед литералом описания, или открывающая скобка блока state machide'ы
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COMMA)
+            if (isTokenOneOf(UFSM_TOKEN_OP_COMMA))
             {
                 readNextToken(); 
                 continue;
             }
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_BRACKET_SCOPE_OPEN)
+            if (isTokenOneOf(UFSM_TOKEN_BRACKET_SCOPE_OPEN))
             {
                 return true;
             }
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+            if (isTokenOneOf(UFSM_TOKEN_OP_DESCR_FOLLOWS))
             {
                 readNextToken(); 
-                if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL, } /* , "'display-options' directive: invalid option value" */ ))
+                if (!checkExactTokenType({UMBA_TOKENIZER_TOKEN_STRING_LITERAL, } /* , "'display-options' directive: invalid option value" */ ))
                     return false;
 
-                sm.description = extractLiteral(m_pTokenInfo);
+                sm.description = extractLiteral();
                 readNextToken(); 
             }
 
@@ -1554,31 +1586,31 @@ public:
     {
         readNextToken();
 
-        if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ ))
+        if (!checkExactTokenType({UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ ))
             return false;
 
-        sm.name = extractIdentifierName(m_pTokenInfo);
+        sm.name = extractIdentifierName();
 
         readNextToken(); 
-        if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_COLON)
+        if (isTokenOneOf(UFSM_TOKEN_OP_COLON))
         {
             if (!parseStateMachineInheritanceList(sm, inheritanceListMode))
                 return false;
         }
         // else 
         
-        if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_DESCR_FOLLOWS)
+        if (isTokenOneOf(UFSM_TOKEN_OP_DESCR_FOLLOWS))
         {
             readNextToken(); 
-            if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_STRING_LITERAL, } /* , "'display-options' directive: invalid option value" */ ))
+            if (!checkExactTokenType({UMBA_TOKENIZER_TOKEN_STRING_LITERAL, } /* , "'display-options' directive: invalid option value" */ ))
                 return false;
 
-            sm.description = extractLiteral(m_pTokenInfo);
+            sm.description = extractLiteral();
             readNextToken(); 
         }
 
         // Тут у нас должна быть открывающая блок скобка
-        if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+        if (!checkExactTokenType({UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
             return false;
 
         if (!parseStateMachineBody(sm))
@@ -1629,19 +1661,19 @@ public:
 
             if (!waitSep) // wait for name
             {
-                if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ ))
+                if (!checkExactTokenType({UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , "'display-options' directive: invalid option value" */ ))
                     return false;
 
-                nsName.append(extractIdentifierName(m_pTokenInfo));
+                nsName.append(extractIdentifierName());
                 waitSep = true;
                 continue;
             }
             else // wait for name sep or open curly
             {
-                if (!checkExactTokenType(m_pTokenInfo, {UFSM_TOKEN_OP_SCOPE, UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
+                if (!checkExactTokenType({UFSM_TOKEN_OP_SCOPE, UFSM_TOKEN_BRACKET_SCOPE_OPEN} /* , "'display-options' directive: invalid option value" */ ))
                     return false;
 
-                if (m_pTokenInfo->tokenType==UFSM_TOKEN_OP_SCOPE) // ::
+                if (isTokenOneOf(UFSM_TOKEN_OP_SCOPE)) // ::
                 {
                     waitSep = false; // переходим к ожиданию слдующего имени NS
                     continue;
@@ -1667,29 +1699,29 @@ public:
             //const TokenInfoType *pTokenInfo
             readNextToken();
 
-            if (m_pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_LINEFEED)
+            if (isTokenOneOf(UMBA_TOKENIZER_TOKEN_LINEFEED))
                 continue;
 
-            if (m_pTokenInfo->tokenType==UMBA_TOKENIZER_TOKEN_CTRL_FIN)
+            if (isTokenOneOf(UMBA_TOKENIZER_TOKEN_CTRL_FIN))
                 return true; // normal stop
 
-            if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_NAMESPACE)
+            if (isTokenOneOf(UFSM_TOKEN_KWD_NAMESPACE))
             {
-                ctx.lastNsPos = getFullPos(m_tokenPos);
+                ctx.lastNsPos = getFullPos();
                 if (!parseNamespace())
                     return false;
             }
-            else if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_FSM)
+            else if (isTokenOneOf(UFSM_TOKEN_KWD_FSM))
             {
                 if (!parseStateMachine())
                     return false;
             }
-            else if (m_pTokenInfo->tokenType==UFSM_TOKEN_KWD_DEFINITIONS)
+            else if (isTokenOneOf(UFSM_TOKEN_KWD_DEFINITIONS))
             {
                 if (!parseDefinitions())
                     return false;
             }
-            else if (m_pTokenInfo->tokenType==UFSM_TOKEN_BRACKET_SCOPE_CLOSE)
+            else if (isTokenOneOf(UFSM_TOKEN_BRACKET_SCOPE_CLOSE))
             {
                 std::size_t nsPopCount = 0;
                 if (!ctx.nsOpenLevels.empty())
@@ -1699,7 +1731,7 @@ public:
                 }
                 else
                 {
-                    BaseClass::logSimpleUnexpected( m_pTokenInfo, [&](umba::tokenizer::payload_type tk) { return getTokenIdStr(tk); } );
+                    BaseClass::logSimpleUnexpected();
                     return false;
                 }
 
@@ -1714,12 +1746,12 @@ public:
 
             else
             {
-                expectedReachedMsg(m_pTokenInfo, { UFSM_TOKEN_KWD_NAMESPACE, UFSM_TOKEN_KWD_FSM, UFSM_TOKEN_KWD_DEFINITIONS } /* , msg */ );
+                expectedReachedMsg({ UFSM_TOKEN_KWD_NAMESPACE, UFSM_TOKEN_KWD_FSM, UFSM_TOKEN_KWD_DEFINITIONS } /* , msg */ );
                 return false;
             }
 
-            if (!m_pTokenInfo)
-                return false;
+            //if (!m_pTokenInfo)
+            //    return false;
     
         }
 
@@ -1734,11 +1766,11 @@ public:
         }
         catch(const std::exception &e) // e
         {
-            return BaseClass::logMessage( m_pTokenInfo, "generic-error", e.what() ), false;
+            return logMessage( "generic-error", e.what() ), false;
         }
         catch(...)
         {
-            return BaseClass::logMessage( m_pTokenInfo, "generic-error", "unknown error" ), false;
+            return logMessage( "generic-error", "unknown error" ), false;
         }
 
         //return false;
