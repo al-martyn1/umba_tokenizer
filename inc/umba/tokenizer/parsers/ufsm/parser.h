@@ -1489,7 +1489,7 @@ public:
             {
                 readNextToken(); 
 
-                if (isTokenOneOf(UFSM_TOKEN_OP_COLON)) // override без блока - это all
+                if (!isTokenOneOf(UFSM_TOKEN_OP_COLON)) // override без блока - это all
                 {
                     ple.overrideFlags = InheritanceOverrideFlags::all;
                 }

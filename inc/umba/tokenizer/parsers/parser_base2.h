@@ -77,6 +77,9 @@ public: // ctors & assignment
     {
     }
 
+    virtual
+    ~ParserBase2() {}
+
 
 public: // info & pos methods
 
