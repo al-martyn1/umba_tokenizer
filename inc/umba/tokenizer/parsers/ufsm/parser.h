@@ -43,16 +43,6 @@ namespace ufsm {
 
 //!!! В definitions нельзя добавлять переходы. Сейчас это не проверяется
 
-//!!! Целевое состояние перехода может быть self - надо обработать
-// Тут ещё такой нюанс. Если используется self - то действия состояния (state actions) -
-// используются действия self-enter/self-leave. Если целевым состоянием перехода задано
-// именованное состояние, то, даже если целевое состояние совпадает с исходным,
-// то используются действия enter/leave.
-
-//!!! Если у нас список исходных состояний, или там есть ANY-состояние, а в качестве
-// целевого состояния задан self - то всё нормально, сложно-составной переход будет разложен
-// на элементарные, с одним исх. состоянием, и с одним событием, и там self будет понятно куда
-// переходит.
 
 
 struct ParsingContext
@@ -260,20 +250,6 @@ public:
 
 
             default: 
-                 #if 0
-                 if (tk>=MERMAID_TOKEN_SET_DIRECTIVES_FIRST && tk<=MERMAID_TOKEN_SET_DIRECTIVES_LAST)
-                     return "directive";
-
-                 if (tk>=MERMAID_TOKEN_SET_TYPES_FIRST && tk<=MERMAID_TOKEN_SET_TYPES_LAST)
-                     return "type";
-
-                 if (tk>=MERMAID_TOKEN_SET_OPERATORS_FIRST && tk<=MERMAID_TOKEN_SET_OPERATORS_LAST )
-                     return "operator";
-
-                 if (tk>=MERMAID_TOKEN_SET_ATTRS_FIRST && tk<=MERMAID_TOKEN_SET_ATTRS_LAST )
-                     return "attribute/option";
-                 #endif
-
                  return "unknown_" + std::to_string(tk);
         }
     }
@@ -282,92 +258,11 @@ public:
     {
         if (!pTokenInfo)
         {
-            // log->logErrorEvent( ParserErrorEventType::customError
-            //                   , textPositionInfoInitialized(getFileId())
-            //                   , 0
-            //                   )
-            // return false;
-
-            //throw std::runtime_error("Something goes wrong in parser");
-            // Не надо ничего кидать, просто молча выходим
             return false;
         }
 
         return true;
     }
-
-    // bool expectedReachedMsg(const TokenInfoType *pTokenInfo, std::initializer_list<umba::tokenizer::payload_type> payloadExpectedList, const std::string &msg=std::string()) const
-    // {
-    //     BaseClass::logUnexpected( pTokenInfo, payloadExpectedList, msg, [&](umba::tokenizer::payload_type tk) { return getTokenIdStr(tk); } );
-    //     return false;
-    // }
-    //  
-    // bool expectedReachedMsg(const TokenInfoType *pTokenInfo, umba::tokenizer::payload_type payloadExpected, const std::string &msg=std::string()) const
-    // {
-    //     BaseClass::logUnexpected( pTokenInfo, payloadExpected, msg, [&](umba::tokenizer::payload_type tk) { return getTokenIdStr(tk); } );
-    //     return false;
-    // }
-    //  
-    // bool checkExactTokenType(const TokenInfoType *pTokenInfo, std::initializer_list<umba::tokenizer::payload_type> payloadExpectedList, const std::string &msg=std::string()) const
-    // {
-    //     for(auto e : payloadExpectedList)
-    //     {
-    //         if (e==pTokenInfo->tokenType) // tkReached
-    //             return true;
-    //     }
-    //     return expectedReachedMsg(pTokenInfo, payloadExpectedList, msg);
-    // }
-    //  
-    // bool checkExactTokenType(const TokenInfoType *pTokenInfo, umba::tokenizer::payload_type payloadExpected, const std::string &msg=std::string()) const
-    // {
-    //     // for(auto e : payloadExpectedList)
-    //     // {
-    //     //     if (e==pTokenInfo->tokenType) // tkReached
-    //     //         return true;
-    //     // }
-    //  
-    //     if (payloadExpected==pTokenInfo->tokenType)
-    //         return true;
-    //  
-    //     return expectedReachedMsg(pTokenInfo, payloadExpected, msg);
-    // }
-    //  
-    //  
-    // template<typename TokenHandler>
-    // bool readHomogeneousTokensList( umba::tokenizer::payload_type tokenToken, umba::tokenizer::payload_type tokenSep
-    //                               , bool readNextOnStart
-    //                               , TokenHandler handler
-    //                               , bool initialWaitSep = false
-    //                               )
-    // {
-    //     if (readNextOnStart)
-    //         readNextToken();
-    //  
-    //     bool waitSep = initialWaitSep;
-    //  
-    //     for( 
-    //        ; umba::TheValue(m_pTokenInfo->tokenType).oneOf(tokenSep, tokenToken)
-    //        ; readNextToken()
-    //        )
-    //     {
-    //         if (waitSep)
-    //         {
-    //             if (m_pTokenInfo->tokenType!=tokenSep)
-    //                 break;
-    //             waitSep = false;
-    //         }
-    //         else // ждём tokenToken, после разделителя или в начале
-    //         {
-    //             if (!checkExactTokenType(m_pTokenInfo, tokenToken /* , "'display-options' directive: invalid option value" */ ))
-    //                 return false; // а пришло хз что
-    //             //evd.basicEvents.emplace_back(extractIdentifierName(m_pTokenInfo));
-    //             handler();
-    //             waitSep = true;
-    //         }
-    //     }
-    //  
-    //     return true;
-    // }
 
 
     //----------------------------------------------------------------------------
@@ -815,10 +710,6 @@ public:
 
         expr = parser.getExpression();
 
-        // ExpressionNodeType simplify(const ExpressionNodeType &node) const
-        //     LogicExpressionParser
-        //     LogicExpressionEvaluator
-
         return true;
     }
 
@@ -858,8 +749,6 @@ public:
             pd.flags = commonFlags;
 
             readNextToken();
-
-            //bool hasExpression = false;
 
             if (isTokenOneOf(UFSM_TOKEN_OP_ASSIGN))
             {
@@ -1028,9 +917,6 @@ public:
             return true;
         }
 
-        // UFSM_TOKEN_OP_ANY
-        // UFSM_TOKEN_OP_COMMA
-        // UMBA_TOKENIZER_TOKEN_IDENTIFIER
     }
 
     bool parseStateMachineTransitions(StateMachineDefinition &sm)
@@ -1085,24 +971,12 @@ public:
         //   СписокСобытий      - Событие1 [, Событие2 [, Событие3... ] ]
         //   СобытиеN           - */Событие/!Событие
 
-        // struct TransitionDefinition
-        // {
-        //     PositionInfo               positionInfo;
-        //     std::string                description ;
-        //     TransitionSourceStates     sourceStates; 
-        //     TransitionEvents           events      ;
-        //     TransitionFlags            flags;
-        //     LogicExpression            additionalCondition;
-
         while(true)
         {
             // Ждём конец блока
             readNextToken();
             if (isTokenOneOf(UFSM_TOKEN_BRACKET_SCOPE_CLOSE))
                 return true;
-
-            // if (!checkExactTokenType(m_pTokenInfo, {UMBA_TOKENIZER_TOKEN_IDENTIFIER, UFSM_TOKEN_BRACKET_SCOPE_CLOSE} /* , "'display-options' directive: invalid option value" */ ))
-            //     return false; // а пришло хз что
 
             TransitionDefinition td;
             td.positionInfo = getFullPos();
@@ -1353,11 +1227,8 @@ public:
 
             } // switch
 
-            // Выбрали закрывающую скобку блока actions/events/... со входа
-            //readNextToken(); 
         }
 
-        //return true;
     }
 
     //----------------------------------------------------------------------------
@@ -1372,12 +1243,10 @@ public:
         {
             // В начале у нас оператор скоупа, значит имя абсолютное
             waitSep = true;
-            //fqn.flags = FullQualifiedNameFlags::absolute;
             fqn.makeAbsolute();
         }
         else
         {
-            //fqn.flags = FullQualifiedNameFlags::none;
             fqn.makeRelative();
         }
 
@@ -1441,7 +1310,6 @@ public:
 
         if (!flagsCount)
         {
-            // BaseClass::logSimpleMessage(getFullPos(), m_pTokenInfo->tokenType, "override-list", "empty 'override' list");
             logSimpleMessage("override-list", "empty 'override' list");
             return false;
         }
@@ -1480,7 +1348,6 @@ public:
             if (!parseFullQualifiedName(ple.name))
             {
                 // Ошибку вроде вывели в parseFullQualifiedName
-                //expectedReachedMsg(m_pTokenInfo, {UFSM_TOKEN_OP_SCOPE, UMBA_TOKENIZER_TOKEN_IDENTIFIER} /* , msg */ );
                 return false;
             }
 
@@ -1506,7 +1373,6 @@ public:
                         return false;
                     readNextToken(); 
                 }
-
             }
             else
             {
