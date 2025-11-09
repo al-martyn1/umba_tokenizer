@@ -4,6 +4,13 @@ Generator: Umba Brief Scanner
 
 # inc/umba
 
+- `[inc/umba/char_class.h:1345]`
+  Сделать реверс последовательности для oO  пунктуации
+
+- `[inc/umba/char_class.h:1514]`
+  Тут ещё нужно добавить внешний цикл - текущий цикл становится внутренним, после
+  него сортируем rangesStr, и опять прогоняем
+
 - `[inc/umba/c_tokenizer_constants.h:76]`
   При изменении базовых констант не забываем, что нельзя вылезать за
   UMBA_TOKENIZER_TOKEN_BASE_LAST (или надо поправить эту константу)
@@ -100,7 +107,7 @@ Generator: Umba Brief Scanner
 - `[inc/umba/tokenizer/lexers/plantuml.h:178]`
   Фильтры, установленные позже, отрабатывают раньше
 
-- `[inc/umba/tokenizer/lexers/ufsm.h:121]`
+- `[inc/umba/tokenizer/lexers/ufsm.h:127]`
   Фильтры, установленные позже, отрабатывают раньше
 
 - `[inc/umba/tokenizer/lexers/usketch_tokenizer.h:193]`
@@ -139,22 +146,25 @@ Generator: Umba Brief Scanner
 - `[inc/umba/tokenizer/parsers/ufsm/parser.h:44]`
   В definitions нельзя добавлять переходы. Сейчас это не проверяется
 
-- `[inc/umba/tokenizer/parsers/ufsm/parser.h:46]`
-  Целевое состояние перехода может быть self - надо обработать Тут ещё такой
-  нюанс. Если используется self - то действия состояния (state actions) -
-  используются действия self-enter/self-leave. Если целевым состоянием перехода
-  задано именованное состояние, то, даже если целевое состояние совпадает с
-  исходным, то используются действия enter/leave.
+- `[inc/umba/tokenizer/parsers/ufsm/parser.h:771]`
+  Дублирование кода, вынести в отдельную лямбду
 
-- `[inc/umba/tokenizer/parsers/ufsm/parser.h:52]`
-  Если у нас список исходных состояний, или там есть ANY-состояние, а в качестве
-  целевого состояния задан self - то всё нормально, сложно-составной переход
-  будет разложен на элементарные, с одним исх. состоянием, и с одним событием, и
-  там self будет понятно куда переходит.
-
-- `[inc/umba/tokenizer/parsers/ufsm/parser.h:1348]`
+- `[inc/umba/tokenizer/parsers/ufsm/parser.h:1304]`
   Нужно проверить наличие этого флага, если уже установлен, то это ошибка Пока
   просто устанавливаем без проверки
+
+
+
+# inc/umba/tokenizer/parsers/ufsm/impl
+
+- `[inc/umba/tokenizer/parsers/ufsm/impl/types.h:294]`
+  Данная версия expandTransitions нужна для реализации автомата Для рисования
+  графа нам не нужно раскрывать events - граф будет сильно замусорен, но нам
+  нужно раскрывать sourceStates - так как рисовать события нужно для каждой
+  вершины. При этом нам нужно как-то помечать раскрытые по sourceStates переходы
+  каким-то ID для того, чтобы проверить, присутствует ли что-либо с таким ID в
+  полностью раскрытом графе. Если не присутствует, то такой нераскрытый по events
+  переход не отображается.
 
 
 

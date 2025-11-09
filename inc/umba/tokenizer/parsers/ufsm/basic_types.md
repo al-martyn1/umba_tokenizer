@@ -234,7 +234,8 @@ struct PredicateDefinition
 
     /*! Список событий, для которых предикат может быть использован.
         Актуален только если установлен флаг PredicateFlags::validFor */
-    std::vector<std::string>   validForList;
+    std::vector<std::string>          validForList;
+    std::unordered_set<std::uint8_t>  charSet;
 
     std::string getCanonicalName() const { return name; }
 
@@ -463,10 +464,31 @@ struct TransitionSourceState
 ```cpp
 struct TransitionSourceStates
 {
-    std::vector<TransitionSourceState>  list;
 
+    std::vector<TransitionSourceState>  list;
     std::string getCanonicalName() const;
 
+
+    using iterator        = typename std::vector<TransitionSourceState>::iterator       ;
+    using const_iterator  = typename std::vector<TransitionSourceState>::const_iterator ;
+    using reference       = typename std::vector<TransitionSourceState>::reference      ;
+    using const_reference = typename std::vector<TransitionSourceState>::const_reference;
+
+    iterator        begin()       { return list.begin (); }
+    iterator        end  ()       { return list.end   (); }
+    const_iterator  begin() const { return list.begin (); }
+    const_iterator  end  () const { return list.end   (); }
+    const_iterator cbegin() const { return list.cbegin(); }
+    const_iterator cend  () const { return list.cend  (); }
+
+    reference       front()       { return list.front(); }
+    const_reference front() const { return list.front(); }
+    reference       back()        { return list.back() ; }
+    const_reference back() const  { return list.back() ; }
+
+
+    int getWeightForCompareForPrioritySort() const;
+    //int compareForPrioritySort(const TransitionSourceStates &other) const;
     int compare(const TransitionSourceStates &other) const;
     bool isEqual(const TransitionSourceStates &other) const;
 
@@ -481,6 +503,7 @@ struct TransitionSourceStates
     void push_back( const TransitionSourceState &st);
     std::size_t size () const { return list.size (); }
     bool        empty() const { return list.empty(); }
+    void        clear()       { list.clear(); }
 
     std::vector<TransitionSourceState> getSortedStates() const;
 
@@ -606,6 +629,22 @@ struct TransitionEvents
 
     std::string getCanonicalName() const;
 
+
+    using iterator        = typename std::vector<TransitionEvent>::iterator       ;
+    using const_iterator  = typename std::vector<TransitionEvent>::const_iterator ;
+    using reference       = typename std::vector<TransitionEvent>::reference      ;
+    using const_reference = typename std::vector<TransitionEvent>::const_reference;
+
+    iterator        begin()       { return list.begin (); }
+    iterator        end  ()       { return list.end   (); }
+    const_iterator  begin() const { return list.begin (); }
+    const_iterator  end  () const { return list.end   (); }
+    const_iterator cbegin() const { return list.cbegin(); }
+    const_iterator cend  () const { return list.cend  (); }
+
+
+    int getWeightForCompareForPrioritySort() const;
+    //int compareForPrioritySort(const TransitionEvents &other) const;
     int compare(const TransitionEvents &other) const;
     bool isEqual(const TransitionEvents &other) const;
 
@@ -620,6 +659,7 @@ struct TransitionEvents
     void push_back( const TransitionEvent &st);
     std::size_t size () const { return list.size (); }
     bool        empty() const { return list.empty(); }
+    void        clear()       { list.clear(); }
 
     std::vector<TransitionEvent> getSortedEvents() const;
 
@@ -672,16 +712,25 @@ struct TransitionDefinition
     std::string                description ;
     TransitionSourceStates     sourceStates;
     TransitionEvents           events      ;
-    TransitionFlags            flags;
+    TransitionFlags            flags       ;
     LogicExpression            additionalCondition;
     std::string                targetState ;
     TransitionActionRefs       actionRefs  ;
 
+    std::size_t                id = 0;
+
 
     std::string additionalConditionAsString() const;
+    std::string eventsAsString() const;
 
     std::string getCanonicalName() const;
 
+    bool hasAnyAny() const; // has any in sourceStates or in events
+    bool hasAdditionalCondition() const;
+    int compareAdditionalCondition(const TransitionDefinition &other) const;
+    int getWeightForCompareForPrioritySort() const;
+    int comparePrerequisites(const TransitionDefinition &other) const;
+    bool isEqualPrerequisites(const TransitionDefinition &other) const;
     int compare(const TransitionDefinition &other) const;
     bool isEqual(const TransitionDefinition &other) const;
 
@@ -700,6 +749,16 @@ struct TransitionDefinition
 
     void append   ( const TransitionEvent &te);
     void push_back( const TransitionEvent &te);
+
+    std::vector<TransitionDefinition> expandEvents(const std::vector<std::string> &allEventNames) const;
+    std::vector<TransitionDefinition> expandSourceStates(const std::vector<std::string> &allSourceStateNames) const;
+    std::vector<TransitionDefinition> expandEventsAndSourceStates(const std::vector<std::string> &allEventNames, const std::vector<std::string> &allSourceStateNames) const;
+
+    std::string getSourceState() const;
+    std::string getTargetState() const;
+
+    bool isSelfTarget() const { return (flags&TransitionFlags::selfTarget)!=0; }
+
 
 }; // struct TransitionDefinition
 ```
@@ -792,6 +851,7 @@ struct StateDefinition
 
     std::unordered_map<StateActionKind, StateActionRefs>   actionRefs;
 
+    std::size_t     id = 0;
 
 public: // methods
 
@@ -801,6 +861,10 @@ public: // methods
 
     template<typename StreamType>
     StreamType& print(StreamType& oss, std::size_t indendSize) const;
+
+    bool isInitial() const { return (flags&StateFlags::initial)!=0; }
+    bool isFinal()   const { return (flags&StateFlags::final  )!=0; }
+    bool isError()   const { return (flags&StateFlags::error  )!=0; }
 
 }; // struct StateDefinition
 ```

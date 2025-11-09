@@ -4,3 +4,4 @@
    - [TODO List](inc/umba/tokenizer/parsers/ufsm/todo.md)
    - [TokenCollection](inc/umba/tokenizer/token_collection.md)
    - [Базовые типы примитивов КА](inc/umba/tokenizer/parsers/ufsm/basic_types.md)
+   - [Скалярные типы protobuf](inc/umba/tokenizer/parsers/protobuf/doc.notes/scalar.md)

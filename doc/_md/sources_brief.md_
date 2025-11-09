@@ -57,8 +57,9 @@ Generator: Umba Brief Scanner
 
 # inc/umba/tokenizer/parsers
 
-- `mermaid_packet_diagram_parser_new.h` - Парсер mermaid packet diagram, расширенная версия, с использованием типов и массивов
 - `parser_base.h` - Базовый парсер
+- `parser_base2.h` - Базовый парсер V2
+- `parser_template.h` - Шаблон класса парсера
 
 # inc/umba/tokenizer/parsers/ufsm
 
@@ -71,6 +72,7 @@ Generator: Umba Brief Scanner
 # inc/umba/tokenizer/parsers/ufsm/impl
 
 - `basic_types.h` - Базовые типы для парсера ufsm - реализация функций
+- `types.h` - Типы для парсера ufsm - реализация функций
 
 # inc/umba/tokenizer/parsers/ufsm
 
@@ -79,10 +81,15 @@ Generator: Umba Brief Scanner
 
 # inc/umba/tokenizer/parsers/ufsm/samples
 
+- `binr.ufsm` - 
 - `concept.ufsm` - 
 - `elevator.ufsm` - 
 - `http.ufsm` - 
+- `modbus.ufsm` - 
+- `nmea.ufsm` - 
+- `sirf.ufsm` - 
 - `traffic_lights.ufsm` - 
+- `trimble.ufsm` - 
 
 # inc/umba/tokenizer/parsers/ufsm
 
