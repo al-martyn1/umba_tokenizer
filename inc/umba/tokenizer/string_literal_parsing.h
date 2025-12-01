@@ -35,6 +35,7 @@ enum class StringLiteralParsingResult : unsigned
 
 
 //----------------------------------------------------------------------------
+#include "umba/warnings/interface_begin.h"
 template<typename CharType>
 struct ITokenizerLiteralCharInserter
 {
@@ -46,6 +47,7 @@ struct ITokenizerLiteralCharInserter
     // Тут такой вопрос - может, сделать перегрузки для разных типов char?
     virtual void insert(CharType ch) = 0;
 };
+#include "umba/warnings/interface_end.h"
 
 //----------------------------------------------------------------------------
 
